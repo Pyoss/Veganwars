@@ -1,0 +1,641 @@
+from bot_utils import keyboards, bot_methods
+from locales import localization
+import inspect
+import sys
+import engine
+
+object_dict = {}
+action_dict = {}
+
+
+class ActionHandler:
+    name = None
+
+    def __init__(self, handler):
+        self.handler = handler
+
+    def handle(self, call):
+        call_data = call.data.split('_')
+        try:
+            fight = self.handler.game_dict[call_data[2]]
+            unit = fight.units_dict[int(call_data[1])]
+        except KeyError:
+            return self.handler.game_error(call)
+        if unit.controller.message_id == call.message.message_id and unit.active:
+            unit.active = False
+            action = action_dict[call_data[3]](unit, fight, info=call_data, call=call)
+            action.act()
+        else:
+            print(unit.controller.message_id)
+            print(call.message.message_id)
+            print(unit.active)
+            return self.handler.actor_error(call)
+
+# 1-20 До эффектов, 21-40 - эффекты, 41-60 результаты. Некоторые правила:
+# здоровье не изменять после 41,
+# здоровье не прибавлять после 39,
+# предметы не использовать раньше 2,
+# перезарядка и отдых: 3
+# подойти: 10
+# отойти: 1
+
+
+class Action:
+    name = None
+    types = []
+    order = 5
+    full = True
+    action_type = []
+
+    def __init__(self, unit, fight, info=None, call=None):
+        self.unit = unit
+        self.fight = fight
+        self.info = info
+        self.call = call
+        self.full = True
+        self.str = ''
+
+    def act(self):
+        self.fight.action_queue.append(self)
+        for action_type in self.action_type:
+            self.unit.action.append(action_type)
+        if self.full:
+            self.unit.controller.end_turn()
+
+    def to_queue(self):
+        pass
+
+    def activate(self):
+        pass
+
+
+class UnitAction:
+    name = 'blank'
+
+    def __init__(self, name, func, action_type=list(), types=list(),
+                 full=True, order=5):
+        self.name = name
+        self.full = full
+        self.order = order
+        self.types = types
+        self.action_type = action_type
+
+        class NewAction(Action):
+            name = self.name
+            action_type = self.action_type
+            order = self.order
+            full = self.full
+            types = self.types
+
+            def activate(new_action):
+                func(new_action)
+
+        action_dict[name] = NewAction
+
+
+class EffectString(Action):
+    full = False
+
+    def __init__(self, fight, order, lang_tuple):
+        Action.__init__(self, None, fight)
+        self.order = 20 + order
+        self.lang_tuple = lang_tuple
+
+    def activate(self):
+        self.fight.string_tuple.append(self.lang_tuple)
+
+
+class MenuAction(Action):
+    full = False
+
+    def act(self):
+        self.unit.active = True
+        self.activate()
+
+    def activate(self):
+        pass
+
+
+class BaseAttack(Action):
+    action_type = ['attack']
+
+    def __init__(self, unit, fight, info=None, order=5, call=None):
+        Action.__init__(self, unit, fight, info=info)
+        self.order = order
+        self.weapon = self.unit.weapon
+        self.call = call
+        if info is not None:
+            self.unit.target = self.fight[info[-1]]
+        self.dmg_done = 0
+        self.special_emotes = []
+        self.target = None
+        self.armored = None
+
+    def to_emotes(self, emote):
+        if emote not in self.special_emotes:
+            self.special_emotes.append(emote)
+
+    def attack(self, waste=None):
+        self.weapon.before_hit(self)
+        # Вычисление нанесенного урона и трата энергии
+        self.dmg_done = self.weapon.get_damage(self.target)
+        if waste is None:
+            self.unit.waste_energy(self.weapon.energy)
+        else:
+            self.unit.waste_energy(waste)
+        # Применение способностей и особых свойств оружия
+        self.dmg_done += self.unit.damage if self.dmg_done else 0
+        self.target.receive_hit(self)
+        self.unit.on_hit(self)
+        self.weapon.on_hit(self)
+
+    def on_attack(self):
+        self.target.receive_damage(self.dmg_done)
+
+    def string(self, hit_string):
+        if self.armored is None:
+            action = 'hit' if self.dmg_done > 0 else 'miss'
+            if self.target == self.unit:
+                action += '_self'
+            if hit_string != '':
+                action = hit_string + '_' + action
+            attack_dict = {'actor': self.unit.name, 'target': self.target.name,
+                           'damage': self.dmg_done if not self.special_emotes else str(self.dmg_done) +
+                           ''.join(self.special_emotes)}
+            attack_tuple = localization.LangTuple(self.weapon.table_row, action, attack_dict)
+            self.fight.string_tuple.row(attack_tuple)
+        else:
+            self.armor_string()
+
+    def armor_string(self):
+        action = 'armor'
+        attack_dict = {'actor': self.unit.name, 'target': self.target.name,
+                       'armor_name': localization.LangTuple('armor' + '_' + self.armored.name, 'name')}
+        attack_tuple = localization.LangTuple(self.weapon.table_row, action, attack_dict)
+        self.fight.string_tuple.row(attack_tuple)
+
+    def activate(self, target=None, weapon=None):
+        # Определение цели
+        self.target = self.unit.target if target is None else target
+        self.weapon = weapon if weapon is not None else self.weapon
+        self.attack()
+        self.on_attack()
+
+
+class SpecialAttack(BaseAttack):
+    def __init__(self, unit, fight, info, order, waste=0):
+        BaseAttack.__init__(self, fight=fight, unit=unit, info=info, order=order)
+        self.waste = waste
+
+    def activate(self, target=None, weapon=None):
+        # Определение цели
+        self.target = self.unit.target
+        self.attack(waste=self.waste)
+        self.weapon.modify_attack(self)
+        self.on_attack()
+        # Добавление описания в строку отчета
+        self.string('special')
+
+
+class Suicide(Action):
+    name = 'suicide'
+
+    def __init__(self, unit, fight, info=None, order=10, call=None):
+        Action.__init__(self, unit, fight, info=info)
+        self.order = order
+        self.call = call
+
+    def activate(self):
+        self.unit.hp_delta -= 100
+        self.fight.string_tuple.row(localization.LangTuple('fight', 'suicide', {'actor': self.unit.name}))
+
+
+class Attack(BaseAttack):
+    name = 'attack'
+
+    def activate(self, target=None, weapon=None, waste=None):
+        # Определение цели
+        self.target = self.unit.target if target is None else target
+        self.attack(waste=waste)
+        self.on_attack()
+        # Добавление описания в строку отчета
+        self.string(self.str)
+
+
+class Skip(Action):
+    name = 'skip'
+    action_type = ['idle', 'skip']
+
+    def activate(self):
+        # Добавление строки пропуска
+        self.fight.string_tuple += localization.LangTuple('fight', 'skip', {'actor': self.unit.name})
+
+
+class MoveForward(Action):
+    name = 'move'
+    action_type = ['move']
+    order = 10
+
+    def activate(self):
+        self.fight.string_tuple += localization.LangTuple('fight', 'move', {'actor': self.unit.name})
+        self.unit.move_forward()
+
+
+class MoveBack(Action):
+    name = 'move-back'
+    action_type = ['move']
+    order = 1
+
+    def activate(self):
+        self.fight.string_tuple += localization.LangTuple('fight', 'move_back', {'actor': self.unit.name})
+        self.unit.move_back()
+
+
+class Reload(Action):
+    action_type = ['idle', 'reload']
+    order = 3
+
+    def activate(self):
+        self.unit.recovery()
+
+
+class MeleeReload(Reload):
+    name = 'melee-reload'
+
+    def activate(self):
+        energy = self.unit.max_energy if not self.unit.recovery_energy else self.unit.recovery_energy
+        self.fight.string_tuple += localization.LangTuple('fight',
+                                                          'melee_reload', {'actor': self.unit.name, 'energy': energy})
+        Reload.activate(self)
+
+
+class RangedReload(Reload):
+    name = 'ranged-reload'
+
+    def activate(self):
+        energy = self.unit.max_energy if not self.unit.recovery_energy else self.unit.recovery_energy
+        self.fight.string_tuple += localization.LangTuple('fight',
+                                                          'ranged_reload', {'actor': self.unit.name, 'energy': energy})
+        Reload.activate(self)
+
+
+class WeaponActions(MenuAction):
+    name = 'weapon'
+    types = ['keyboard']
+
+    def activate(self):
+        weapon = self.unit.weapon
+        weapon.get_action()
+
+
+class SpecialWeaponAction(Action):
+    name = 'special'
+
+    def __init__(self, unit, fight, info, call=None):
+        Action.__init__(self, unit, fight, info, call=call)
+        self.types = self.unit.weapon.special_types
+        self.order = self.unit.weapon.order
+
+    def activate(self):
+        weapon = self.unit.weapon
+        weapon.start_special_action(self.info)
+
+
+class ListAbilities(MenuAction):
+    name = 'ability-list'
+    types = ['keyboard']
+
+    def activate(self):
+        keyboard = keyboards.form_keyboard(*[ability.button() for ability
+                                             in self.unit.abilities if ability.available()],
+                                           keyboards.MenuButton(self.unit, 'back'))
+        self.unit.edit_message(localization.LangTuple('utils', 'abilities'), reply_markup=keyboard)
+
+
+class Ability(Action):
+    name = 'ability'
+    full = False
+    action_type = ['ability']
+
+    def __init__(self, unit, fight, info=None, call=None, ability_name=None):
+        self.call = call
+        Action.__init__(self, unit, fight, info=info)
+        ability_name = info[4] if ability_name is None else ability_name
+        self.ability = next(ability for ability in unit.abilities if ability.name == ability_name)
+        self.order = self.ability.order
+        self.types = ['ability', *self.ability.types]
+
+    def act(self):
+        self.unit.action = [*self.unit.action, *self.types]
+        self.ability.act(self)
+
+    def activate(self):
+        self.ability.activate(self)
+
+
+class ListItems(MenuAction):
+    name = 'item-list'
+    types = ['keyboard']
+
+    def activate(self):
+        keyboard = keyboards.form_keyboard(*keyboards.get_item_buttons(self.unit),
+                                           keyboards.MenuButton(self.unit, 'back'))
+        self.unit.controller.edit_message(localization.LangTuple('utils', 'items'), reply_markup=keyboard)
+
+
+class Item(Action):
+    name = 'item'
+    full = False
+    action_type = ['item']
+
+    def __init__(self, unit, fight, info=None, call=None, item_name=None):
+        self.call = call
+        Action.__init__(self, unit, fight, info=info)
+        item_name = info[4] if item_name is None else item_name
+        self.item = next(item for item in unit.items if item.name == item_name)
+        self.order = self.item.order
+        self.types = ['item', *self.item.types]
+
+    def act(self):
+        self.unit.action = [*self.unit.action, *self.types]
+        self.item.act(self)
+
+    def activate(self):
+        self.item.activate(self)
+
+
+class AdditionalKeyboard(MenuAction):
+    name = 'add-keyboard'
+    types = ['keyboard']
+
+    def activate(self):
+        keyboard = keyboards.form_additional_keyboard(self.unit)
+        self.unit.controller.edit_message(self.unit.menu_string(),
+                                reply_markup=keyboard)
+
+
+class GetInfo(MenuAction):
+    name = 'info'
+    types = ['keyboard']
+
+    def activate(self):
+        bot_methods.answer_callback_query(call=self.call,
+                                          text=self.unit.info_string(lang=self.unit.controller.lang).translate(self.unit.controller.lang),
+                                          alert=True)
+
+
+class MainMenu(MenuAction):
+    name = 'menu'
+    types = ['keyboard']
+
+    def activate(self):
+        keyboard = keyboards.form_turn_keyboard(self.unit)
+        self.unit.controller.edit_message(self.unit.menu_string(),
+                                reply_markup=keyboard)
+
+
+class Custom:
+    name = None
+    types = []
+    order = 0
+    full = False
+    effect = False
+    action_type = ['attack']
+
+    def __init__(self, func, *args, order=5, to_queue=True, unit=None, **kwargs):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        self.order = order
+        self.unit = unit
+        if to_queue:
+            self.unit.fight.edit_queue(self)
+
+    def act(self):
+        self.unit.fight.action_queue.append(self)
+
+    def activate(self):
+        self.func(*self.args, **self.kwargs)
+
+    def to_queue(self):
+        pass
+
+
+class AddString(Custom):
+
+    def __init__(self, lang_tuple, order, unit):
+        self.lang_tuple = lang_tuple
+        self.unit = unit
+        self.order = order
+        Custom.__init__(self, self.to_string, order=self.order, unit=self.unit)
+
+    def to_string(self):
+        if self.effect:
+            self.unit.fight.string_tuple.effect()
+        self.unit.fight.string_tuple.row(self.lang_tuple)
+
+
+# Объекты для способностей и предметов
+class GameObject:
+    name = None
+    order = 5
+    cd = 0
+    active = True
+    full = True
+    core_types = []
+    types = []
+    db_string = ''
+    keyboard_button = keyboards.ObjectButton
+    effect = False
+    one_time = True
+    action_type = []
+
+    def __init__(self, unit=None, obj_dict=None):
+        self.unit = unit
+        self.table_row = None
+        self.get_table_row()
+        self.types = [*self.core_types, *self.types]
+        self.ready_turn = 0
+        self.id = str(engine.rand_id())
+        if obj_dict is not None:
+            self.from_dict(obj_dict)
+
+    def from_dict(self, obj_dict):
+        for key, value in obj_dict.items():
+            setattr(self, key, value)
+
+    def to_dict(self):
+        this_dict = {
+            'name': self.name
+        }
+        return this_dict
+
+    def get_table_row(self):
+        self.table_row = '_'.join([self.db_string, self.name])
+        return self.table_row
+
+    def pop_info(self, call):
+        bot_methods.answer_callback_query(call=call,
+                                          text=localization.LangTuple(self.table_row,
+                                                                      'info').translate(self.unit.controller.lang))
+
+    def activate(self, action):
+        pass
+
+    def name_lang_tuple(self):
+        return localization.LangTuple(self.table_row, 'name')
+
+    def available(self):
+        if not self.active:
+            return False
+        if self.cd:
+            if self.unit.fight.turn >= self.ready_turn:
+                return True
+            else:
+                return False
+        return True
+
+    def string(self, string_code, format_dict=None, order=0):
+        format_dict = {} if None else format_dict
+        lang_tuple = localization.LangTuple(self.table_row, string_code, format_dict=format_dict)
+        if not order:
+            self.unit.fight.string_tuple.row(lang_tuple)
+        else:
+            AddString(lang_tuple=lang_tuple, unit=self.unit, order=order)
+
+    def button(self):
+        return self.keyboard_button(self)
+
+    def ask_action(self):
+        self.unit.controller.end_turn() if self.full else self.unit.get_action(edit=True)
+
+    def start_act(self):
+        pass
+
+    def suit(self):
+        if 'unique' in self.types:
+            return False
+        if 'not_range' in self.types and not self.unit.weapon.melee:
+            return False
+        elif 'not_melee' in self.types and self.unit.weapon.melee:
+            return False
+        elif 'not_solo' in self.types and len(self.unit.team.actors) < 2:
+            return False
+        elif self.name in [ability.name for ability in self.unit.abilities]:
+            return False
+        else:
+            return True
+
+    def on_cd(self):
+        self.ready_turn = self.unit.fight.turn + 1 + self.cd
+
+    def add_to_build(self, info):
+        self.apply_start_option(info)
+        if 'ability' in self.types:
+            self.unit.abilities.append(self)
+        self.unit.statuses['ability_choice'][0] -= 1
+        if self.unit.statuses['ability_choice'][0] > 0:
+            self.unit.send_ability_choice(self.unit, self.unit.statuses['ability_choice'][1], edit=True)
+        elif 'ability_choice' in self.unit.statuses:
+            self.unit.edit_message(localization.LangTuple('build', 'abilities_chosen'))
+            self.unit.done = True
+            del self.unit.statuses['ability_choice']
+
+    def to_build(self, info):
+        if 'optional_start' in self.types:
+            if len(info) < 5:
+                self.ask_start_option()
+            else:
+                self.add_to_build(info)
+        else:
+            self.add_to_build(info)
+            self.build_act()
+
+    def ask_start_option(self):
+        pass
+
+    def build_act(self):
+        pass
+
+    def apply_start_option(self, info):
+        pass
+
+    def dungeon_use(self):
+        pass
+
+def get_name(name, lang):
+    return object_dict[name]().name_lang_tuple().translate(lang)
+
+class InstantObject(GameObject):
+
+    def act(self, action):
+        self.unit.fight.action_queue.append(action)
+        for action_type in action.action_type:
+            self.unit.action.append(action_type)
+        self.on_cd()
+        self.ask_action()
+
+
+class TargetObject(GameObject):
+
+    def target_keyboard(self):
+        return keyboards.form_keyboard(*[keyboards.OptionObject(self,
+                                                                name=(unit.name if isinstance(unit.name, str)
+                                                                      else unit.name.str(self.unit.controller.lang)),
+                                                                option=unit) for unit in self.targets()],
+                                       keyboards.MenuButton(self.unit, 'back'))
+
+    def targets(self):
+        return []
+
+    def act(self, action):
+        if len(action.info) > 5:
+            self.act_options(action)
+            for action_type in action.action_type:
+                self.unit.action.append(action_type)
+            self.on_cd()
+            self.ask_action()
+        else:
+            self.ask_options()
+
+    def act_options(self, action):
+        action.target = self.unit.fight[action.info[-1]]
+        self.unit.fight.action_queue.append(action)
+
+    def ask_options(self):
+        self.unit.active = True
+        keyboard = self.target_keyboard()
+        self.unit.controller.edit_message(localization.LangTuple(self.table_row, 'options'), reply_markup=keyboard)
+
+
+class SpecialObject(GameObject):
+    def target_keyboard(self):
+        return keyboards.form_keyboard(*self.options_keyboard(),
+                                       keyboards.MenuButton(self.unit, 'back'))
+
+    def options(self):
+        return []
+
+    def options_keyboard(self):
+        return [keyboards.OptionObject(self, name=option[0], option=option[1]) for option in self.options()]
+
+    def act(self, action):
+        if len(action.info) > 4:
+            self.act_options(action)
+            for action_type in action.action_type:
+                self.unit.action.append(action_type)
+            self.on_cd()
+            self.ask_action()
+        else:
+            self.ask_options()
+
+    def act_options(self, action):
+        self.unit.fight.action_queue.append(action)
+
+    def ask_options(self):
+        self.unit.active = True
+        keyboard = self.target_keyboard()
+        self.unit.edit_message(localization.LangTuple(self.table_row, 'options'), reply_markup=keyboard)
+
+act_dict = dict(inspect.getmembers(sys.modules[__name__], inspect.isclass))
+action_dict = {**action_dict, **{v.name: v for k, v in act_dict.items()}}
