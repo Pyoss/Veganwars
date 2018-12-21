@@ -19,6 +19,7 @@ chats_table = Table('chats', metadata,
                     Column('name', String),
                     Column('data', String),
                     Column('receipts', String),
+                    Column('resources', Integer),
                     Column('armory', String),
                     Column('used_armory', String))
 
@@ -35,13 +36,14 @@ metadata.create_all(engn)
 class SqlChat(object):
     pyosession = None
 
-    def __init__(self, chat_id, name=None, data=None, receipts=None, armory=None, used_armory=None):
+    def __init__(self, chat_id, name=None, data=None, receipts=None, armory=None, used_armory=None, resources=None):
         self.chat_id = chat_id
         self.name = name
         self.data = data
         self.receipts = receipts
         self.armory = armory
         self.used_armory = used_armory
+        self.resources = resources
 
     def add_user(self, user_id):
         session.add(self.pyosession.user_class(user_id, self.chat_id))
@@ -66,23 +68,18 @@ class SqlChat(object):
         return False
 
     # Обработка предметов
-    def add_item(self, item):
+    def add_item(self, item, value=1):
         container = engine.Container()
         container.from_json(self.armory)
-        container.put(item)
+        container.put(item, value=value)
         self.armory = container.to_json()
         session.commit()
 
+    # Получить список вооружения в чате в виде словаря для Container()
     def get_armory(self):
         return json.loads(self.armory)
 
-    def use_item(self, item):
-        container = engine.Container()
-        container.from_json(self.used_armory)
-        container.put(item)
-        self.used_armory = container.to_json()
-        session.commit()
-
+    # Получить список не потраченного вооружения в чате в виде словаря для Container()
     def get_free_armory(self):
         armory = dict(self.get_armory())
         used_armory = json.loads(self.used_armory)
@@ -92,6 +89,12 @@ class SqlChat(object):
                 del armory[key]
         return armory
 
+    def use_item(self, item):
+        container = engine.Container()
+        container.from_json(self.used_armory)
+        container.put(item)
+        self.used_armory = container.to_json()
+        session.commit()
 
     def __repr__(self):
         return "<Chat('%s', '%s', '%s', '%s', '%s', '%s')>" % (self.chat_id, self.name, self.users, self.data,
