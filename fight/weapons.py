@@ -16,6 +16,7 @@ class Weapon(standart_actions.GameObject):
     energy = 2
     melee = True
     damage = 0
+    price = 100
 
     db_string = 'weapon'
     order = 5

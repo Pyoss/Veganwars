@@ -82,8 +82,11 @@ class Chat(sql_alchemy.SqlChat):
                 craft_list.append((key, value))
             buttons = []
             for item in craft_list:
-                buttons.append(keyboards.Button(standart_actions.get_name(item[0], 'rus') + ' (' + item[1] + ')',
+                price = standart_actions.get_class(item[0]).price
+                buttons.append(keyboards.Button(standart_actions.get_name(item[0], 'rus') + ' (' + str(price) + ')',
                                                 callback_data='_'.join(['chat', self.chat_id, 'craft',  item[0]])))
+            keyboard = keyboards.form_keyboard(*buttons)
+            bot_methods.send_message(user_id, message, reply_markup=keyboard)
 
 
 
@@ -325,6 +328,12 @@ class ChatHandler:
             else:
                 bot_methods.delete_message(call.message.chat.id, call.message.message_id)
                 lobby.team[user_id][2] = True
+        elif action == 'craft':
+            chat = get_chat(call_data[1])
+            item_name = call_data[-1]
+            item_class = standart_actions.get_class(item_name)
+            name = standart_actions.get_name(item_name, 'rus')
+            chat.add_resources()
 
 
 def add_chat(chat_id, name, creator):

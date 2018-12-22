@@ -563,8 +563,13 @@ class GameObject:
     def dungeon_use(self):
         pass
 
+
 def get_name(name, lang):
     return object_dict[name]().name_lang_tuple().translate(lang)
+
+
+def get_class(name):
+    return object_dict[name]
 
 class InstantObject(GameObject):
 

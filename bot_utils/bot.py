@@ -115,24 +115,10 @@ def start(message):
         chat.print_receipts()
 
 
-@bot.message_handler(commands=['resources'])
+@bot.message_handler(commands=['craft'])
 def start(message):
-    try:
-        resources = int(message.text.split()[1])
         chat = chat_main.get_chat(message.chat.id)
-        chat.add_resources(resources)
-    except:
-        return False
-
-
-@bot.message_handler(commands=['resources'])
-def start(message):
-    try:
-        resources = int(message.text.split()[1])
-        chat = chat_main.get_chat(message.chat.id)
-        chat.add_resources(resources)
-    except:
-        return False
+        chat.ask_craft(message.from_user.id)
 
 
 @bot.message_handler(content_types=['photo'])
