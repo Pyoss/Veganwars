@@ -4,7 +4,6 @@ import game_classes
 from fight import fight_main, units
 import time, requests, threading
 from chat_wars import chat_main
-import test_2
 
 
 start_time = time.time()
@@ -94,9 +93,20 @@ def start(message):
         chat.ask_attack(message.from_user.id)
 
 
-@bot.message_handler(commands=['tst'])
+@bot.message_handler(commands=['show_resources'])
 def start(message):
-    bot_methods.send_message(message.chat.id, test_2.message)
+        chat = chat_main.get_chat(message.chat.id)
+        chat.print_resources()
+
+
+@bot.message_handler(commands=['resources'])
+def start(message):
+    try:
+        resources = int(message.text.split()[1])
+        chat = chat_main.get_chat(message.chat.id)
+        chat.add_resources(resources)
+    except:
+        return False
 
 
 @bot.message_handler(content_types=['photo'])
