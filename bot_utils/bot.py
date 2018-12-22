@@ -43,42 +43,6 @@ def game(message):
         game_dict[message.chat.id].error('game_exists')
 
 
-@bot.message_handler(commands=["join_dog"])
-def join(message):
-    try:
-        if message.chat.id in game_dict:
-            game_dict[message.chat.id].join_dog()
-    except AttributeError:
-        pass
-
-
-@bot.message_handler(commands=["join_rat"])
-def join(message):
-    try:
-        if message.chat.id in game_dict:
-            game_dict[message.chat.id].join_rat()
-    except AttributeError:
-        pass
-
-
-@bot.message_handler(commands=["join_zombie"])
-def join(message):
-    try:
-        if message.chat.id in game_dict:
-            game_dict[message.chat.id].join_zombie()
-    except AttributeError:
-        pass
-
-
-@bot.message_handler(commands=["join_RAT"])
-def join(message):
-    try:
-        if message.chat.id in game_dict:
-            game_dict[message.chat.id].join_RAT()
-    except AttributeError:
-        pass
-
-
 @bot.message_handler(commands=["switch"])
 def switch(message):
     if message.chat.id in game_dict:
@@ -104,6 +68,7 @@ def start(message):
     mob_class = fight_main.units.Snail
     fight_main.thread_fight(None, {message.from_user.id: (name, units.Human(name).to_dict())},
                                    {(mob_class, 1): (None, mob_class().to_dict())}, chat_id=message.chat.id)
+
 
 @bot.message_handler(commands=['test'])
 def start(message):

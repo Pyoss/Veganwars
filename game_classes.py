@@ -179,6 +179,7 @@ class VsGame(Game):
 
     def __init__(self, chat_id, lang, team_number=2):
         Game.__init__(self, chat_id, lang, team_number=team_number)
+        # Баловство
         self.mob_dict = {'Pyos': ['zombie', 'zombie'], 'Asgarðr': ['bear', 'bird_rukh']
                         , 'Пасюк Лошадкин': ['spermonster', 'pedobear'], 'Insight': ['shadow', 'snail']}
 
@@ -269,12 +270,6 @@ class Dungeon(Game):
     def generate_map_keyboard(self):
         buttons = [room.return_button() for room in self.party.current_location.get_visible()]
         return dungeon_main.form_keyboard(*buttons, row_width=3)
-        #buttons = []
-        #for y in range(self.height):
-            #for x in range(self.width):
-                #buttons.append(self.get_location(x, y))
-        #buttons = [room.return_button() for room in buttons]
-        #return form_keyboard(*buttons, row_width=self.width)
 
     def send_movement_map(self):
         keyboard = self.generate_map_keyboard()
@@ -294,22 +289,3 @@ class Dungeon(Game):
             for member in self.party.members:
                 bot_methods.delete_message(message_id=member.message_id, chat_id=member.chat_id)
                 member.message_id = None
-
-
-class DogGame(Game):
-    def join_lobby(self, chat_id, name):
-        if not any(chat_id in team for team in self.lobby):
-            self.lobby[0][chat_id] = name
-            dog1 = ai.Dog(self)
-            self.lobby[1][dog1] = dog1.name
-            dog2 = ai.Dog(self)
-            self.lobby[1][dog2] = dog2.name
-            self.update_lobby()
-        else:
-            self.error('player_exists')
-
-
-def test_inventory(chat_id):
-    dungeon = map_engine.player_dict[chat_id]
-    member = [member for member in dungeon.party.members if member.chat_id == chat_id][0]
-    member.inventory.inventory_menu()
