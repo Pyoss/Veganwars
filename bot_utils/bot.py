@@ -109,6 +109,32 @@ def start(message):
         return False
 
 
+@bot.message_handler(commands=['show_receipts'])
+def start(message):
+        chat = chat_main.get_chat(message.chat.id)
+        chat.print_receipts()
+
+
+@bot.message_handler(commands=['resources'])
+def start(message):
+    try:
+        resources = int(message.text.split()[1])
+        chat = chat_main.get_chat(message.chat.id)
+        chat.add_resources(resources)
+    except:
+        return False
+
+
+@bot.message_handler(commands=['resources'])
+def start(message):
+    try:
+        resources = int(message.text.split()[1])
+        chat = chat_main.get_chat(message.chat.id)
+        chat.add_resources(resources)
+    except:
+        return False
+
+
 @bot.message_handler(content_types=['photo'])
 def start(message):
     print(message.photo[0].file_id)

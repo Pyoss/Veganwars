@@ -57,6 +57,34 @@ class Chat(sql_alchemy.SqlChat):
         return weapons
 
     # Демонстрация списка доступных рецептов
+    def print_receipts(self):
+        receipts = self.get_receipts()
+        message = ''
+        for key in receipts:
+            name = standart_actions.get_name(key, 'rus')
+            if receipts[key] == 'inf':
+                value = 'Много'
+            else:
+                value = str(receipts[key])
+            message += name + ' - ' + value + '\n'
+        self.send_message(message)
+
+    def ask_craft(self, user_id):
+        if self.ask_rights(user_id) == 'admin':
+            message = 'Выберите предмет для крафта.'
+            craft_list = []
+            receipts = self.get_receipts()
+            for key in receipts:
+                if receipts[key] == 'inf':
+                    value = 'Много'
+                else:
+                    value = str(receipts[key])
+                craft_list.append((key, value))
+            buttons = []
+            for item in craft_list:
+                buttons.append(keyboards.Button(standart_actions.get_name(item[0], 'rus') + ' (' + item[1] + ')',
+                                                callback_data='_'.join(['chat', self.chat_id, 'craft',  item[0]])))
+
 
 
     # Распечатка количества ресурсов

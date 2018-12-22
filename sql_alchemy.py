@@ -36,7 +36,7 @@ metadata.create_all(engn)
 class SqlChat(object):
     pyosession = None
 
-    def __init__(self, chat_id, name=None, data=None, receipts=None, armory=None, used_armory=None, resources=None):
+    def __init__(self, chat_id, name=None, data=None, receipts=None, armory=None, used_armory=None, resources=0):
         self.chat_id = chat_id
         self.name = name
         self.data = data
@@ -44,6 +44,8 @@ class SqlChat(object):
         self.armory = armory
         self.used_armory = used_armory
         self.resources = resources
+
+    # Пользователи
 
     def add_user(self, user_id):
         session.add(self.pyosession.user_class(user_id, self.chat_id))
@@ -54,23 +56,33 @@ class SqlChat(object):
             session.rollback()
             pass
 
-    def add_receipt(self, receipt):
-        container = engine.Container()
-        container.from_json(self.receipts)
-        container.put(receipt)
-        self.receipts = container.to_json()
-        session.commit()
-
-    def add_resources(self, value):
-        self.resources += value
-        session.commit()
-
     def user_is_member(self, user_id):
         user = session.query(self.pyosession.user_class).filter_by(user_id=user_id).one()
         if user.chat_id == self.chat_id:
             return True
         return False
 
+    # Рецепты
+
+    def add_receipt(self, receipt):
+        container = engine.ReceiptsContainer()
+        container.from_json(self.receipts)
+        container.put(receipt)
+        self.receipts = container.to_json()
+        session.commit()
+
+    def delete_receipt(self, receipt):
+        container = engine.ReceiptsContainer()
+        self.receipts = container.to_json()
+        container.from_json(self.receipts)
+        container.remove(receipt)
+        self.receipts = container.to_json()
+        session.commit()
+
+    def get_receipts(self):
+        return json.loads(self.receipts)
+
+    # Предметы
     # Обработка предметов
     def add_item(self, item, value=1):
         container = engine.Container()
@@ -98,6 +110,29 @@ class SqlChat(object):
         container.from_json(self.used_armory)
         container.put(item)
         self.used_armory = container.to_json()
+        session.commit()
+
+    def delete_item(self, item, value=1):
+        container = engine.Container()
+        container.from_json(self.armory)
+        container.remove(item, value=value)
+        self.armory = container.to_json()
+        session.commit()
+
+    def delete_used_item(self, item, value=1):
+        container = engine.Container()
+        container.from_json(self.armory)
+        container.remove(item, value=value)
+        self.armory = container.to_json()
+        container.from_json(self.used_armory)
+        container.remove(item, value=value)
+        self.used_armory = container.to_json()
+        session.commit()
+
+    # Ресурсы
+
+    def add_resources(self, value):
+        self.resources += value
         session.commit()
 
     def __repr__(self):
@@ -131,7 +166,7 @@ class Pyossession:
         mapper(self.user_class, users_table, properties={'chat': relationship(self.chat_class)})
 
     def create_chat(self, chat_id, name):
-        session.add(self.chat_class(chat_id, name, '{"resources": 0}', '{}', '{}', '{}'))
+        session.add(self.chat_class(chat_id, name, '{}', '{}', '{}', '{}'))
         try:
             session.commit()
         except Exception as e:

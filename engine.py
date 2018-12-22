@@ -40,7 +40,9 @@ class Container:
             item_id = int(item)
         else:
             item_id = self.get_id(item)
-        if self.base_dict[item_id][1] >= value:
+        if self.base_dict[item_id][1] == 'inf':
+            return True
+        elif self.base_dict[item_id][1] >= value:
             self.__change__(self.base_dict[item_id][0], -value)
             return True
         return False
@@ -120,6 +122,31 @@ class Container:
                 for i in range(self.base_dict[key][1]):
                     inv_list.append(self.get_item_object(key, unit=unit))
         return inv_list
+
+
+class ReceiptsContainer(Container):
+
+    def put(self, item, value=1):
+        self.__change__(item, value)
+        return True
+
+    def __change__(self, item, value):
+        if value == 'inf':
+            self.base_dict[item] = value
+            return True
+        self.base_dict[item] += value
+        if self.base_dict[item][1] <= 0:
+            del self.base_dict[item]
+        else:
+            self.base_dict[item] = value
+
+    def remove(self, item, value=1):
+        if self.base_dict[item] == 'inf':
+            return True
+        elif self.base_dict[item] >= value:
+            self.__change__(item, -value)
+            return True
+        return False
 
 
 def throw_dice(cap: int):
