@@ -61,6 +61,10 @@ class SqlChat(object):
         self.receipts = container.to_json()
         session.commit()
 
+    def add_resources(self, value):
+        self.resources += value
+        session.commit()
+
     def user_is_member(self, user_id):
         user = session.query(self.pyosession.user_class).filter_by(user_id=user_id).one()
         if user.chat_id == self.chat_id:

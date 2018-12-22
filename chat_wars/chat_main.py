@@ -56,6 +56,14 @@ class Chat(sql_alchemy.SqlChat):
                 weapons.append([key, armory[key]])
         return weapons
 
+    # Демонстрация списка доступных рецептов
+
+
+    # Распечатка количества ресурсов
+    def print_resources(self):
+        message = 'Количество ресурсов - ' + str(self.resources)
+        self.send_message(message)
+
 
 class User(sql_alchemy.SqlUser):
     lang = 'rus'
