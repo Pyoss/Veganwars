@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from fight import weapons, abilities, items, armors, standart_actions
 from fight import fight_main
 import random
