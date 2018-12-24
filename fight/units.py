@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from locales.localization import LangTuple
 from locales.emoji_utils import emote_dict
 from fight import standart_actions, weapons, ai, statuses, armors, abilities, items

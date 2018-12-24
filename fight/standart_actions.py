@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from bot_utils import keyboards, bot_methods
 from locales import localization
 import inspect

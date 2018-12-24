@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import telebot
 from bot_utils import config, bot_methods
 from fight import standart_actions, build, fight_main

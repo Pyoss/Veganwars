@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from fight import standart_actions
 from locales import emoji_utils
 import random

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from fight import statuses, standart_actions, abilities
 from bot_utils import keyboards, bot_methods
 from locales import emoji_utils, localization

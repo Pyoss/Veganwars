@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import sqlite3
 from locales import emoji_utils
 from random import choice

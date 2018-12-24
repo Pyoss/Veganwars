@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import sql_alchemy
 from bot_utils import bot_methods, keyboards
 from sql_alchemy import Pyossession
