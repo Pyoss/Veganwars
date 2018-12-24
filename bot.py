@@ -1,12 +1,9 @@
-import sys
-
-sys.path.append("..")
 import telebot
-from bot_utils import config, bot_handlers, bot_methods
+from .bot_utils import config, bot_handlers, bot_methods
 import game_classes
 from fight import fight_main, units
 import time, requests, threading
-from chat_wars import chat_main
+from .chat_wars import chat_main
 
 
 start_time = time.time()
