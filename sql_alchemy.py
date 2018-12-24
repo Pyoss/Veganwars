@@ -73,7 +73,6 @@ class SqlChat(object):
 
     def delete_receipt(self, receipt):
         container = engine.ReceiptsContainer()
-        self.receipts = container.to_json()
         container.from_json(self.receipts)
         container.remove(receipt)
         self.receipts = container.to_json()

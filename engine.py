@@ -91,10 +91,17 @@ class Container:
 
     def to_string(self, lang):
         base_string = ', '.join([self.get_string(key, lang) for key in self.base_dict.keys()])
-        return base_string
+        if base_string:
+            return base_string
+        else:
+            return 'Пусто.'
 
     def to_json(self):
         return json.dumps(self.base_dict)
+
+    def from_json(self, json_dict):
+        self.base_dict = json.loads(json_dict)
+        return self
 
     def get_item_object(self, item_id, item_name=None, unit=None):
         if item_id == 'weapon':
@@ -135,12 +142,13 @@ class ReceiptsContainer(Container):
             self.base_dict[item] = value
             return True
         self.base_dict[item] += value
-        if self.base_dict[item][1] <= 0:
+        if self.base_dict[item] <= 0:
             del self.base_dict[item]
         else:
             self.base_dict[item] = value
 
     def remove(self, item, value=1):
+        print(self.base_dict)
         if self.base_dict[item] == 'inf':
             return True
         elif self.base_dict[item] >= value:

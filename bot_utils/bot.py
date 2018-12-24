@@ -115,6 +115,12 @@ def start(message):
         chat.print_receipts()
 
 
+@bot.message_handler(commands=['show_items'])
+def start(message):
+        chat = chat_main.get_chat(message.chat.id)
+        chat.print_items()
+
+
 @bot.message_handler(commands=['craft'])
 def start(message):
         chat = chat_main.get_chat(message.chat.id)

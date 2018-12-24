@@ -3,6 +3,7 @@ from bot_utils import bot_methods, keyboards
 from sql_alchemy import Pyossession
 from locales import localization
 from fight import fight_main, units, standart_actions
+import engine
 import threading
 import time
 
@@ -69,6 +70,10 @@ class Chat(sql_alchemy.SqlChat):
             message += name + ' - ' + value + '\n'
         self.send_message(message)
 
+    def print_items(self):
+        inventory = engine.Container(base_dict=self.get_armory())
+        self.send_message(inventory.to_string('rus'))
+
     def ask_craft(self, user_id):
         if self.ask_rights(user_id) == 'admin':
             message = 'Выберите предмет для крафта.'
@@ -87,8 +92,6 @@ class Chat(sql_alchemy.SqlChat):
                                                 callback_data='_'.join(['chat', self.chat_id, 'craft',  item[0]])))
             keyboard = keyboards.form_keyboard(*buttons)
             bot_methods.send_message(user_id, message, reply_markup=keyboard)
-
-
 
     # Распечатка количества ресурсов
     def print_resources(self):
@@ -333,7 +336,12 @@ class ChatHandler:
             item_name = call_data[-1]
             item_class = standart_actions.get_class(item_name)
             name = standart_actions.get_name(item_name, 'rus')
-            chat.add_resources()
+            chat.add_resources(-item_class.price)
+            chat.add_item(item_name)
+            chat.delete_receipt(item_name)
+            bot_methods.edit_message(call.message.chat.id, call.message.message_id, name + ' - произведено.')
+        elif action == 'cancel':
+            bot_methods.delete_message(call.message.chat.id, call.message.message_id)
 
 
 def add_chat(chat_id, name, creator):
