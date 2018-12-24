@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import telebot
 from bot_utils import config, bot_handlers, bot_methods
 import game_classes
