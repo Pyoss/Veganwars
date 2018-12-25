@@ -63,7 +63,7 @@ def start(message):
 def start(message):
     # [team={chat_id:(name, unit_dict)} or team={(ai_class, n):(ai_class.name, unit_dict)}].
     name = message.from_user.first_name
-    mob_class = fight_main.units.Snail
+    mob_class = fight_main.units.Pasyuk
     fight_main.thread_fight(None, {message.from_user.id: (name, units.Human(name).to_dict())},
                                    {(mob_class, 1): (None, mob_class().to_dict())}, chat_id=message.chat.id)
 
