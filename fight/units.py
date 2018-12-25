@@ -1567,7 +1567,18 @@ class Bear(StandartCreature):
         unit.damage -= 3
         unit.string('skill_1', format_dict={'actor': unit.name, 'target': unit.target.name, 'damage': attack.dmg_done})
 
+# Тут Пасюк учится кодить под либу Игоря
+        
+class Pasyuk(StandartCreature):
+    unit_name = 'pasyuk'
+    control_class = ai.StandartMeleeAi
+    
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+        StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
+        self.weapon = weapons.Knife(self)
+        
 
+# Конец кода Пасюка      
 
 units_dict = {Human.unit_name: Human,
               Skeleton.unit_name: Skeleton,
