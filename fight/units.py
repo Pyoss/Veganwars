@@ -1592,4 +1592,5 @@ units_dict = {Human.unit_name: Human,
               Bear.unit_name: Bear,
               PedoBear.unit_name: PedoBear,
               BirdRukh.unit_name: BirdRukh,
-              SperMonster.unit_name: SperMonster}
+              SperMonster.unit_name: SperMonster,
+              Pasyuk.unit_name: Pasyuk}
