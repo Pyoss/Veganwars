@@ -372,7 +372,7 @@ class Fight:
                         if not unit.alive():
                             loot = unit.generate_loot()
                             ending_dict['loot'] += loot
-        del fight_dict[str(self.chat_id)]
+        del fight_dict[str(self.id)]
         return ending_dict
 
     def edit_queue(self, action):
