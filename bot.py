@@ -11,9 +11,6 @@ from chat_wars import chat_main
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
 game_dict = game_classes.game_dict
-telebot.apihelper.proxy = {
-  'https': 'http://178.33.39.70:3128'
-}
 
 types = telebot.types
 
