@@ -1,13 +1,12 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+
 import sqlite3
 from locales import emoji_utils
 from random import choice
 import string
 
 
-eng = 'locales/en_US/locale_en.sql'
-rus = 'locales/ru_RU/locale_ru.sql'
+eng = 'D:/YandexDisk/Veganwars/Veganwars/locales/en_US/locale_en.sql'
+rus = 'D:/YandexDisk/Veganwars/Veganwars/locales/ru_RU/locale_ru.sql'
 lang_dict = {'rus': rus, 'eng': eng}
 emote_dict = emoji_utils.emote_dict
 encryption_name = 'shadow'

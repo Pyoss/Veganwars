@@ -131,7 +131,7 @@ class Fight:
         self.lang = self.langs[0]
         self.dead = {}
         self.teams = []
-        self.public = True
+        self.public = False
         self.listeners = list()
         self.action_queue = ActionQueue()
         self.string_tuple = FightString(self)

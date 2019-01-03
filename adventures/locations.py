@@ -136,7 +136,6 @@ class MobLocation(OpenLocation):
         mobs = map_engine.get_enemy(self.complexity, dungeon.map.enemy_dict)
         self.mobs = map_engine.MobPack(*mobs)
         self.loot = engine.Container()
-        self.loot.put('hatchet', 4)
         if self.mobs is not None:
             main_mob = max(mobs, key=lambda mob: units.units_dict[mob].danger)
             self.emote = units.units_dict[main_mob].emote
@@ -146,6 +145,7 @@ class MobLocation(OpenLocation):
             for member in self.dungeon.party.members:
                 member.occupied = True
             self.dungeon.delete_map()
+
             class DungFight:
                 def __init__(dung):
                     results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mobs.join_fight())

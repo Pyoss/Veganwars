@@ -19,6 +19,11 @@ class Unit:
     types = ['alive']
     summoned = False
 
+    # Список предметов, выпадающих из юнита при убийстве. Имеет вид [name: (quantity, chance)]
+    loot = []
+    # Вероятности, с которыми Вы можете получить оружие, броню или предметы цели при её смерти
+    loot_chances = {'armor': 0, 'weapon': 0, 'items': 0}
+
     def __init__(self, name, controller=None, unit_dict=None, fight=None):
 
         # То, как осуществляется управление юнитом
@@ -68,11 +73,6 @@ class Unit:
         # Параметры для ai
         self.number = 1
         self.named = True
-
-        # Список предметов, выпадающих из юнита при убийстве. Имеет вид {name: (quantity, chance)}
-        self.loot = {}
-        # Вероятности, с которыми Вы можете получить оружие, броню или предметы цели при её смерти
-        self.loot_chances = {'armor': 0, 'weapon': 0, 'items': 0}
 
     def available_actions(self):
         actions = [(1, WeaponButton(self, self.weapon)), (1, MoveForward(self)), (1, self.weapon.reload_button()),
@@ -347,9 +347,9 @@ class Unit:
     # Выдавание конечного списка лута при смерти.
     def generate_loot(self):
         loot = engine.Container()
-        for key in self.loot:
-            if engine.roll_chance(self.loot[key][1]):
-                loot.put(key, value=self.loot[key][0])
+        for item in self.loot:
+            if engine.roll_chance(item[1][1]):
+                loot.put(item[0], value=item[1][0])
         if engine.roll_chance(self.loot_chances['weapon']) and not self.weapon.natural:
             loot.put(self.weapon.name)
         for piece in self.armor:
@@ -364,6 +364,7 @@ class Unit:
 class StandartCreature(Unit):
 
     danger = 7
+
     def __init__(self, name, controller=None, fight=None, unit_dict=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
@@ -694,6 +695,7 @@ class Skeleton(Unit):
     greet_msg = 'текст-скелетов'
     image = 'AgADAgADBaoxG5L9kUuqFj563vC1uiiXOQ8ABMxTxezbQ5wjrfAAAgI'
     danger = 12
+    loot = [('old_bone', (1, 100))]
 
     def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
         Unit.__init__(self, name, controller, fight=fight, unit_dict=unit_dict)
@@ -936,6 +938,7 @@ class Zombie(Unit):
     greet_msg = 'текст-зомби'
     image = 'AgADAgADqqoxG8_E6Uu_il72AlGXdRuiOQ8ABHWprqpYxXCGvpYBAAEC'
     danger = 10
+    loot = [('zombie_tooth', (1, 100))]
 
     def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
@@ -1243,6 +1246,7 @@ class Goblin(StandartCreature):
     unit_name = 'goblin'
     control_class = ai.GoblinAi
     emote = emote_dict['skeleton_em']
+    loot = [('goblin_ear', (1, 100)), ('goblin_ear', (1, 50))]
 
     danger = 7
 
@@ -1255,6 +1259,7 @@ class Goblin(StandartCreature):
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
         self.energy = self.max_energy
+        self.loot_chances['weapon'] = 100
 
 
 class Worm(Unit):
@@ -1265,6 +1270,7 @@ class Worm(Unit):
     emote = emote_dict['worm_em']
     control_class = ai.WormAi
     danger = 7
+    loot = [('worm_skin', (1, 100))]
 
     def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
@@ -1584,6 +1590,7 @@ units_dict = {Human.unit_name: Human,
               Skeleton.unit_name: Skeleton,
               Unit.unit_name: Unit,
               Zombie.unit_name: Zombie,
+              Goblin.unit_name: Goblin,
               Worm.unit_name: Worm,
               Basilisk.unit_name: Basilisk,
               Lich.unit_name: Lich,

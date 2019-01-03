@@ -50,6 +50,30 @@ class TargetItem(standart_actions.TargetObject):
         standart_actions.TargetObject.act(self, action)
 
 
+# -------------------------   Ресурсы мобов   --------------------------
+
+
+class Resource(standart_actions.GameObject):
+    core_types = ['item', 'resource']
+    db_string = 'resources'
+
+
+class OldBone(Resource):
+    name = 'old_bone'
+
+
+class GoblinEar(Resource):
+    name = 'goblin_ear'
+
+
+class ZombieTooth(Resource):
+    name = 'zombie_tooth'
+
+
+class WormSkin(Resource):
+    name = 'worm_skin'
+
+
 class Bomb(__InstantItem):
     name = 'bomb'
     types = ['explosive', 'aoe']
