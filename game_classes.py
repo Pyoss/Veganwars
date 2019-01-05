@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from fight import fight_main, ai, units
+from fight import fight_main, ai, units, standart_actions
 from locales import localization
 from bot_utils import bot_methods, keyboards
+from chat_wars import chat_main
 import threading
 from adventures import dungeon_main, maps, map_engine
 import engine
@@ -252,7 +253,21 @@ class Dungeon(Game):
         results = fight.run()
         return results
 
-    def end_dungeon(self):
+    def end_dungeon(self, defeat=False, boss_beaten=False):
+        user = chat_main.get_user(self.party.leader.chat_id)
+        chat = user.chat
+        farmed_resources = 0
+        for member in self.party.members:
+            for item in member.inventory:
+                print(item)
+                item_obj = standart_actions.get_class(item[0]['name'])
+                if 'resource' in item_obj.core_types:
+                    farmed_resources += item_obj.resources*member.inventory[item[1]][1]
+                print('Ресурсы -' + str(farmed_resources))
+        if boss_beaten:
+            farmed_resources *= 2
+        if not defeat:
+            chat.resources += farmed_resources
         del game_dict[self.id]
 
     def create_dungeon_map(self, map_type):

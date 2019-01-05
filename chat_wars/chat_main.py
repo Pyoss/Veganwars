@@ -12,6 +12,7 @@ import time
 attack_choosers = []
 attack_lobby_list = {}
 defense_lobby_list = {}
+dungeon_lobby_list = {}
 
 
 class Chat(sql_alchemy.SqlChat):
@@ -315,6 +316,8 @@ class ChatHandler:
                 lobby = attack_lobby_list[call_data[1]]
             elif call_data[-2] == 'def':
                 lobby = defense_lobby_list[call_data[1]]
+            elif call_data[-2] == 'dung':
+                lobby = dungeon_lobby_list[call_data[1]]
             user_id = call.from_user.id
             weapon_name = call_data[-1]
             unit_dict = lobby.team[user_id][1]

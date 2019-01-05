@@ -56,6 +56,7 @@ class TargetItem(standart_actions.TargetObject):
 class Resource(standart_actions.GameObject):
     core_types = ['item', 'resource']
     db_string = 'resources'
+    resources = 5
 
 
 class OldBone(Resource):

@@ -144,7 +144,8 @@ class SqlChat(object):
 class SqlUser(object):
     pyosession = None
 
-    def __init__(self, user_id, chat_id):
+    def __init__(self, user_id, dung_pass, chat_id):
+        self.dung_pass = dung_pass
         self.user_id = user_id
         self.chat_id = chat_id
 

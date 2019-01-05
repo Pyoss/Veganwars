@@ -102,7 +102,8 @@ emote_dict = {
     'wall_em': '⬛️',
     'kaaba_em': '\U0001f54b',
     'crossroad_em': '\u2795',
-    'smith_em': '\u2692'
+    'smith_em': '\u2692',
+    'loose_loot_em': '\U0001f46e\U0001f3fe'
     }
 
 

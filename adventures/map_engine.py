@@ -178,13 +178,13 @@ class Location:
             self.dungeon.party.send_message(self.greet_msg,
                                             image=self.image)
 
-    # Проверяет, можно ли производить перемещение с данной локацией
+    def available(self):
+        return False
+
+    # Проверяет, можно ли производить перемещение с данной локации
     def move_permission(self, movement, call):
         bot_methods.answer_callback_query(call, 'Вы не можете здесь пройти.', alert=False)
         return self.available()
-
-    def available(self):
-        return False
 
     # Функция, запускающаяся при входе в комнату. Именно сюда планируется пихать события.
     def on_enter(self):
@@ -298,19 +298,15 @@ class FirstDungeon(DungeonMap):
         unused_armor = [armors.Breastplate().to_dict(), armors.Helmet().to_dict(), armors.Shield().to_dict()]
 
     def generate_location(self, x, y, map_tuple):
-        goblins = False
         if x == 0 and y == 0:
             return locations.Entrance(0, 0, self.dungeon, map_tuple)
-        elif x == 1 and goblins or y == 1 and goblins:
-            goblins = True
-            return locations.MobLocation(x, y, self.dungeon, map_tuple)
         elif 'core' in map_tuple.types:
             if 'end' in map_tuple.types:
                 return locations.End(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
             elif 'crossroad' in map_tuple.types:
                 return locations.CrossRoad(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
             else:
-                return locations.MobLocation(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
+                return locations.LoseLoot(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
         elif 'branch' in map_tuple.types:
             if 'dead_end' in map_tuple.types:
                 return locations.DeadEnd(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)

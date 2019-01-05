@@ -36,7 +36,9 @@ class Container:
         return True
 
     def remove(self, item, value=1):
-        if isinstance(item, int):
+        if isinstance(item, tuple):
+            item_id = item[1]
+        elif isinstance(item, int):
             item_id = item
         elif item.isdigit():
             item_id = int(item)
@@ -59,7 +61,10 @@ class Container:
             self.base_dict[rand_id()] = [item, value]
 
     def get_id(self, item, value=1):
-        test = list([k for k, v in self.base_dict.items() if v[0] == item and v[1] >= value])
+        if isinstance(item, str):
+            test = list([k for k, v in self.base_dict.items() if v[0]['name'] == item and v[1] >= value])
+        else:
+            test = list([k for k, v in self.base_dict.items() if v[0] == item and v[1] >= value])
         if not test:
             return False
         else:

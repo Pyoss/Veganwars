@@ -474,8 +474,9 @@ class Human(StandartCreature):
     def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
-        self.weapon = random.choice([weapons.Hatchet, weapons.Knife, weapons.Bow, weapons.Crossbow, weapons.Spear])(self)
-        self.abilities = [abilities.Dodge(self)]
+        if unit_dict is None:
+            self.weapon = random.choice([weapons.Hatchet, weapons.Knife, weapons.Bow, weapons.Crossbow, weapons.Spear])(self)
+            self.abilities = [abilities.Dodge(self)]
 
 
 class Necromancer(Human):

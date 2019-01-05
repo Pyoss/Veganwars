@@ -158,7 +158,7 @@ class MobLocation(OpenLocation):
     def process_results(self, results):
         if not any(unit_dict['name'] == self.dungeon.party.leader.unit_dict['name'] for unit_dict in results['winners']):
                 bot_methods.send_message(self.dungeon.party.chat_id, 'Вы проиграли!')
-                self.dungeon.end_dungeon()
+                self.dungeon.end_dungeon(defeat=True)
         else:
             for member in self.dungeon.party.members:
                 member.occupied = False
@@ -168,6 +168,26 @@ class MobLocation(OpenLocation):
             loot = results['loot'] + self.loot
             self.dungeon.party.distribute_loot(loot)
             self.dungeon.update_map()
+
+
+class LoseLoot(OpenLocation):
+    name = 'lose_loot'
+    emote = emoji_utils.emote_dict['loose_loot_em']
+    greet_msg = 'Вас обдирает налоговая.'
+
+    def on_enter(self):
+        if not self.visited:
+            victims = [member for member in self.dungeon.party.members if not member.inventory.is_empty()]
+            if victims:
+                victim = random.choice(victims)
+                item = random.choice(victim.inventory.items())
+                print(item)
+                victim.inventory.remove(item)
+                self.dungeon.party.send_message('Вы потеряли ' + str(standart_actions.get_name(item[0]['name'], 'rus')))
+            else:
+                pass
+        self.dungeon.update_map(new=True)
+
 
 
 class LootRoom(OpenLocation):

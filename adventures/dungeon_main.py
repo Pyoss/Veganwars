@@ -173,6 +173,7 @@ class Member:
         buttons = list()
         buttons.append(keyboards.DungeonButton('Инвентарь', self, 'menu', 'inventory', named=True))
         buttons.append(keyboards.DungeonButton('На карту', self, 'menu', 'map', named=True))
+        buttons.append(keyboards.DungeonButton('Покинуть данж', self, 'menu', 'leave', named=True))
         for button in self.dungeon.party.current_location.buttons(self):
             buttons.append(keyboards.DungeonButton(button['name'], self, 'location', button['act'], named=True))
         keyboard = form_keyboard(*buttons)
@@ -237,11 +238,9 @@ class Member:
             self.member_menu()
         elif action == 'map':
             self.menu.kill()
-
-    def map_menu(self, message_id=None):
-        buttons = []
-        buttons.append(keyboards.DungeonButton('Инвентарь', self, 'menu', 'inventory', named=True))
-        buttons.append(keyboards.DungeonButton('Карта', self, 'menu', 'map', named=True))
+        elif action == 'leave':
+            if self.chat_id == self.dungeon.party.leader.chat_id:
+                self.dungeon.end_dungeon()
 
     def team_dict_item(self):
         return self.chat_id, (self.name, self.unit_dict)
@@ -314,7 +313,6 @@ class Inventory(engine.Container):
 
     def items(self):
         items_list = []
-        print(self.member['weapon'])
         if self.member['weapon'] is not None:
             if 'natural' not in standart_actions.object_dict[self.member['weapon']['name']].types:
                 items_list.append((self.member['weapon'], 'weapon'))
@@ -431,6 +429,11 @@ class Inventory(engine.Container):
                + LangTuple(table_row, 'desc').translate(self.member.lang)
         self.member.edit_message(text, reply_markup=keyboard)
         self.member.menu.update()
+
+    def is_empty(self):
+        if not self.base_dict:
+            return True
+        return False
 
 
 class Menu:
