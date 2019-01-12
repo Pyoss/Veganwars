@@ -173,7 +173,7 @@ class Bandages(TargetItem):
             self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
         try:
             del action.target.statuses['bleeding']
-        except:
+        except KeyError:
             pass
         action.target.change_hp(1)
 
@@ -275,36 +275,16 @@ class Jet(__InstantItem):
         self.unit.energy = self.unit.max_energy
 
 
-class Shield(TargetItem):
-    name = 'shield'
-    order = 21
-    full = True
-
-    def targets(self):
-        return self.actor.team.actors
-
-    def activate(self, action):
-        if action.target == self.actor:
-            self.string('special', format_dict={'actor': self.actor.name, 'target': action.target.name})
-        else:
-            self.string('use', format_dict={'actor': self.actor.name, 'target': action.target.name})
-        self.actor = action.target
-        self.actor.fight.edit_queue(standart_actions.Custom(self.wear_off, order=40, actor=self.actor))
-
-    def wear_off(self):
-        self.actor.dmg_received = 0
-
-
 class FlashBomb(TargetItem):
     name = 'flashbomb'
     order = 2
     full = True
 
     def targets(self):
-        return self.actor.targets()
+        return self.unit.targets()
 
     def activate(self, action):
-        self.string('use', format_dict={'actor': self.actor.name, 'target': action.target.name})
+        self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
         action.target.energy -= 6
 
 

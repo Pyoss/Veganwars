@@ -67,14 +67,14 @@ class SqlChat(object):
     # Рецепты
 
     def add_receipt(self, receipt):
-        container = engine.ReceiptsContainer()
+        container = engine.ChatContainer()
         container.from_json(self.receipts)
         container.put(receipt)
         self.receipts = container.to_json()
         session.commit()
 
     def delete_receipt(self, receipt):
-        container = engine.ReceiptsContainer()
+        container = engine.ChatContainer()
         container.from_json(self.receipts)
         container.remove(receipt)
         self.receipts = container.to_json()
@@ -86,7 +86,7 @@ class SqlChat(object):
     # Предметы
     # Обработка предметов
     def add_item(self, item, value=1):
-        container = engine.Container()
+        container = engine.ChatContainer()
         container.from_json(self.armory)
         container.put(item, value=value)
         self.armory = container.to_json()
@@ -107,27 +107,30 @@ class SqlChat(object):
         return armory
 
     def use_item(self, item):
-        container = engine.Container()
+        container = engine.ChatContainer()
         container.from_json(self.used_armory)
+        print(item)
         container.put(item)
+        print(self.used_armory)
         self.used_armory = container.to_json()
         session.commit()
 
     def delete_item(self, item, value=1):
-        container = engine.Container()
+        container = engine.ChatContainer()
         container.from_json(self.armory)
         container.remove(item, value=value)
         self.armory = container.to_json()
         session.commit()
 
     def delete_used_item(self, item, value=1):
-        container = engine.Container()
-        container.from_json(self.armory)
-        container.remove(item, value=value)
-        self.armory = container.to_json()
+        container = engine.ChatContainer()
         container.from_json(self.used_armory)
         container.remove(item, value=value)
         self.used_armory = container.to_json()
+        session.commit()
+
+    def clear_used_items(self):
+        self.used_armory = '{}'
         session.commit()
 
     # Ресурсы
@@ -144,8 +147,7 @@ class SqlChat(object):
 class SqlUser(object):
     pyosession = None
 
-    def __init__(self, user_id, dung_pass, chat_id):
-        self.dung_pass = dung_pass
+    def __init__(self, user_id, chat_id):
         self.user_id = user_id
         self.chat_id = chat_id
 

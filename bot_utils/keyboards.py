@@ -17,10 +17,11 @@ class Button(types.InlineKeyboardButton):
 
 class FightButton(Button):
     def __init__(self, text, unit, *args, special='', named=False):
-        text = LangTuple('buttons' if not len(special) else special,
-                         text).translate(unit.controller.lang) if not named else text
         if not isinstance(text, str):
             text = text.translate(unit.controller.lang)
+        else:
+            text = LangTuple('buttons' if not len(special) else special,
+                             text).translate(unit.controller.lang) if not named else text
         callback = '_'.join(('fgt', str(unit), str(unit.fight), *args))
         Button.__init__(self, text, callback)
 
@@ -230,7 +231,8 @@ def form_additional_keyboard(unit):
 
 
 def get_item_buttons(unit):
-    item_list = [item for item in unit.items if item.available()]
+    item_list = [*[item for item in unit.items if item.available()],
+                 *[armor for armor in unit.armor if armor.available()]]
     item_buttons = [item.button() for item in item_list]
     i = 0
     while item_buttons:

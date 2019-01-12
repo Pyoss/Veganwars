@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from bot_utils import keyboards, bot_methods
-from locales import localization
+from locales import localization, emoji_utils
 import inspect
 import sys
 import engine
+import dynamic_dicts
 
 object_dict = {}
 action_dict = {}
@@ -19,7 +20,7 @@ class ActionHandler:
     def handle(self, call):
         call_data = call.data.split('_')
         try:
-            fight = self.handler.game_dict[call_data[2]]
+            fight = dynamic_dicts.fight_dict[call_data[2]]
             unit = fight.units_dict[int(call_data[1])]
         except KeyError:
             return self.handler.game_error(call)
@@ -121,11 +122,12 @@ class MenuAction(Action):
 class BaseAttack(Action):
     action_type = ['attack']
 
-    def __init__(self, unit, fight, info=None, order=5, call=None):
+    def __init__(self, unit, fight, info=None, order=5, call=None, stringed=True):
         Action.__init__(self, unit, fight, info=info)
         self.order = order
         self.weapon = self.unit.weapon
         self.call = call
+        self.stringed = stringed
         if info is not None:
             self.unit.target = self.fight[info[-1]]
         self.dmg_done = 0
@@ -221,7 +223,8 @@ class Attack(BaseAttack):
         self.attack(waste=waste)
         self.on_attack()
         # Добавление описания в строку отчета
-        self.string(self.str)
+        if self.stringed:
+            self.string(self.str)
 
 
 class Skip(Action):
@@ -303,6 +306,19 @@ class SpecialWeaponAction(Action):
         weapon.start_special_action(self.info)
 
 
+class SpecialWeaponOption(MenuAction):
+    name = 'wpspecial'
+
+    def __init__(self, unit, fight, info, call=None):
+        Action.__init__(self, unit, fight, info, call=call)
+        self.types = self.unit.weapon.special_types
+        self.order = self.unit.weapon.order
+
+    def activate(self):
+        weapon = self.unit.weapon
+        weapon.start_special_action(self.info)
+
+
 class ListAbilities(MenuAction):
     name = 'ability-list'
     types = ['keyboard']
@@ -364,6 +380,27 @@ class Item(Action):
 
     def activate(self):
         self.item.activate(self)
+
+
+class Armor(Action):
+    name = 'armor'
+    full = False
+    action_type = ['armor']
+
+    def __init__(self, unit, fight, info=None, call=None, armor_name=None):
+        self.call = call
+        Action.__init__(self, unit, fight, info=info)
+        armor_name = info[4] if armor_name is None else armor_name
+        self.armor = next(armor for armor in unit.armor if armor.name == armor_name)
+        self.order = self.armor.order
+        self.types = ['item', *self.armor.types]
+
+    def act(self):
+        self.unit.action = [*self.unit.action, *self.types]
+        self.armor.act(self)
+
+    def activate(self):
+        self.armor.activate(self)
 
 
 class AdditionalKeyboard(MenuAction):
@@ -451,6 +488,7 @@ class GameObject:
     effect = False
     one_time = True
     action_type = []
+    emote = emoji_utils.emote_dict['question_em']
 
     def __init__(self, unit=None, obj_dict=None):
         self.unit = unit
@@ -565,6 +603,9 @@ class GameObject:
     def dungeon_use(self):
         pass
 
+    def try_placement(self, unit_dict):
+        return True
+
 
 def get_name(name, lang):
     return object_dict[name]().name_lang_tuple().translate(lang)
@@ -572,6 +613,7 @@ def get_name(name, lang):
 
 def get_class(name):
     return object_dict[name]
+
 
 class InstantObject(GameObject):
 

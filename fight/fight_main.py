@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from fight import standart_actions, abilities, items, statuses, weapons, units
+from fight import standart_actions, statuses, weapons, units
 from bot_utils import keyboards, bot_methods, config
 from locales.localization import *
 import time
 import random
 import engine
 import threading
-
-fight_dict = {}
+import dynamic_dicts
 
 
 def thread_fight(game, *args, chat_id=None):
@@ -97,27 +96,22 @@ class ActionQueue:
     def append(self, action):
         self.action_list.append(action)
 
+    def run_queue_section(self, order_limit):
+        while self.action_list:
+            if self.action_list[-1].order <= order_limit:
+                self.action_list.pop().activate()
+            else:
+                break
+
     def run_actions(self):
         self.action_list.sort(key=lambda x: x.order, reverse=True)
-        while self.action_list:
-            if self.action_list[-1].order <= 20:
-                self.action_list.pop().activate()
-            else:
-                break
+        self.run_queue_section(20)
 
     def run_effects(self):
-        while self.action_list:
-            if self.action_list[-1].order <= 40:
-                self.action_list.pop().activate()
-            else:
-                break
+        self.run_queue_section(40)
 
     def run_post_results(self):
-        while self.action_list:
-            if self.action_list[-1].order <= 60:
-                self.action_list.pop().activate()
-            else:
-                break
+        self.run_queue_section(60)
 
 
 class Fight:
@@ -131,11 +125,11 @@ class Fight:
         self.lang = self.langs[0]
         self.dead = {}
         self.teams = []
-        self.public = False
+        self.public = True
         self.listeners = list()
         self.action_queue = ActionQueue()
         self.string_tuple = FightString(self)
-        fight_dict[str(self.id)] = self
+        dynamic_dicts.fight_dict[str(self.id)] = self
 
     #  ---------- Основная функция, отвечающая за сражение между готовыми командами -------
 
@@ -150,12 +144,22 @@ class Fight:
         message.construct()
         return bot_methods.send_message(self.chat_id, message.result_dict[self.lang])
 
+    def unit_talk(self, unit_id, text):
+        unit = self.units_dict[unit_id]
+        if not unit.controller.talked:
+            unit.controller.talked = True
+            for teammate in unit.team:
+                if not unit.controller.ai and unit != teammate:
+                    pass
+
+
     def add_player(self, chat_id, name, unit_dict=None):
         # Добавление бота в словарь игроков и список игроков конкретного боя
         controller = Player(chat_id, 'rus', self)
         unit_class = units.units_dict[unit_dict['unit_name']] if unit_dict is not None else units.Zombie
         unit = unit_class(name, controller=controller, fight=self, unit_dict=unit_dict)
         self.units_dict[unit.id] = unit
+        dynamic_dicts.unit_talk[unit.id] = self
         self.units.append(unit)
         self.listeners.append(controller)
         return unit
@@ -187,8 +191,8 @@ class Fight:
     def form_teams(self, team_dicts):
         # [team={chat_id:(name, unit_dict)} or team={(ai_class.name, id):(name/None, unit_dict)}]
         print(team_dicts)
-        self.teams = [Team(*[self.add_unit(key, value[0],
-                                           unit_dict=value[1]) for key, value in team_dict.items()])
+        self.teams = [Team(*[self.add_unit(key, value['name'],
+                                           unit_dict=value) for key, value in team_dict.items()])
                       for team_dict in team_dicts]
         for team in self.teams:
             for actor in team.units:
@@ -279,8 +283,8 @@ class Fight:
     def wait_action(self):
         x = 0
         while not all(unit.done for unit in self.active_actors()) and x < config.turn_time:
-            time.sleep(5)
-            x += 5
+            time.sleep(1)
+            x += 1
         for actor in [unit for unit in self.active_actors() if not unit.done]:
             actor.active = False
         for actor in [unit for unit in self.active_actors() if not unit.done]:
@@ -372,7 +376,7 @@ class Fight:
                         if not unit.alive():
                             loot = unit.generate_loot()
                             ending_dict['loot'] += loot
-        del fight_dict[str(self.id)]
+        del dynamic_dicts.fight_dict[str(self.id)]
         return ending_dict
 
     def edit_queue(self, action):

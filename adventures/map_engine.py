@@ -8,9 +8,6 @@ import Testing
 import engine
 import random
 
-dungeons = {}
-player_dict = {}
-
 
 class PartyMovement:
 
@@ -31,9 +28,11 @@ class DungeonMap:
     name = None
     wall_location = None
 
-    def __init__(self, length, dungeon, new=True, dungeon_dict=None):
+    def __init__(self, length, dungeon, branch_length, branch_number, new=True, dungeon_dict=None):
         self.location_matrix = dict()
         self.length = length
+        self.branch_length = branch_length
+        self.branch_number = branch_number
         self.entrance = None
         self.exit = None
         self.party = None
@@ -42,12 +41,15 @@ class DungeonMap:
 
     def create_map(self):
         self.dungeon.map = self
-        map_tuples = Testing.generate_core(complexity=len(self.dungeon.lobby[0])*10, length=self.length)
-        Testing.generate_branch(map_tuples)
-        Testing.generate_branch(map_tuples)
-        Testing.generate_branch(map_tuples)
+        map_tuples = Testing.generate_core(complexity=len(self.dungeon.team)*10, length=self.length)
+        for i in range(self.branch_number):
+            Testing.generate_branch(map_tuples, self.branch_length)
         self.width = max(map_tuple[0] for map_tuple in map_tuples) + 1
+        if self.width < 3:
+            self.width = 3
         self.height = max(map_tuple[1] for map_tuple in map_tuples) + 1
+        if self.height < 3:
+            self.height = 3
         for x in range(0, self.width):
             for y in range(0, self.height):
                 if (x, y) in map_tuples:
@@ -125,6 +127,7 @@ class Location:
     name = 'location'
     greet_msg = 'Тестовое приветствие локации'
     image = None
+    finish = False
     emote = emote_dict['wall_em']
     visited_emote = emote_dict['visited_map_em']
 
@@ -271,14 +274,15 @@ class Location:
 
 
 class MobPack:
-    def __init__(self, *args):
+    def __init__(self, *args, complexity=None):
         self.mob_units = args
+        self.complexity = complexity
 
     def join_fight(self):
         team_dict = {}
         i = 0
         for unit in self.mob_units:
-            team_dict[(units.units_dict[unit], i)] = (None, units.units_dict[unit]().to_dict())
+            team_dict[(units.units_dict[unit], i)] = units.units_dict[unit](complexity=self.complexity).to_dict()
             i += 1
         return team_dict
 
@@ -288,7 +292,7 @@ class FirstDungeon(DungeonMap):
     wall_location = None
 
     def __init__(self, dungeon, new=True, dungeon_dict=None):
-        DungeonMap.__init__(self, 22, dungeon, new=True, dungeon_dict=None)
+        DungeonMap.__init__(self, 1, dungeon,  0, 0,  new=True, dungeon_dict=None)
         self.low_loot = ['bandages', 'chitin', 'stimulator', 'helmet', 'breastplate', 'bandages', 'knife', 'adrenalin']
         self.enemy_dict = {'goblin': (7, 238), 'skeleton': (12, 238), 'skeleton+zombie': (12, 238), 'worm+goblin': (7, 238)}
         unused_loot = [items.Molotov().to_dict(), items.ThrowingKnife().to_dict(),
@@ -302,11 +306,13 @@ class FirstDungeon(DungeonMap):
             return locations.Entrance(0, 0, self.dungeon, map_tuple)
         elif 'core' in map_tuple.types:
             if 'end' in map_tuple.types:
-                return locations.End(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
+                end_loc = locations.MobLocation(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple, mobs=['lich'])
+                end_loc.finish = True
+                return end_loc
             elif 'crossroad' in map_tuple.types:
                 return locations.CrossRoad(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
             else:
-                return locations.LoseLoot(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
+                return locations.MobLocation(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
         elif 'branch' in map_tuple.types:
             if 'dead_end' in map_tuple.types:
                 return locations.DeadEnd(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)

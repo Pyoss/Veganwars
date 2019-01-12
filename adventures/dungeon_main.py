@@ -5,6 +5,8 @@ from fight import fight_main, abilities, items, weapons, armors, ai, standart_ac
 from locales.localization import LangTuple
 from locales.emoji_utils import emote_dict
 from bot_utils.keyboards import Button, form_keyboard
+from chat_wars import chat_main
+import dynamic_dicts
 import time
 import threading
 import random
@@ -22,7 +24,7 @@ class MapHandler:
         call_data = call.data.split('_')
         action = call_data[2]
         try:
-            party = map_engine.dungeons[call.message.chat.id].party
+            party = dynamic_dicts.dungeons[call.message.chat.id].party
             member = party.member_dict[call.from_user.id]
         except KeyError:
             return False
@@ -39,12 +41,12 @@ class MapHandler:
 
 
 class Party:
-    def __init__(self, player_dict, chat_id):
+    def __init__(self, player_dict, chat_id, dungeon_id):
         # Текущая локация
         self.current_location = None
-        self.chat_id = chat_id
+        self.id = chat_id
         # Чат, куда будет посылаться информация по игре
-        self.members = [Member(key, value, dungeon=map_engine.dungeons[chat_id]) for key, value in player_dict.items()]
+        self.members = [Member(key, value['dict'], dungeon=dynamic_dicts.dungeons[dungeon_id]) for key, value in player_dict.items()]
         self.leader = self.members[0]
         self.member_dict = {member.chat_id: member for member in self.members}
 
@@ -53,7 +55,7 @@ class Party:
     def move_handler(self, call):
         call_data = call.data.split('_')
         x, y = call_data[3].split('-')
-        location = map_engine.dungeons[call.message.chat.id].map.get_location(x, y)
+        location = dynamic_dicts.dungeons[call.message.chat.id].map.get_location(x, y)
         map_engine.PartyMovement(self, self.current_location, location).execute(call)
 
     def move(self, location):
@@ -122,18 +124,17 @@ class Party:
 
 
 class Member:
-    def __init__(self, chat_id, name, dungeon, lang='rus'):
+    def __init__(self, chat_id, unit_dict, dungeon, lang='rus'):
         self.lang = lang
         self.chat_id = chat_id
         self.message_id = None
         self.menu = None
-        self.name = name
+        self.name = unit_dict['name']
         self.dungeon = dungeon
-        self.unit_dict = units.Human(self.name).to_dict()
+        self.unit_dict = unit_dict
         self.inventory = Inventory(self)
         self.experience = 0
         self.occupied = False
-        map_engine.player_dict[self.chat_id] = self.dungeon
 
     def send_message(self, text, reply_markup=None, image=None):
         if image is None:
@@ -167,15 +168,19 @@ class Member:
                                       'hp': self['hp'],
                                       'max_hp': self['max_hp'] - self['hp'],
                                       'equipment': self.inventory.get_equipment_string(self.lang),
-                                      'inventory': inventory,'fill': inventory_fill}).translate(self.lang)
+                                      'inventory': inventory, 'fill': inventory_fill}).translate(self.lang)
 
     def menu_keyboard(self):
         buttons = list()
         buttons.append(keyboards.DungeonButton('Инвентарь', self, 'menu', 'inventory', named=True))
+        print(buttons[-1].callback_data)
         buttons.append(keyboards.DungeonButton('На карту', self, 'menu', 'map', named=True))
+        print(buttons[-1].callback_data)
         buttons.append(keyboards.DungeonButton('Покинуть данж', self, 'menu', 'leave', named=True))
+        print(buttons[-1].callback_data)
         for button in self.dungeon.party.current_location.buttons(self):
             buttons.append(keyboards.DungeonButton(button['name'], self, 'location', button['act'], named=True))
+            print(buttons[-1].callback_data)
         keyboard = form_keyboard(*buttons)
         return keyboard
 
@@ -226,7 +231,7 @@ class Member:
 
     def use_item(self, item_id, call):
         item = self.inventory[item_id]
-        item = standart_actions.object_dict[item['name']](self, obj_dict=item)
+        item = standart_actions.object_dict[item[0]['name']](self, obj_dict=item)
         item.map_act(call)
 
     def menu_handler(self, call):
@@ -243,7 +248,7 @@ class Member:
                 self.dungeon.end_dungeon()
 
     def team_dict_item(self):
-        return self.chat_id, (self.name, self.unit_dict)
+        return self.chat_id, self.unit_dict
 
     def __getitem__(self, item):
         return self.unit_dict[item]
@@ -257,7 +262,7 @@ class Inventory(engine.Container):
         engine.Container.__init__(self)
         self.max_size = 6
         self.member = member
-        self.base_dict = member.unit_dict['inventory']
+        self.base_dict = member['inventory']
 
     def handler(self, call):
         call_data = call.data.split('_')
@@ -346,10 +351,10 @@ class Inventory(engine.Container):
         equipment_list = []
         if self.member['weapon'] is not None:
             equipment_list.append(
-                emote_dict['weapon_em'] + self.get_item_name(self.member['weapon'], self.member.lang))
+                emote_dict['weapon_em'] + self.get_item_name(self.member['weapon'], lang))
         for item in self.member['armor']:
-            equipment_list.append(emote_dict['shield_em'] + self.get_item_name(item, self.member.lang))
-        return ', '.join(equipment_list)
+            equipment_list.append(emote_dict['shield_em'] + self.get_item_name(item, lang))
+        return ', '.join(equipment_list) if equipment_list else ' --- '
 
     def inventory_buttons(self):
         buttons = []

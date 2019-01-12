@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from fight import statuses, standart_actions, abilities
+from fight import statuses, standart_actions
 from bot_utils import keyboards, bot_methods
 from locales import emoji_utils, localization
 import engine
 import inspect
 import sys
-import itertools
 
 
 class Weapon(standart_actions.GameObject):
@@ -19,7 +18,7 @@ class Weapon(standart_actions.GameObject):
     melee = True
     damage = 0
     price = 100
-
+    emote = emoji_utils.emote_dict['weapon_em']
     db_string = 'weapon'
     order = 5
     # Типы особого действия (если есть)
@@ -73,6 +72,11 @@ class Weapon(standart_actions.GameObject):
         return self.unit.melee_targets if self.melee else self.unit.targets()
 
     def get_action(self):
+        if not self.special_types and len(self.targets()) == 1:
+            self.unit.target = self.targets()[0]
+            attack = standart_actions.Attack(unit=self.unit, fight=self.unit.fight)
+            attack.act()
+            return True
         keyboard = keyboards.types.InlineKeyboardMarkup(row_width=2)
         buttons = self.attack_buttons()
         for button in buttons:
@@ -89,8 +93,8 @@ class Weapon(standart_actions.GameObject):
         keyboard.add(keyboards.MenuButton(self.unit, 'back'))
         self.unit.controller.edit_message(self.get_menu_string(), reply_markup=keyboard)
 
-    def get_menu_string(self):
-        return localization.LangTuple(self.table_row, 'weapon_menu_1',
+    def get_menu_string(self, sp_string=None):
+        return localization.LangTuple(self.table_row, 'weapon_menu_1' if sp_string is None else sp_string,
                                       format_dict={'chance': self.get_hit_chance()})
 
     def attack_buttons(self):
@@ -168,6 +172,92 @@ class SpecialActionWeapon(Weapon):
 
     def start_special_action(self, info):
         standart_actions.Custom(self.activate_special_action, order=self.order, unit=self.unit)
+
+
+class SpecialOptionWeapon(Weapon):
+    special_types = ['option']
+
+    def get_action(self):
+        keyboard = keyboards.form_keyboard(*self.attack_buttons())
+        if self.special_available(target=None):
+            keyboard.add(self.special_button(target=None))
+        self.create_menu(keyboard)
+
+    def special_button(self, target):
+        if target is not None:
+            return None if not self.special_available(target=target) else \
+                keyboards.FightButton('special_button', self.unit,
+                                      'wpspecial', str(target), special=self.table_row)
+        else:
+            return keyboards.FightButton('special_button', self.unit,
+                                         'wpspecial', special=self.table_row)
+
+    def target_keyboard(self):
+        return keyboards.form_keyboard(*self.options_keyboard(),
+                                       keyboards.MenuButton(self.unit, 'back'))
+
+    def options(self):
+        return []
+
+    def options_keyboard(self):
+        return [keyboards.FightButton(option[0], self.unit,
+                                      'wpspecial', str(option[1]), named=True) for option in self.options()]
+
+    def start_special_action(self, info):
+        if len(info) > 4:
+            standart_actions.Custom(self.activate_special_action, info[-1], order=self.order, unit=self.unit)
+            self.unit.end_turn()
+        else:
+            self.unit.active = True
+            self.ask_options()
+
+    def activate_special_action(self, info):
+        pass
+
+    def ask_options(self):
+        keyboard = self.target_keyboard()
+        self.unit.controller.edit_message(localization.LangTuple(self.table_row, 'weapon_menu_2',
+                                      format_dict={'chance': self.get_hit_chance()}), reply_markup=keyboard)
+
+    def special_available(self, target=None):
+        if self.ready_turn <= self.unit.fight.turn:
+            return True
+        return False
+
+
+class Sword(SpecialOptionWeapon):
+    name = 'sword'
+    order = 0
+    cd = 2
+
+    def activate_special_action(self, option):
+        self.unit.waste_energy(1)
+        self.on_cd()
+        self.string('special_hit', format_dict={'actor': self.unit.name, 'option': option})
+        statuses.CustomPassive(self.unit, types=['receive_hit'], func=self.parry, option=option)
+
+    def parry(self, action, option):
+        if action.dmg_done == int(option):
+            self.string('special_hit_self', format_dict={'actor':self.unit.name, 'target': action.unit.name})
+            action.dmg_done = 0
+            action.stringed = False
+            x = standart_actions.Attack(self.unit, self.unit.fight, order=6)
+            x.activate(target=action.unit, waste=1)
+        elif action.dmg_done == int(option) - 1:
+            action.dmg_done = 0
+            action.stringed = False
+            self.string('special_miss', format_dict={'actor': self.unit.name, 'target': action.unit.name})
+
+    def get_menu_string(self):
+        return localization.LangTuple(self.table_row, 'weapon_menu_1',
+                                      format_dict={'chance': self.get_hit_chance()})
+
+    def options(self):
+        return [(str(n+1), str(n+1)) for n in range(3)]
+
+    def target_keyboard(self):
+        return keyboards.form_keyboard(*self.options_keyboard(),
+                                       keyboards.MenuButton(self.unit, 'back'), row_width=3)
 
 
 class SpecialTargetWeapon(Weapon):

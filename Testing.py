@@ -59,7 +59,6 @@ def generate_core(complexity, length):
     # Метод для выбора координат следующей локации карты, отталкиваясь от предыдущей
     def next_tuple(prev_tuple):
         available_tuples = list()
-        print(prev_tuple)
         # Всегда в возможные прибавляются следующие координаты по оси X
         available_tuples.append((prev_tuple[0] + 1, prev_tuple[1]))
 
@@ -78,6 +77,7 @@ def generate_core(complexity, length):
 
         # Случайным образом выбираются одни из доступных координат
         chosen_tuple = random.choice(available_tuples)
+        print(chosen_tuple)
         return chosen_tuple
 
     # Добавляется новая занятая локация в соответствии с подобранными координатами
@@ -91,7 +91,7 @@ def generate_core(complexity, length):
 
 
 # Метод создания нового ответвления
-def generate_branch(map_tuples):
+def generate_branch(map_tuples, length):
     possible_starts = dict()
     # Выбор точки старта нового ответвления данжа
     for map_tuple in map_tuples.keys():
@@ -110,7 +110,7 @@ def generate_branch(map_tuples):
     map_tuples.complexity = int(map_tuples[possible_starts[branch_start]].complexity) + random.randint(1, 5)
     map_tuples.new_tuple(branch_start[0], branch_start[1], 'branch')
     map_tuples[possible_starts[branch_start]].types.append('crossroad')
-    prolong_branch(map_tuples, branch_start, 6)
+    prolong_branch(map_tuples, branch_start, length)
 
 
 # Метод увеличения длины ответвления
@@ -147,3 +147,8 @@ def visualise(map_tuples):
             map_string += ' ' + map_dict[(x, y)].__str__() + ' '
         map_string += '\n'
     print(map_string)
+
+if __name__ == '__main__':
+    while True:
+        tuples = generate_core(10, 10)
+        visualise(tuples)

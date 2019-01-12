@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import telebot
 from bot_utils import config, bot_handlers, bot_methods
+import dynamic_dicts
 import game_classes
 from fight import fight_main, units
 import time, requests, threading
@@ -17,22 +18,31 @@ WEBHOOK_SSL_PRIV = './webhook_pkey.pem'  # Путь к приватному кл
 WEBHOOK_URL_BASE = "https://%s:%s" % (WEBHOOK_HOST, WEBHOOK_PORT)
 WEBHOOK_URL_PATH = "/%s/" % (config.token)
 
+proxy = 'http://5.189.172.203:3128'
+
 bot = telebot.TeleBot(config.token, threaded=False)
+telebot.apihelper.proxy = {
+  'http': proxy,
+  'https': proxy
+}
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
-game_dict = game_classes.game_dict
+game_dict = dynamic_dicts.lobby_list
 
 types = telebot.types
 
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 bot.remove_webhook()
 
+
 @bot.message_handler(commands=["start"])
 def game(message):
     if len(message.text.split(' ')) > 1:
         data = message.text.split(' ')[1].split('_')
-        if int(data[1]) in game_classes.game_dict:
-            game_classes.game_dict[int(data[1])].join_lobby(message.from_user.id, message.from_user.first_name)
+        import dynamic_dicts
+        if data[1] in dynamic_dicts.lobby_list:
+            dynamic_dicts.lobby_list[data[1]].join_lobby(message.from_user.id,
+                                                     unit_dict=units.Human(name=message.from_user.first_name).to_dict())
 
 
 @bot.message_handler(commands=["game"])
@@ -42,19 +52,10 @@ def game(message):
     else:
         game_dict[message.chat.id].error('game_exists')
 
-
-@bot.message_handler(commands=["ffa"])
-def game(message):
-    if message.chat.id not in game_dict:
-        game_classes.FFAGame(message.chat.id, lang='rus' if message.from_user.language_code == 'ru-RU' else 'rus')
-    else:
-        game_dict[message.chat.id].error('game_exists')
-
-
-@bot.message_handler(commands=["switch"])
+@bot.message_handler(commands=["dicts"])
 def switch(message):
-    if message.chat.id in game_dict:
-        game_dict[message.chat.id].change_team(message.from_user.id)
+    import dynamic_dicts
+    dynamic_dicts.print_dicts()
 
 
 @bot.message_handler(commands=['start_game'])
@@ -62,11 +63,12 @@ def start(message):
     if message.chat.id in game_dict:
         game_dict[message.chat.id].ask_start()
 
-
 @bot.message_handler(commands=['map'])
 def start(message):
-    thread = threading.Thread(target=game_classes.Dungeon, args=[message.chat.id, 'rus'])
-    thread.start()
+    chat = chat_main.pyossession.get_chat(message.chat.id)
+    chat.clear_used_items()
+    dung = chat_main.Dungeon(message.chat.id)
+    dung.send_lobby()
 
 
 @bot.message_handler(commands=['test_fight'])
@@ -124,7 +126,7 @@ def start(message):
         chat.print_receipts()
 
 
-@bot.message_handler(func=lambda message: True,commands=['show_items'])
+@bot.message_handler(func=lambda message: True, commands=['show_items'])
 def start(message):
         chat = chat_main.get_chat(message.chat.id)
         chat.print_items()

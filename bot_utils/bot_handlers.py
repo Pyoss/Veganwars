@@ -3,7 +3,7 @@
 import telebot
 from bot_utils import config, bot_methods
 from fight import standart_actions, build, fight_main
-import game_classes
+import dynamic_dicts
 from locales import localization
 from adventures import dungeon_main
 from chat_wars import chat_main
@@ -18,11 +18,11 @@ def game_exists_error(chat_id):
 
 class CallbackHandler:
     def __init__(self):
-        self.game_dict = fight_main.fight_dict
         self.type_dicts = {'fgt': standart_actions.ActionHandler(self),
                            'build': build.BuildHandler(self),
                            'map': dungeon_main.MapHandler(self),
-                           'chat': chat_main.ChatHandler(self)}
+                           'chat': chat_main.ChatHandler(self),
+                           'lobby': chat_main.LobbyHandler(self)}
 
     def handle(self, call):
         call_split = call.data.split('_')
@@ -30,7 +30,7 @@ class CallbackHandler:
         call_type = call_split[0]
         if call_type == 'switch':
             try:
-                game_classes.game_dict[call.message.chat.id].change_team(call.from_user.id)
+                dynamic_dicts.lobby_list[call.message.chat.id].change_team(call.from_user.id)
             except KeyError:
                 pass
         else:

@@ -131,10 +131,10 @@ class MobLocation(OpenLocation):
     name = 'mobs'
     emote = '!!!'
 
-    def __init__(self, x, y, dungeon, map_tuple, special='0', loot=list()):
+    def __init__(self, x, y, dungeon, map_tuple, mobs=None, loot=list()):
         map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
-        mobs = map_engine.get_enemy(self.complexity, dungeon.map.enemy_dict)
-        self.mobs = map_engine.MobPack(*mobs)
+        mobs = map_engine.get_enemy(self.complexity, dungeon.map.enemy_dict) if mobs is None else mobs
+        self.mobs = map_engine.MobPack(*mobs, complexity=self.complexity)
         self.loot = engine.Container()
         if self.mobs is not None:
             main_mob = max(mobs, key=lambda mob: units.units_dict[mob].danger)
@@ -157,7 +157,7 @@ class MobLocation(OpenLocation):
 
     def process_results(self, results):
         if not any(unit_dict['name'] == self.dungeon.party.leader.unit_dict['name'] for unit_dict in results['winners']):
-                bot_methods.send_message(self.dungeon.party.chat_id, 'Вы проиграли!')
+                bot_methods.send_message(self.dungeon.party.id, 'Вы проиграли!')
                 self.dungeon.end_dungeon(defeat=True)
         else:
             for member in self.dungeon.party.members:
@@ -183,11 +183,12 @@ class LoseLoot(OpenLocation):
                 item = random.choice(victim.inventory.items())
                 print(item)
                 victim.inventory.remove(item)
-                self.dungeon.party.send_message('Вы потеряли ' + str(standart_actions.get_name(item[0]['name'], 'rus')))
+                self.dungeon.party.send_message(victim.name + ' потерял ' + str(standart_actions.get_name(item[0]['name'], 'rus')))
             else:
                 pass
-        self.dungeon.update_map(new=True)
-
+            self.dungeon.update_map(new=True)
+        else:
+            self.dungeon.update_map()
 
 
 class LootRoom(OpenLocation):

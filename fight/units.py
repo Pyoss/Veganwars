@@ -24,7 +24,7 @@ class Unit:
     # Вероятности, с которыми Вы можете получить оружие, броню или предметы цели при её смерти
     loot_chances = {'armor': 0, 'weapon': 0, 'items': 0}
 
-    def __init__(self, name, controller=None, unit_dict=None, fight=None):
+    def __init__(self, name, controller=None, unit_dict=None, fight=None, complexity=None):
 
         # То, как осуществляется управление юнитом
         self.controller = controller
@@ -182,16 +182,29 @@ class Unit:
 
     # ------------------------- Активация способностей -------------------
 
+    def activate_statuses(self, sp_type=None, action=None):
+        for k, v in self.statuses.items():
+            if sp_type is not None:
+                if sp_type in v.types and self.alive():
+                    v.act(action=action)
+            else:
+                if self.alive() or 'permanent' in v.types:
+                    v.act()
+
     def activate_abilities(self, sp_type, action=None):
         for ability in self.abilities:
             if sp_type in ability.types:
                 ability.act(action=action)
 
     def on_hit(self, action):
+        self.activate_statuses('on_hit', action=action)
         self.activate_abilities('on_hit', action=action)
 
     def receive_hit(self, action):
         # Применение брони
+        print(self.statuses)
+        if action.dmg_done > 0:
+            self.activate_statuses('receive_hit', action=action)
         if action.dmg_done > 0:
             armor_data = self.activate_armor(action.dmg_done)
             if armor_data[0] >= action.dmg_done:
@@ -201,11 +214,6 @@ class Unit:
 
     def activate_passives(self):
         self.activate_abilities('passive')
-
-    def activate_statuses(self):
-        for status in self.statuses:
-            if self.alive() or 'permanent' in self.statuses[status].types:
-                self.statuses[status].act()
 
     def actions(self):
         return [action for action in self.fight.action_queue.action_list if action.unit == self]
@@ -475,7 +483,6 @@ class Human(StandartCreature):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         if unit_dict is None:
-            self.weapon = random.choice([weapons.Hatchet, weapons.Knife, weapons.Bow, weapons.Crossbow, weapons.Spear])(self)
             self.abilities = [abilities.Dodge(self)]
 
 
@@ -853,7 +860,8 @@ class Lich(Skeleton):
     greet_msg = 'текст-лича'
     image = 'AgADAgADaaoxG8zb0Eus0hQfCdFJd0eXOQ8ABF-FiJZxVRuJTV0BAAEC'
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=30):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
+        complexity = 30 if complexity is None else complexity
         Skeleton.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         self.max_wounds = complexity
         self.wounds = complexity
@@ -874,7 +882,6 @@ class Lich(Skeleton):
         unit = action.unit
         target = unit.target
         statuses.Bleeding(target)
-        target.receive_damage(1)
         unit.string('skill_1', format_dict={'actor': unit.name, 'target': target.name})
 
     def chain(self, action):
@@ -1255,7 +1262,6 @@ class Goblin(StandartCreature):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 3
-        self.evasion = 1
         self.abilities = [abilities.WeaponSnatcher(self), abilities.Dodge(self)]
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)

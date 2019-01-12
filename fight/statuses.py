@@ -11,9 +11,11 @@ class Status(standart_actions.GameObject):
     core_types = ['status']
     db_string = 'statuses'
     effect = True
+    passive = False
 
-    def __init__(self, unit, acting=False):
+    def __init__(self, unit, acting=False, **kwargs):
         standart_actions.GameObject.__init__(self, unit)
+        self.kwargs = kwargs
         if self.name not in unit.statuses:
             unit.statuses[self.name] = self
             if acting:
@@ -21,8 +23,9 @@ class Status(standart_actions.GameObject):
         else:
             self.reapply(unit.statuses[self.name])
 
-    def act(self):
-        self.unit.fight.edit_queue(self)
+    def act(self, action=None):
+        if not self.passive:
+            self.unit.fight.edit_queue(self)
 
     def available(self):
         return False
@@ -57,6 +60,30 @@ class CustomStatus(Status):
 
     def reapply(self, parent):
         self.unit.statuses[self.name] = self
+
+
+class CustomPassive(Status):
+    order = 60
+
+    def __init__(self, unit, types=None, delay=1, **kwargs):
+        self.name = 'custom_' + str(id(self))
+        print('Инициирован {}...'.format(self.name))
+        Status.__init__(self, unit, acting=True,  **kwargs)
+        self.delay = delay
+        self.types = [] if types is None else types
+
+    def act(self, action=None):
+        if action is not None:
+            func = self.kwargs['func']
+            option = self.kwargs['option']
+            func(action, option)
+        else:
+            self.unit.fight.edit_queue(self)
+
+    def activate(self, action=None):
+        self.delay -= 1
+        if self.delay <= 0:
+            self.finish()
 
 
 class PermaStatus(CustomStatus):

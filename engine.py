@@ -61,6 +61,7 @@ class Container:
             self.base_dict[rand_id()] = [item, value]
 
     def get_id(self, item, value=1):
+        print('Ищем id...  ' + str(item))
         if isinstance(item, str):
             test = list([k for k, v in self.base_dict.items() if v[0]['name'] == item and v[1] >= value])
         else:
@@ -90,18 +91,20 @@ class Container:
         return new_containers
 
     def get_string(self, item_id, lang):
+        print(self.base_dict)
         item = self.base_dict[item_id]
+        print(item)
         string = standart_actions.object_dict[item[0]['name']]().name_lang_tuple().translate(lang)
         if item[1] > 1:
             string += ' (' + str(item[1]) + ')'
         return string
 
-    def to_string(self, lang):
-        base_string = ', '.join([self.get_string(key, lang) for key in self.base_dict.keys()])
+    def to_string(self, lang, mark=', '):
+        base_string = mark.join([self.get_string(key, lang) for key in self.base_dict.keys()])
         if base_string:
             return base_string
         else:
-            return 'Пусто.'
+            return ' --- '
 
     def to_json(self):
         return json.dumps(self.base_dict)
@@ -138,7 +141,7 @@ class Container:
         return inv_list
 
 
-class ReceiptsContainer(Container):
+class ChatContainer(Container):
 
     def put(self, item, value=1):
         self.__change__(item, value)
@@ -148,11 +151,13 @@ class ReceiptsContainer(Container):
         if value == 'inf':
             self.base_dict[item] = value
             return True
-        self.base_dict[item] += value
+        if item not in self.base_dict.keys():
+            self.base_dict[item] = value
+        else:
+            self.base_dict[item] += value
+        print(self.base_dict)
         if self.base_dict[item] <= 0:
             del self.base_dict[item]
-        else:
-            self.base_dict[item] = value
 
     def remove(self, item, value=1):
         print(self.base_dict)
@@ -162,6 +167,26 @@ class ReceiptsContainer(Container):
             self.__change__(item, -value)
             return True
         return False
+
+    def to_string(self, lang, mark=', ', marked=False, emoted=False):
+        names_list = [self.get_string(item, lang, emoted=emoted) for item in self.base_dict.keys()]
+        if not marked:
+            base_string = mark.join(names_list)
+        else:
+            base_string = list_to_marked_string(names_list)
+        if base_string:
+            return base_string
+        else:
+            return 'Пусто.'
+
+    def get_string(self, item, lang, emoted=False):
+        item_obj =  standart_actions.object_dict[item]()
+        string = item_obj.name_lang_tuple().translate(lang)
+        if self.base_dict[item]> 1:
+            string += ' (' + str(self.base_dict[item]) + ')'
+        if emoted:
+            string = item_obj.emote + string
+        return string
 
 
 def throw_dice(cap: int):
@@ -187,3 +212,15 @@ def roll_chance(chance: int):
 
 def rand_id():
     return uuid.uuid4().int >> 112
+
+
+def list_to_marked_string(my_list):
+        next_arrow = '┞'
+        end_arrow = '┕'
+        string = ''
+        if len(my_list) > 0:
+            for item in my_list[:-1]:
+                string += '\n ' + next_arrow + ' ' + item
+            string += '\n ' + end_arrow + ' ' + my_list[-1]
+        return string
+
