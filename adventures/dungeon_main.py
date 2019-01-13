@@ -231,7 +231,7 @@ class Member:
 
     def use_item(self, item_id, call):
         item = self.inventory[item_id]
-        item = standart_actions.object_dict[item[0]['name']](self, obj_dict=item)
+        item = standart_actions.object_dict[item[0]['name']](self, obj_dict=item[0])
         item.map_act(call)
 
     def menu_handler(self, call):

@@ -55,6 +55,7 @@ class Player:
         self.player_string = PlayerString(self)
         self.fight = fight
         self.unit = None
+        self.talked = False
 
     def get_action(self, edit=False):
         self.unit.active = True
@@ -144,14 +145,13 @@ class Fight:
         message.construct()
         return bot_methods.send_message(self.chat_id, message.result_dict[self.lang])
 
-    def unit_talk(self, unit_id, text):
+    def unit_talk(self, unit_id, message):
         unit = self.units_dict[unit_id]
         if not unit.controller.talked:
             unit.controller.talked = True
-            for teammate in unit.team:
-                if not unit.controller.ai and unit != teammate:
-                    pass
-
+            for fighter in self.units:
+                if not fighter.controller.ai and unit != fighter:
+                    bot_methods.send_message(fighter.controller.chat_id, '{}: {}'.format(unit.name, message))
 
     def add_player(self, chat_id, name, unit_dict=None):
         # Добавление бота в словарь игроков и список игроков конкретного боя
@@ -159,7 +159,7 @@ class Fight:
         unit_class = units.units_dict[unit_dict['unit_name']] if unit_dict is not None else units.Zombie
         unit = unit_class(name, controller=controller, fight=self, unit_dict=unit_dict)
         self.units_dict[unit.id] = unit
-        dynamic_dicts.unit_talk[unit.id] = self
+        dynamic_dicts.unit_talk[unit.controller.chat_id] = (unit.id, self)
         self.units.append(unit)
         self.listeners.append(controller)
         return unit
@@ -205,21 +205,6 @@ class Fight:
             self.units.append(unit)
             self.units_dict[unit.chat_id] = unit
             unit.team = team
-
-    def choose_build(self):
-        for unit in self.units:
-            unit.start_abilities()
-
-    def _send_chosen_weapons_(self):
-        weapon_string = emote_dict['weapon_em'] +\
-                        '|Выбор оружия\n' \
-                        + '\n'.join([unit.name
-                                     + ' - '
-                                     + LangTuple(unit.weapon.table_row, 'name').translate(self.lang)
-                                    if isinstance(unit.name, str) else unit.name.translate(self.lang)
-                                    + ' - ' + LangTuple(unit.weapon.table_row, 'name').translate(self.lang)
-                                    for unit in self.units])
-        bot_methods.send_message(self.chat_id, weapon_string)
 
     def active_actors(self):
         return [unit for unit in self.units if unit.alive() and not unit.disabled]

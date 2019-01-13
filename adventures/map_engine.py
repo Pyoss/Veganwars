@@ -292,7 +292,7 @@ class FirstDungeon(DungeonMap):
     wall_location = None
 
     def __init__(self, dungeon, new=True, dungeon_dict=None):
-        DungeonMap.__init__(self, 1, dungeon,  0, 0,  new=True, dungeon_dict=None)
+        DungeonMap.__init__(self, 4, dungeon,  2, 2,  new=True, dungeon_dict=None)
         self.low_loot = ['bandages', 'chitin', 'stimulator', 'helmet', 'breastplate', 'bandages', 'knife', 'adrenalin']
         self.enemy_dict = {'goblin': (7, 238), 'skeleton': (12, 238), 'skeleton+zombie': (12, 238), 'worm+goblin': (7, 238)}
         unused_loot = [items.Molotov().to_dict(), items.ThrowingKnife().to_dict(),

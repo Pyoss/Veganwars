@@ -94,6 +94,8 @@ class Shield(Armor):
 
     def activate(self, action):
         unit = action.unit
+        if not self.max_armor:
+            return False
         if unit.dmg_received > 0:
             if unit.dmg_received > self.max_armor:
                 blocked_dmg = self.max_armor

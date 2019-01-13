@@ -18,6 +18,12 @@ WEBHOOK_URL_BASE = "https://%s:%s" % (WEBHOOK_HOST, WEBHOOK_PORT)
 WEBHOOK_URL_PATH = "/%s/" % (config.token)
 
 bot = telebot.TeleBot(config.token, threaded=False)
+
+proxy = 'http://5.189.172.203:3128'
+telebot.apihelper.proxy = {
+  'http': proxy,
+  'https': proxy
+}
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
@@ -133,6 +139,13 @@ def start(message):
 @bot.message_handler(content_types=['photo'])
 def start(message):
     print(message.photo[0].file_id)
+
+
+@bot.message_handler(content_types=['text'])
+def start(message):
+    if message.from_user.id in dynamic_dicts.unit_talk:
+        unit_id, fight = dynamic_dicts.unit_talk[message.from_user.id]
+        fight.unit_talk(unit_id, message.text)
 
 
 @bot.callback_query_handler(func=lambda call: call)

@@ -257,6 +257,7 @@ class Unit:
         self.target = None
         self.action = []
         self.hp_changed = False
+        self.controller.talked = False
 
     def alive(self):
         pass
@@ -373,7 +374,7 @@ class StandartCreature(Unit):
 
     danger = 7
 
-    def __init__(self, name, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 4
@@ -479,7 +480,7 @@ class StandartCreature(Unit):
 class Human(StandartCreature):
     unit_name = 'human'
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         if unit_dict is None:
@@ -491,7 +492,7 @@ class Necromancer(Human):
     control_class = ai.SkeletonAi
     emote = emote_dict['skeleton_em']
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 4
@@ -591,7 +592,7 @@ class Necromancer(Human):
 class Pyromant(Human):
     unit_name = 'human'
 
-    def __init__(self, name, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 4
@@ -705,7 +706,7 @@ class Skeleton(Unit):
     danger = 12
     loot = [('old_bone', (1, 100))]
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller, fight=fight, unit_dict=unit_dict)
         self.max_wounds = 15
         self.wounds = 15
@@ -948,7 +949,7 @@ class Zombie(Unit):
     danger = 10
     loot = [('zombie_tooth', (1, 100))]
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 3
@@ -1045,7 +1046,7 @@ class Ghoul(Zombie):
     emote = emote_dict['zombie_em']
     control_class = ai.ZombieAi
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 3
@@ -1142,7 +1143,7 @@ class Basilisk(Unit):
     emote = emote_dict['basilisk_em']
     control_class = ai.BasiliskAi
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 5
@@ -1258,7 +1259,7 @@ class Goblin(StandartCreature):
 
     danger = 7
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 3
@@ -1279,7 +1280,7 @@ class Worm(Unit):
     danger = 7
     loot = [('worm_skin', (1, 100))]
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         self.feared = False
         # Максимальные параметры
@@ -1413,7 +1414,7 @@ class Shadow(StandartCreature):
     control_class = ai.StandartMeleeAi
     emote = emote_dict['skeleton_em']
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 3
@@ -1431,7 +1432,7 @@ class Snail(StandartCreature):
 
     danger = 7
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, summoned=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, summoned=None, complexity=None):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         summoned = 0 if summoned is None else summoned
@@ -1479,7 +1480,7 @@ class SperMonster(StandartCreature):
     control_class = ai.SperMonsterAi
     emote = emote_dict['spermonster_em']
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         self.max_hp = 5
         self.hp = self.max_hp
@@ -1508,7 +1509,7 @@ class PedoBear(StandartCreature):
     control_class = ai.PedoBearAi
     emote = emote_dict['pedobear_em']
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         self.find_target_action = self.create_action('find_target', self.find_target, 'button_3', order=5)
         self.hug_action = self.create_action('hug', self.hug, 'button_3', order=10)
@@ -1542,7 +1543,7 @@ class BirdRukh(StandartCreature):
     unit_name = 'bird_rukh'
     control_class = ai.BirdRukhAi
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         self.fly_action = self.create_action('bird_fly', self.fly, 'button_1', order=10)
         self.stun_action = self.create_action('bird_stun', self.stun, 'button_2', order=10)
@@ -1567,7 +1568,7 @@ class Bear(StandartCreature):
     unit_name = 'bear'
     control_class = ai.BearAi
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         self.destroy_action = self.create_action('destroy', self.destroy, 'button_1', order=10)
         self.weapon = weapons.BearClaw(self)
@@ -1586,7 +1587,7 @@ class Pasyuk(StandartCreature):
     unit_name = 'pasyuk'
     control_class = ai.StandartMeleeAi
     
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         self.weapon = weapons.Knife(self)
         

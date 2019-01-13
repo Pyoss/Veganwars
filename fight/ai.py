@@ -41,6 +41,7 @@ class Ai:
         self.done = True
         self.difficulty = 0
         self.unit = None
+        self.talked = False
 
     def form_actions(self):
         pass
