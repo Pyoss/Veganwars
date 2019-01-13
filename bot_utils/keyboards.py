@@ -50,39 +50,6 @@ class BuildButton(Button):
         Button.__init__(self, text, callback)
 
 
-class AbilityChoice(BuildButton):
-    def __init__(self, ability, unit, option=None, name=''):
-        ability_name = (ability.name + '_' + option) if option is not None else ability.name
-        BuildButton.__init__(self, localization.LangTuple(ability.table_row, 'name')
-                             .translate(unit.lang) if not len(name) else name, unit, 'abilities', ability_name)
-
-
-class AbilityInfo(BuildButton):
-    def __init__(self, ability, unit, option=None, name=''):
-        ability_name = (ability.name + '_' + option) if option is not None else ability.name
-        BuildButton.__init__(self, localization.LangTuple('utils', 'info')
-                             .translate(unit.lang) if not len(name) else name, unit, 'info', 'abilities', ability_name)
-
-
-class WeaponChoice(BuildButton):
-    def __init__(self, weapon, unit, option=None, name=''):
-        weapon_name = (weapon.name + '_' + option) if option is not None else weapon.name
-        BuildButton.__init__(self, localization.LangTuple('_'.join(['weapon', weapon.name]), 'name')
-                             .translate(unit.lang) if not len(name) else name, unit, 'weapon', weapon_name)
-
-
-class WeaponCancel(BuildButton):
-    def __init__(self, unit, option=None, name=''):
-        BuildButton.__init__(self, 'Оставить', unit, 'weapon', 'cancel')
-
-
-class WeaponInfo(BuildButton):
-    def __init__(self, weapon, unit, option=None, name=''):
-        weapon_name = (weapon.name + '_' + option) if option is not None else weapon.name
-        BuildButton.__init__(self, localization.LangTuple('utils', 'info')
-                             .translate(unit.lang) if not len(name) else name, unit, 'info', 'weapon', weapon_name)
-
-
 class NameButton(Button):
     def __init__(self, text, unit, *args):
         fight = unit.fight

@@ -3,7 +3,6 @@
 import telebot
 from bot_utils import config, bot_handlers, bot_methods
 import dynamic_dicts
-import game_classes
 from fight import fight_main, units
 import time, requests, threading
 from chat_wars import chat_main
@@ -44,14 +43,6 @@ def game(message):
             dynamic_dicts.lobby_list[data[1]].join_lobby(message.from_user.id,
                                                      unit_dict=units.Human(name=message.from_user.first_name).to_dict())
 
-
-@bot.message_handler(commands=["game"])
-def game(message):
-    if message.chat.id not in game_dict:
-        game_classes.VsGame(message.chat.id, lang='rus' if message.from_user.language_code == 'ru-RU' else 'rus')
-    else:
-        game_dict[message.chat.id].error('game_exists')
-
 @bot.message_handler(commands=["dicts"])
 def switch(message):
     import dynamic_dicts
@@ -68,6 +59,13 @@ def start(message):
     chat = chat_main.pyossession.get_chat(message.chat.id)
     chat.clear_used_items()
     dung = chat_main.Dungeon(message.chat.id)
+    dung.send_lobby()
+
+@bot.message_handler(commands=['ffa'])
+def start(message):
+    chat = chat_main.pyossession.get_chat(message.chat.id)
+    chat.clear_used_items()
+    dung = chat_main.FFA(message.chat.id)
     dung.send_lobby()
 
 
