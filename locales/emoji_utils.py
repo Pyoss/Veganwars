@@ -78,7 +78,7 @@ emote_dict = {
     "dog_em": u'\U0001F436',
     "wolf_em": emoji.emojize(':wolf:', use_aliases=True),
     'rat_em': u'\U0001F42D',
-    'zombie_em': '🎃',
+    'zombie_em': '\U0001f9df\u200d\u2642\ufe0f',
     'skeleton_em': '💀',
     'worm_em': '\U0001f40d',
     'basilisk_em':'snk',
@@ -88,6 +88,7 @@ emote_dict = {
     'pedobear_em':'\U0001f43b',
     'bird_em': '\U0001f985',
     'bear_em': '\U0001f43b',
+    'goblin_em': '\U0001f47a',
 
     # Меню_мобов
     "arm_em": u'\U0001F4AA',

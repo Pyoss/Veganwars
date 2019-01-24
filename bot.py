@@ -4,7 +4,7 @@ import telebot
 from bot_utils import config, bot_handlers, bot_methods
 import dynamic_dicts
 from fight import fight_main, units
-import time, requests, threading
+import time, requests, threading, asyncio
 from chat_wars import chat_main
 
 WEBHOOK_HOST = '167.99.131.174'
@@ -29,6 +29,7 @@ call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
 
 types = telebot.types
+
 
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 bot.remove_webhook()
@@ -143,6 +144,8 @@ def start(message):
 
 @bot.message_handler(content_types=['text'])
 def start(message):
+    print(message.text)
+    return False
     if message.from_user.id in dynamic_dicts.unit_talk:
         unit_id, fight = dynamic_dicts.unit_talk[message.from_user.id]
         fight.unit_talk(unit_id, message.text)

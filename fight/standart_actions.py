@@ -29,9 +29,8 @@ class ActionHandler:
             action = action_dict[call_data[3]](unit, fight, info=call_data, call=call)
             action.act()
         else:
-            print(unit.controller.message_id)
-            print(call.message.message_id)
-            print(unit.active)
+            print('Ошибка обработки запроса к ActionHandler. Controller_id={}, message_id={}, unit_active={}'.
+                  format(unit.controller.chat_id, call.message.message_id, unit.active))
             return self.handler.actor_error(call)
 
 # 1-20 До эффектов, 21-40 - эффекты, 41-60 результаты. Некоторые правила:
@@ -70,6 +69,9 @@ class Action:
 
     def activate(self):
         pass
+
+    def available(self):
+        return True
 
 
 class UnitAction:
@@ -234,6 +236,27 @@ class Skip(Action):
     def activate(self):
         # Добавление строки пропуска
         self.fight.string_tuple += localization.LangTuple('fight', 'skip', {'actor': self.unit.name})
+
+
+class PickUpWeapon(Action):
+    name = 'pick-up'
+    action_type = ['tech']
+    order = 1
+
+    def available(self):
+        if self.unit.lost_weapon:
+            return True
+        return False
+
+    def activate(self):
+        weapon = self.unit.pick_up_weapon()
+        self.fight.string_tuple += localization.LangTuple('fight',
+                                                          'pickup',
+                                                          {
+                                                              'actor': self.unit.name,
+                                                              'weapon': weapon.name_lang_tuple()
+                                                          }
+                                                          )
 
 
 class MoveForward(Action):

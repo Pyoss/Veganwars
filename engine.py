@@ -30,20 +30,17 @@ class Container:
         return self.base_dict.keys()
 
     def put(self, item, value=1):
+        print('Добавление в инвентарь:{}'.format(self.base_dict))
+        print('Предмет: {}'.format(item))
         if isinstance(item, str):
             item = standart_actions.object_dict[item]().to_dict()
         self.__change__(item, value)
         return True
 
     def remove(self, item, value=1):
-        if isinstance(item, tuple):
-            item_id = item[1]
-        elif isinstance(item, int):
-            item_id = item
-        elif item.isdigit():
-            item_id = int(item)
-        else:
-            item_id = self.get_id(item)
+        print('Удаление из инвентаря:{}'.format(self.base_dict))
+        print('Предмет: {}'.format(item))
+        item_id = self.get_id(item, value)
         if self.base_dict[item_id][1] == 'inf':
             return True
         elif self.base_dict[item_id][1] >= value:
@@ -61,16 +58,25 @@ class Container:
             self.base_dict[rand_id()] = [item, value]
 
     def get_id(self, item, value=1):
-        print('Ищем id...  ' + str(item))
-        if isinstance(item, str):
-            test = list([k for k, v in self.base_dict.items() if v[0]['name'] == item and v[1] >= value])
-        else:
-            test = list([k for k, v in self.base_dict.items() if v[0] == item and v[1] >= value])
-        if not test:
-            return False
-        else:
-            item_id = test[0]
-            return item_id
+        item_id = None
+        if isinstance(item, tuple):
+            item_id = item[1]
+        elif isinstance(item, int):
+            item_id = item
+        elif isinstance(item, str):
+            if item.isdigit():
+                item_id = int(item)
+
+        if item_id is None:
+            if isinstance(item, str):
+                test = list([k for k, v in self.base_dict.items() if v[0]['name'] == item and v[1] >= value])
+            else:
+                test = list([k for k, v in self.base_dict.items() if v[0] == item and v[1] >= value])
+            if not test:
+                return False
+            else:
+                item_id = test[0]
+        return item_id
 
     def empty(self):
         if not self.base_dict:
@@ -91,9 +97,7 @@ class Container:
         return new_containers
 
     def get_string(self, item_id, lang):
-        print(self.base_dict)
-        item = self.base_dict[item_id]
-        print(item)
+        item = self[item_id]
         string = standart_actions.object_dict[item[0]['name']]().name_lang_tuple().translate(lang)
         if item[1] > 1:
             string += ' (' + str(item[1]) + ')'
@@ -155,12 +159,10 @@ class ChatContainer(Container):
             self.base_dict[item] = value
         else:
             self.base_dict[item] += value
-        print(self.base_dict)
         if self.base_dict[item] <= 0:
             del self.base_dict[item]
 
     def remove(self, item, value=1):
-        print(self.base_dict)
         if self.base_dict[item] == 'inf':
             return True
         elif self.base_dict[item] >= value:

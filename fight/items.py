@@ -32,7 +32,7 @@ class MapItem(standart_actions.GameObject):
     core_types = ['item', 'map']
     db_string = 'items'
 
-    def map_act(self, call):
+    def map_act(self, call, item_id):
         pass
 
     def map_available(self, call):
@@ -145,7 +145,7 @@ class Bandages(TargetItem):
     name = 'bandages'
     full = True
 
-    def map_act(self, call):
+    def map_act(self, call, item_id):
         member = self.unit
         if self.map_available(call):
             if member.unit_dict['max_hp'] > member.unit_dict['hp']:
@@ -153,7 +153,7 @@ class Bandages(TargetItem):
                 if member.unit_dict['hp'] < 3:
                     member.unit_dict['hp'] += 1
                 member.alert('Вы вылечились', call)
-                member.inventory.remove(self.id)
+                member.inventory.remove(item_id)
             else:
                 member.alert('Вы не можете лечиться', call)
 
@@ -252,12 +252,15 @@ class Psycho(__InstantItem):
 
     def activate(self, action):
         self.string('use', format_dict={'actor': self.unit.name})
-        statuses.Buff(unit=self.unit, attr='damage', length=2, value=3)
+        statuses.Buff(unit=self.unit, attr='damage', length=3, value=3)
         statuses.CustomStatus(unit=self.unit, delay=1, func=self.wear_off, order=40, name='psycho_delay')
 
     def wear_off(self):
-        self.string('end', format_dict={'actor': self.unit.name})
-        self.unit.hp_delta -= 1
+        if self.unit.hp > 1:
+            self.string('end', format_dict={'actor': self.unit.name})
+            self.unit.hp_delta -= 1
+        else:
+            self.string('fail', format_dict={'actor': self.unit.name})
 
 
 class Jet(__InstantItem):

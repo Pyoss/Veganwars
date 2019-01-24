@@ -69,6 +69,7 @@ class Unit:
         self.action = []
         self.disabled = []
         self.hp_changed = False
+        self.weapon_to_member = []
 
         # Параметры для ai
         self.number = 1
@@ -80,7 +81,7 @@ class Unit:
         return actions
 
     def additional_actions(self):
-        actions = [(1, MoveForward(self)), (1, MoveBack(self))]
+        actions = [(1, MoveForward(self)), (1, MoveBack(self)), (2, PickUpButton(self)), (2, SkipButton(self))]
         return actions
 
     def equip_from_dict(self, unit_dict):
@@ -118,15 +119,16 @@ class Unit:
 
     def lose_weapon(self):
         weapon = self.weapon
-        self.weapons.remove(weapon)
         self.lost_weapon.append(weapon)
         weapon.get_lost()
         if self.weapon == weapon:
-            self.equip_weapon(self.default_weapon)
+            self.equip_weapon(standart_actions.object_dict[self.default_weapon](self))
 
     def pick_up_weapon(self):
-        self.get_weapon(self.lost_weapon[0])
-        self.lost_weapon.remove(self.lost_weapon[0])
+        weapon = self.lost_weapon[0]
+        self.get_weapon(weapon)
+        self.lost_weapon.remove(weapon)
+        return weapon
 
     def change_weapon(self):
         if len(self.weapons) > 1:
@@ -135,7 +137,6 @@ class Unit:
             self.weapon = self.weapons[0]
 
     def get_weapon(self, weapon):
-        self.weapons.append(weapon)
         self.weapon = weapon
 
     def get_hit_chance(self, weapon):
@@ -159,6 +160,9 @@ class Unit:
 
     def targets(self):
         return [unit for unit in self.fight.units if unit not in self.team.units and unit.alive()]
+
+    def get_melee_targets(self):
+        return [unit for unit in self.melee_targets if unit.alive()]
 
     def get_allies(self):
         return list([unit for unit in self.team.units if unit.alive()])
@@ -202,7 +206,6 @@ class Unit:
 
     def receive_hit(self, action):
         # Применение брони
-        print(self.statuses)
         if action.dmg_done > 0:
             self.activate_statuses('receive_hit', action=action)
         if action.dmg_done > 0:
@@ -308,6 +311,8 @@ class Unit:
     def clear(self):
         for armor in self.armor:
             armor.clear()
+        for weapon in [*self.lost_weapon, *self.weapon_to_member]:
+            self.inventory.append(weapon)
 
     def to_string(self, string, format_dict=None):
         lang_tuple = localization.LangTuple('unit_' + self.unit_name, string, format_dict=format_dict)
@@ -355,6 +360,10 @@ class Unit:
 
     # Выдавание конечного списка лута при смерти.
     def generate_loot(self):
+        if self.lost_weapon:
+            self.weapon = self.lost_weapon[0]
+        elif self.weapon_to_member:
+            self.weapon = self.weapon_to_member[0]
         loot = engine.Container()
         for item in self.loot:
             if engine.roll_chance(item[1][1]):
@@ -380,7 +389,7 @@ class StandartCreature(Unit):
         self.max_hp = 4
         self.hp = self.max_hp
         self.max_energy = 5
-        self.toughness = 6
+        self.toughness = 4
         self.recovery_energy = 5
         self.melee_accuracy = 0
         self.range_accuracy = 0
@@ -485,6 +494,18 @@ class Human(StandartCreature):
         # Максимальные параметры
         if unit_dict is None:
             self.abilities = [abilities.Dodge(self)]
+
+
+class Rat(StandartCreature):
+    unit_name = 'rat'
+
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
+        StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
+        # Максимальные параметры
+        if unit_dict is None:
+            self.abilities = [abilities.Dodge(self), abilities.Muscle(self)]
+
+
 
 
 class Necromancer(Human):
@@ -722,6 +743,7 @@ class Skeleton(Unit):
         self.default_weapon = weapons.Teeth(self)
         self.crawling = False
         self.energy = 5
+        self.loot_chances['weapon'] = 50
         self.recovery_energy = 5
         self.toughness = 5
         if unit_dict is not None:
@@ -889,6 +911,7 @@ class Lich(Skeleton):
         unit = action.unit
         target = unit.target
         unit.chains = True
+        unit.chain_turn = unit.fight.turn
         unit.string('skill_2', format_dict={'actor': unit.name, 'target': target.name})
 
         class Chains(Tech):
@@ -1251,10 +1274,10 @@ class Basilisk(Unit):
 
 class Goblin(StandartCreature):
     greet_msg = 'текст-гоблина'
-    image = 'AgADAgADqqoxG8_E6Uu_il72AlGXdRuiOQ8ABHWprqpYxXCGvpYBAAEC'
+    image = 'AgADAgADlaoxGxEHGEo_Gw7ItWUpQMpcOQ8ABCvLKflp5m3e6sQBAAEC'
     unit_name = 'goblin'
     control_class = ai.GoblinAi
-    emote = emote_dict['skeleton_em']
+    emote = emote_dict['goblin_em']
     loot = [('goblin_ear', (1, 100)), ('goblin_ear', (1, 50))]
 
     danger = 7
@@ -1263,7 +1286,10 @@ class Goblin(StandartCreature):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 3
+        self.toughness = 3
+        self.hp = 3
         self.abilities = [abilities.WeaponSnatcher(self), abilities.Dodge(self)]
+        self.weapon = random.choice([weapons.Harpoon(self)])
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
         self.energy = self.max_energy
@@ -1456,7 +1482,6 @@ class Snail(StandartCreature):
                 action.unit.melee_targets.append(actor)
 
     def split_check(self, action):
-        print('check')
         unit = action.unit
         if unit.hp <= 0 and unit.max_hp > 1:
             unit.split(action)

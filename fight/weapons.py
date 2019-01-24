@@ -15,7 +15,9 @@ class Weapon(standart_actions.GameObject):
     accuracy = 2
     dice_num = 3
     energy = 2
+    waste = 2
     melee = True
+    range_option = False
     damage = 0
     price = 100
     emote = emoji_utils.emote_dict['weapon_em']
@@ -29,7 +31,7 @@ class Weapon(standart_actions.GameObject):
         standart_actions.GameObject.__init__(self, unit=unit, obj_dict=obj_dict)
         self.damage += self.improved
 
-    def string(self, string_code, format_dict=None):
+    def string(self, string_code, format_dict=None, order=0):
         format_dict = {} if None else format_dict
         self.unit.fight.string_tuple.row(localization.LangTuple(self.table_row, string_code, format_dict=format_dict))
 
@@ -69,7 +71,7 @@ class Weapon(standart_actions.GameObject):
         pass
 
     def targets(self):
-        return self.unit.melee_targets if self.melee else self.unit.targets()
+        return self.unit.get_melee_targets() if self.melee else self.unit.targets()
 
     def get_action(self):
         if not self.special_types and len(self.targets()) == 1:
@@ -119,7 +121,7 @@ class Weapon(standart_actions.GameObject):
         return True
 
     def available(self):
-        if self.targets():
+        if self.targets() or self.range_option:
             return True
 
     def info_string(self):
@@ -203,6 +205,9 @@ class SpecialOptionWeapon(Weapon):
         return [keyboards.FightButton(option[0], self.unit,
                                       'wpspecial', str(option[1]), named=True) for option in self.options()]
 
+    def modify_attack(self, action):
+        pass
+
     def start_special_action(self, info):
         if len(info) > 4:
             standart_actions.Custom(self.activate_special_action, info[-1], order=self.order, unit=self.unit)
@@ -248,7 +253,7 @@ class Sword(SpecialOptionWeapon):
             action.stringed = False
             self.string('special_miss', format_dict={'actor': self.unit.name, 'target': action.unit.name})
 
-    def get_menu_string(self):
+    def get_menu_string(self, sp_string=None):
         return localization.LangTuple(self.table_row, 'weapon_menu_1',
                                       format_dict={'chance': self.get_hit_chance()})
 
@@ -284,7 +289,7 @@ class SpecialAttackWeapon(SpecialTargetWeapon):
         self.unit.target = self.unit.fight[info[-1]]
         if self.special_available(target=self.unit.target):
             self.unit.fight.edit_queue(standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
-                                                                      info=info, order=self.order))
+                                                                      info=info, order=self.order, waste=self.waste))
         else:
             self.unit.fight.edit_queue(standart_actions.Attack(unit=self.unit, fight=self.unit.fight,
                                                                info=info))
@@ -300,7 +305,7 @@ class Knife(Weapon):
 
     def on_hit(self, attack_action):
         if attack_action.dmg_done and engine.roll_chance(
-                self.bleed_chance) and 'alive' in attack_action.unit.target.types:
+                self.bleed_chance) and 'alive' in attack_action.target.types:
             statuses.Bleeding(attack_action.unit.target)
             attack_action.to_emotes(emoji_utils.emote_dict['bleeding_em'])
 
@@ -431,7 +436,7 @@ class Crossbow(SpecialActionWeapon):
     def available(self):
         return True
 
-    def get_menu_string(self):
+    def get_menu_string(self, sp_string=None):
         if self.loaded:
             return localization.LangTuple(self.table_row, 'weapon_menu_2',
                                           format_dict={'chance': self.get_hit_chance()})
@@ -448,6 +453,75 @@ class Crossbow(SpecialActionWeapon):
 
     def reload_button(self):
         return keyboards.MeleeReloadButton(self.unit)
+
+
+class SledgeHammer(SpecialAttackWeapon):
+    name = 'sledgehammer'
+    order = 9
+    waste_energy = 4
+
+    def modify_attack(self, action):
+        if action.dmg_done:
+            action.dmg_done += self.unit.target.max_energy - self.unit.target.energy + self.unit.target.wasted_energy
+
+    def start_special_action(self, info):
+        self.unit.target = self.unit.fight[info[-1]]
+        if self.special_available(target=self.unit.target):
+            self.unit.fight.edit_queue(standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
+                                                                      info=info, order=self.order, waste=1))
+            self.unit.fight.edit_queue(standart_actions.Custom(self.unit.waste_energy, self.waste_energy,
+                                                               unit=self.unit))
+        else:
+            self.unit.fight.edit_queue(standart_actions.Attack(unit=self.unit, fight=self.unit.fight,
+                                                               info=info))
+
+    def special_available(self, target):
+        return True if self.unit.energy > self.waste_energy else False
+
+
+class Harpoon(SpecialOptionWeapon, Knife):
+    name = 'harpoon'
+    order = 9
+    waste_energy = 4
+    bleed_chance = 100
+    range_option = True
+
+    def start_special_action(self, info):
+        if len(info) > 4:
+            self.melee = False
+            self.unit.target = self.unit.fight[info[-1]]
+            standart_actions.Custom(self.activate_special_action, info, order=self.order, unit=self.unit)
+            self.unit.end_turn()
+        else:
+            self.unit.active = True
+            self.ask_options()
+
+    def activate_special_action(self, info):
+        attack = standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
+                                       info=None, order=self.order, waste=self.waste_energy)
+        attack.activate()
+        self.unit.lose_weapon()
+
+    def get_menu_string(self, sp_string=None):
+        return localization.LangTuple(self.table_row, 'weapon_menu_1',
+                                      format_dict={'chance': self.get_hit_chance()})
+
+    def options(self):
+        self.melee = False
+        targets = self.targets()
+        self.melee = True
+        return [(unit.name, str(unit)) for unit in targets]
+
+    def on_hit(self, attack_action):
+        if not self.melee:
+            if attack_action.dmg_done and engine.roll_chance(
+                    self.bleed_chance
+            ) and 'alive' in attack_action.target.types:
+
+                statuses.Bleeding(attack_action.unit.target)
+                attack_action.to_emotes(emoji_utils.emote_dict['bleeding_em'])
+            self.melee = True
+
 
 # --------------------------------------------------
 class Shovel(Weapon):
@@ -559,30 +633,6 @@ class Cock(Weapon):
     name = 'cock'
     types = ['natural']
     natural = True
-
-
-class SledgeHammer(SpecialAttackWeapon):
-    name = 'sledgehammer'
-    order = 9
-    waste_energy = 4
-
-    def modify_attack(self, action):
-        if action.dmg_done:
-            action.dmg_done += self.unit.target.max_energy - self.unit.target.energy + self.unit.target.wasted_energy
-
-    def start_special_action(self, info):
-        self.unit.target = self.unit.fight[info[-1]]
-        if self.special_available(target=self.unit.target):
-            self.unit.fight.edit_queue(standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
-                                                                      info=info, order=self.order, waste=1))
-            self.unit.fight.edit_queue(standart_actions.Custom(self.unit.waste_energy, self.waste_energy,
-                                                               unit=self.unit))
-        else:
-            self.unit.fight.edit_queue(standart_actions.Attack(unit=self.unit, fight=self.unit.fight,
-                                                               info=info))
-
-    def special_available(self, target):
-        return True if self.unit.energy < self.waste_energy else False
 
 
 class Chain(SpecialAttackWeapon):
@@ -803,9 +853,10 @@ class SawnOff(Shotgun):
 class Boomerang(SpecialAttackWeapon):
     name = 'boomerang'
     melee = False
+    bleed_chance = 100
 
-    def __init__(self, actor):
-        Weapon.__init__(self, actor)
+    def __init__(self, unit=None, obj_dict=None):
+        Weapon.__init__(self, unit=unit, obj_dict=obj_dict)
         self.melee = self.melee
         self.target = None
 
@@ -819,6 +870,7 @@ class Boomerang(SpecialAttackWeapon):
         else:
             self.unit.lose_weapon()
             self.unit.lost_weapon.remove(self)
+            self.unit.weapon_to_member.append(self)
             self.target = self.unit.target
             statuses.CustomStatus(self.unit, order=0, func=self.go_back, delay=2, permanent=True)
             statuses.CustomStatus(self.unit, order=5, func=self.equip, delay=2)
@@ -871,6 +923,7 @@ class Boomerang(SpecialAttackWeapon):
         self.unit.fight.edit_queue(BackAttack())
 
     def equip(self):
+        self.unit.weapon_to_member.remove(self)
         self.unit.get_weapon(self)
 
     def reload_button(self):

@@ -468,22 +468,6 @@ class IgniteTorch(InstantAbility):
         self.actor.weapon.string('special_hit', format_dict={'actor': self.actor.name})
 
 
-class PickUpWeapon(InstantAbility):
-    name = 'pick-up-weapon'
-    types = ['tech']
-    order = 1
-
-    def available(self):
-        if self.actor.lost_weapon:
-            return True
-        return False
-
-    def activate(self, action):
-        self.actor.pick_up_weapon()
-        self.string('use', format_dict={'actor': self.actor.name,
-                                        'weapon': localization.LangTuple(self.actor.weapon.table_row, 'with_name')})
-
-
 class WeaponMaster(InstantAbility):
     name = 'weapon-master'
     types = ['optional_start']
@@ -738,6 +722,7 @@ class Cannibal(TargetAbility):
         return allies
 
     def activate(self, action):
+        self.unit.target = action.target
         attack = standart_actions.BaseAttack(self.unit, self.unit.fight)
         attack.activate(target=action.target, weapon=self.unit.weapon)
         dmg_done = attack.dmg_done

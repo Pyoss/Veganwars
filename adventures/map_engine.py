@@ -140,6 +140,7 @@ class Location:
         self.y = y
         self.dungeon = dungeon
         self.special = '0'
+        self.mobs = None
         if map_tuple is not None:
             self.complexity = map_tuple.complexity
 
@@ -272,6 +273,13 @@ class Location:
         visited = 'visited' if self.visited else 'closed'
         return self.name + '_' + self.special + '_' + visited
 
+    def location_fight(self):
+            results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mobs.join_fight())
+            self.process_results(results)
+
+    def process_results(self, results):
+        pass
+
 
 class MobPack:
     def __init__(self, *args, complexity=None):
@@ -292,14 +300,9 @@ class FirstDungeon(DungeonMap):
     wall_location = None
 
     def __init__(self, dungeon, new=True, dungeon_dict=None):
-        DungeonMap.__init__(self, 4, dungeon,  2, 2,  new=True, dungeon_dict=None)
+        DungeonMap.__init__(self, 6, dungeon,  2, 2,  new=True, dungeon_dict=None)
         self.low_loot = ['bandages', 'chitin', 'stimulator', 'helmet', 'breastplate', 'bandages', 'knife', 'adrenalin']
-        self.enemy_dict = {'goblin': (7, 238), 'skeleton': (12, 238), 'skeleton+zombie': (12, 238), 'worm+goblin': (7, 238)}
-        unused_loot = [items.Molotov().to_dict(), items.ThrowingKnife().to_dict(),
-                       items.Jet().to_dict(), items.Chitin().to_dict()]
-        unused_weapons = [weapons.Knife().to_dict(), weapons.Spear().to_dict(),
-                          weapons.Hatchet().to_dict(), weapons.Bow().to_dict()]
-        unused_armor = [armors.Breastplate().to_dict(), armors.Helmet().to_dict(), armors.Shield().to_dict()]
+        self.enemy_dict = {'goblin': (7, 238), 'skeleton': (12, 238), 'skeleton+zombie': (12, 238), 'worm+goblin': (72, 238)}
 
     def generate_location(self, x, y, map_tuple):
         if x == 0 and y == 0:

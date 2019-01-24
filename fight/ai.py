@@ -21,7 +21,6 @@ def get_lowest_energy(team):
         return None
 
 
-
 def get_largest_opponent_team(actor, game):
     i = 0
     for team in game.lobby:
@@ -79,6 +78,10 @@ class Ai:
             info.append(str(target))
         self.add_action(SpecialWeaponAction, chance,
                         info=info)
+
+    def action_weapon_option(self, chance, option):
+        info = ['fgt', str(self.fight), str(self.unit), 'wpspecial', option]
+        self.add_action(SpecialWeaponOption, chance, info=info)
 
     def make_action(self, action_class, **kwargs):
         action_class(self.unit, self.fight, **kwargs).act()
@@ -182,6 +185,7 @@ class LichAi(Ai):
     def __init__(self, fight):
         Ai.__init__(self, fight)
         self.skeleton_summoned = 0
+        self.unit.chain_turn = 0
 
     def find_target(self):
         if self.unit.weapon.targets():
@@ -197,7 +201,7 @@ class LichAi(Ai):
         self.add_action(self.unit.blood_touch_action, self.unit.energy if self.unit.target is not None else 0)
         if self.unit.target is not None:
             self.add_action(self.unit.chain_action, self.unit.energy*4 if len(self.unit.targets()) > 1
-                                                                          and not self.unit.chains else 0)
+                                                                          and not self.unit.chains and self.unit.fight.turn - self.unit.chain_turn > 4 else 0)
         if self.skeleton_summoned < 1 and self.unit.wounds < 30:
             self.add_action(self.unit.summon_skeleton_action, 10)
             self.skeleton_summoned += 1
@@ -228,7 +232,8 @@ class GoblinAi(Ai):
         self.weapon_ai_dict = {'default': self.default_weapon_actions,
                                'fist': self.snatch_weapon_action,
                                'bow': self.bow_weapon_actions,
-                               'crossbow': self.crossbow_weapon_actions}
+                               'crossbow': self.crossbow_weapon_actions,
+                               'harpoon': self.harpoon_weapon_actions}
 
     def find_target(self):
         if self.unit.weapon.targets():
@@ -248,14 +253,18 @@ class GoblinAi(Ai):
         self.move_forward(1 if not self.unit.weapon.targets() else 0)
         self.attack(self.unit.energy if self.unit.target is not None else 0)
         self.reload(5 - self.unit.energy if self.unit.energy < 3 else 0)
-        if self.unit.target is not None and 'natural' not in self.unit.target.weapon.types:
+        if self.unit.target is not None and 'natural' not in self.unit.target.weapon.types \
+                and not self.unit.weapon_to_member and not self.unit.lost_weapon:
             self.action_ability('weapon-snatcher',
-                                (2 - self.unit.target.energy if self.unit.target.energy < 3 else 0)*5, target=self.unit.target)
+                                (2 - self.unit.target.energy if self.unit.target.energy < 3 else 0)*5,
+                                target=self.unit.target)
+        elif self.unit.lost_weapon:
+            self.add_action(PickUpWeapon, 5 - self.unit.energy if self.unit.energy < 3 else 0)
 
     def default_weapon_actions(self):
         self.clear_actions()
         self.find_target()
-        self.move_forward(1 if not self.unit.weapon.targets() else 0)
+        self.move_forward(3 if not self.unit.weapon.targets() else 0)
         self.attack(self.unit.energy if self.unit.target is not None else 0)
         self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
 
@@ -267,6 +276,16 @@ class GoblinAi(Ai):
         self.attack(self.unit.energy if self.unit.target is not None else 0)
         if self.unit.weapon.special_available(self.unit.target):
             self.action_weapon(self.unit.energy + 1 if self.unit.energy > 0 else 0)
+
+    def harpoon_weapon_actions(self):
+        self.clear_actions()
+        self.find_target()
+        self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
+        self.move_forward(2 if not self.unit.weapon.targets() else 0)
+        self.attack(self.unit.energy if self.unit.target is not None else 0)
+        if self.unit.weapon.special_available():
+            self.action_weapon_option(self.unit.energy if self.unit.energy > 0 else 0,
+                                      str(random.choice(self.unit.targets())))
 
     def crossbow_weapon_actions(self):
         self.clear_actions()

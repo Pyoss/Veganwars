@@ -23,7 +23,7 @@ class Armor(standart_actions.GameObject):
         standart_actions.GameObject.__init__(self, unit)
         self.armor = self.max_armor if not damage_left else damage_left
         self.improved = 0
-        self.max_armor += self.improved
+        self.armor += self.improved
         self.rating += self.improved
 
     def try_placement(self, unit_dict):
@@ -94,26 +94,26 @@ class Shield(Armor):
 
     def activate(self, action):
         unit = action.unit
-        if not self.max_armor:
+        if not self.armor:
             return False
         if unit.dmg_received > 0:
-            if unit.dmg_received > self.max_armor:
-                blocked_dmg = self.max_armor
-                unit.dmg_received -= self.max_armor
-                self.max_armor = 0
+            if unit.dmg_received > self.armor:
+                blocked_dmg = self.armor
+                unit.dmg_received -= self.armor
+                self.armor = 0
             else:
                 blocked_dmg = unit.dmg_received
-                self.max_armor -= unit.dmg_received
+                self.armor -= unit.dmg_received
                 unit.dmg_received = 0
             self.string('use', format_dict={'actor': unit.name, 'dmg': blocked_dmg})
 
-            if self.max_armor <= 0:
+            if self.armor <= 0:
                 self.destroy()
         else:
             self.string('use_fail', format_dict={'actor': unit.name})
 
     def available(self):
-        if self.max_armor > 0:
+        if self.armor > 0:
             return True
         return False
 

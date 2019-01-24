@@ -18,6 +18,7 @@ class Status(standart_actions.GameObject):
         self.kwargs = kwargs
         if self.name not in unit.statuses:
             unit.statuses[self.name] = self
+            print('Инициирован статус {} для {}...'.format(self.name, unit.name))
             if acting:
                 self.act()
         else:
@@ -67,7 +68,6 @@ class CustomPassive(Status):
 
     def __init__(self, unit, types=None, delay=1, **kwargs):
         self.name = 'custom_' + str(id(self))
-        print('Инициирован {}...'.format(self.name))
         Status.__init__(self, unit, acting=True,  **kwargs)
         self.delay = delay
         self.types = [] if types is None else types

@@ -2,15 +2,16 @@
 # -*- coding: utf-8 -*-
 import sqlalchemy
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
-from sqlalchemy.orm import mapper, sessionmaker, relationship
+from sqlalchemy.orm import mapper, sessionmaker, relationship, scoped_session
 import json
 import engine
+import threading
 
 # Создание объекта соединения с нашей базой данных
 engn = sqlalchemy.create_engine('sqlite:///chat_data.db', echo=True)
 
-Session = sessionmaker()
-Session.configure(bind=engn)
+session_factory = sessionmaker(bind=engn)
+Session = scoped_session(session_factory)
 session = Session()
 
 # Создание таблицы чатов
@@ -179,6 +180,7 @@ class Pyossession:
             pass
 
     def get_chat(self, chat_id):
+        print('Get_chat from thread number {}'.format(threading.current_thread()))
         chat = session.query(self.chat_class).filter_by(chat_id=chat_id).one()
         chat.pyosession = self
         if chat:

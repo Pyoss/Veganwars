@@ -137,28 +137,25 @@ class MobLocation(OpenLocation):
         self.mobs = map_engine.MobPack(*mobs, complexity=self.complexity)
         self.loot = engine.Container()
         if self.mobs is not None:
-            main_mob = max(mobs, key=lambda mob: units.units_dict[mob].danger)
-            self.emote = units.units_dict[main_mob].emote
+            main_mob = units.units_dict[max(mobs, key=lambda mob: units.units_dict[mob].danger)]
+            self.emote = main_mob.emote
+            self.greet_msg = main_mob.greet_msg
+            self.image = main_mob.image
 
     def on_enter(self):
         if not self.visited and self.dungeon.map.entrance != self:
             for member in self.dungeon.party.members:
                 member.occupied = True
             self.dungeon.delete_map()
-
-            class DungFight:
-                def __init__(dung):
-                    results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mobs.join_fight())
-                    self.process_results(results)
-            thread = threading.Thread(target=DungFight)
+            thread = threading.Thread(target=self.location_fight)
             thread.start()
         else:
             self.dungeon.update_map()
 
     def process_results(self, results):
         if not any(unit_dict['name'] == self.dungeon.party.leader.unit_dict['name'] for unit_dict in results['winners']):
-                bot_methods.send_message(self.dungeon.party.id, 'Вы проиграли!')
-                self.dungeon.end_dungeon(defeat=True)
+                keyboard = keyboards.form_keyboard(keyboards.DungeonButton('Покинуть карту', self, 'menu', 'defeat', named=True))
+                self.dungeon.party.send_message('Вы проиграли!', reply_markup=keyboard)
         else:
             for member in self.dungeon.party.members:
                 member.occupied = False
@@ -166,6 +163,7 @@ class MobLocation(OpenLocation):
                                     if unit_dict['name'] == member.unit_dict['name']][0]
                 member.inventory.update()
             loot = results['loot'] + self.loot
+            print('Раздача добычи:{}'.format(loot))
             self.dungeon.party.distribute_loot(loot)
             self.dungeon.update_map()
 
@@ -181,7 +179,6 @@ class LoseLoot(OpenLocation):
             if victims:
                 victim = random.choice(victims)
                 item = random.choice(victim.inventory.items())
-                print(item)
                 victim.inventory.remove(item)
                 self.dungeon.party.send_message(victim.name + ' потерял ' + str(standart_actions.get_name(item[0]['name'], 'rus')))
             else:

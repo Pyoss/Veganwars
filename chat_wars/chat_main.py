@@ -11,6 +11,7 @@ import engine
 import dynamic_dicts
 import threading
 import time
+import asyncio
 
 
 class Chat(sql_alchemy.SqlChat):
@@ -174,7 +175,7 @@ class User(sql_alchemy.SqlUser):
 
 
 class Lobby:
-    def __init__(self, chat_id):
+    def __init__(self, chat_id, skip_armory=False):
         self.id = str(engine.rand_id())
         self.chat_id = chat_id
         self.message_id = None
@@ -183,9 +184,10 @@ class Lobby:
         self.text = 'FILL THE TEXT'
         self.lang = 'rus'
         self.langs = [self.lang]
-        self.start_checker = StartChecker(self)
         self.started = False
         dynamic_dicts.lobby_list[self.id] = self
+        self.skip_armory = skip_armory
+        self.start_checker = StartChecker(self)
 
     def create_lobby(self):
         message = localization.GameString(self)
@@ -214,17 +216,20 @@ class Lobby:
     def start(self):
         if self.started:
             return None
-        self.started = True
         self.update_lobby(keyboard=False)
+        self.start_checker.start()
         for team in self.teams:
             for chat_id in team:
-                user = pyossession.get_user(chat_id)
-                user.send_weapon_choice(self.id)
-        self.start_checker.start()
+                self.next_step(user_id=chat_id, message_id=None)
 
     def next_step(self, user_id, message_id=None):
+        print(self[user_id])
 
-        if 'armor' in self[user_id]['equipment_choice']:
+        if 'weapon' in self[user_id]['equipment_choice']:
+            user = pyossession.get_user(user_id=user_id)
+            user.send_weapon_choice(self.id, message_id=message_id)
+
+        elif 'armor' in self[user_id]['equipment_choice']:
             user = pyossession.get_user(user_id=user_id)
             user.send_armor_choice(self.id, message_id=message_id)
 
@@ -233,7 +238,6 @@ class Lobby:
             user.send_item_choice(self.id, message_id=message_id)
 
         else:
-            bot_methods.delete_message(chat_id=user_id, message_id=message_id)
             self.run()
 
     def run(self):
@@ -273,7 +277,7 @@ class Lobby:
                             'weapon',
                             'armor',
                             'items'
-                        ],
+                        ] if not self.skip_armory else [],
                     'ready': False
                 }
             if not self.teams[0]:
@@ -304,9 +308,27 @@ class Lobby:
         del dynamic_dicts.lobby_list[self.id]
 
 
+class StartChecker:
+    def __init__(self, lobby):
+        self.lobby = lobby
+
+    def start(self):
+        thread = threading.Thread(target=self.check)
+        thread.daemon = True
+        thread.start()
+
+    def check(self):
+        while not self.lobby.team_ready():
+                time.sleep(2)
+        self.start_fight()
+
+    def start_fight(self):
+        self.lobby.run()
+
+
 class Dungeon(Lobby):
     def __init__(self, chat_id):
-        Lobby.__init__(self, chat_id)
+        Lobby.__init__(self, chat_id, skip_armory=False)
         self.team = self.teams[0]
         self.map = None
         self.party = None
@@ -324,7 +346,7 @@ class Dungeon(Lobby):
                             'weapon',
                             'armor',
                             'items'
-                        ],
+                        ] if not self.skip_armory else [],
                     'ready': False
                 }
             self.team[user_id] =  unit_data
@@ -345,27 +367,34 @@ class Dungeon(Lobby):
         self.add_party(player_list=self.team)
         for member in self.party.members:
             dynamic_dicts.dungeons[member.chat_id] = self
-
         bot_methods.send_message(self.chat_id, localization.LangTuple('utils', 'fight_start')
                                  .translate(self.lang))
         del dynamic_dicts.lobby_list[self.id]
         self.map.start()
 
     def end_dungeon(self, defeat=False, boss_beaten=False):
-        Lobby.end(self)
         farmed_resources = 0
         for member in self.party.members:
             for item in member.inventory:
-                print(item)
                 item_obj = standart_actions.get_class(item[0]['name'])
                 if 'resource' in item_obj.core_types:
                     farmed_resources += item_obj.resources*member.inventory[item[1]][1]
-                print('Ресурсы -' + str(farmed_resources))
         if boss_beaten:
             farmed_resources *= 2
-        if not defeat:
-            return farmed_resources
-        return 0
+        if defeat:
+            farmed_resources = 0
+        print('Поход группы {} окончен. Количество заработанных ресурсов - {}. Выгрузка результата в бд...'.format(self.party.leader.name, farmed_resources))
+        self.delete_map()
+        del dynamic_dicts.dungeons[self.id]
+        for member in self.party.members:
+            del dynamic_dicts.dungeons[member.chat_id]
+        bot_methods.send_message(self.chat_id,
+                                 'Поход группы {} окончен. Количество заработанных ресурсов - {}.'.format(self.party.leader.name, farmed_resources))
+        chat = pyossession.get_chat(self.chat_id)
+        chat.add_resources(farmed_resources)
+
+    def __del__(self):
+        print('Удаление объекта данжа {}...'.format(self.id))
 
     def create_dungeon_map(self, map_type):
         self.map = map_type.create_map()
@@ -410,24 +439,6 @@ class FFA(Lobby):
             args.append({chat_id: team[chat_id]['dict'] for chat_id in team})
         fight_main.thread_fight(None, *args, chat_id=self.chat_id)
         self.end()
-
-
-class StartChecker:
-    def __init__(self, lobby):
-        self.lobby = lobby
-
-    def start(self):
-        thread = threading.Thread(target=self.check)
-        thread.daemon = True
-        thread.start()
-
-    def check(self):
-        while not self.lobby.team_ready():
-                time.sleep(2)
-        self.start_fight()
-
-    def start_fight(self):
-        self.lobby.run()
 
 
 class ChatWar:

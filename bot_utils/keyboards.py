@@ -103,14 +103,30 @@ class MoveForward(FightButton):
         FightButton.__init__(self, 'move', unit, 'move')
 
     def available(self):
-        if self.unit.melee_targets or not self.unit.weapon.melee:
+        if self.unit.melee_targets or not self.unit.weapon.melee or self.unit.weapon.range_option:
             return False
         return True
 
     def add_available(self):
-        if self.unit.melee_targets == self.unit.targets():
+        if self.unit.melee_targets == self.unit.targets() or self.available():
             return False
         return True
+
+
+class PickUpButton(FightButton):
+    def __init__(self, unit):
+        self.unit = unit
+        FightButton.__init__(self, 'pick-up', unit, 'pick-up')
+
+    def available(self):
+        if self.unit.lost_weapon:
+            return True
+        return False
+
+    def add_available(self):
+        if self.unit.lost_weapon:
+            return True
+        return False
 
 
 class MoveBack(FightButton):

@@ -165,15 +165,11 @@ class Fight:
         return unit
 
     def add_ai(self, unit, name, unit_dict=None, **kwargs):
-        print(kwargs)
         if isinstance(unit, tuple):
             unit = unit[0]
-        print(unit)
-        print(unit.control_class)
         controller = unit.control_class(self)
         unit = unit(name, controller=controller, fight=self, unit_dict=unit_dict, **kwargs)
         if unit.name is None:
-            print(unit.name)
             unit.form_ai_name()
             unit.named = False
         if unit.weapon is None:
@@ -190,7 +186,6 @@ class Fight:
 
     def form_teams(self, team_dicts):
         # [team={chat_id:(name, unit_dict)} or team={(ai_class.name, id):(name/None, unit_dict)}]
-        print(team_dicts)
         self.teams = [Team(*[self.add_unit(key, value['name'],
                                            unit_dict=value) for key, value in team_dict.items()])
                       for team_dict in team_dicts]
@@ -268,8 +263,8 @@ class Fight:
     def wait_action(self):
         x = 0
         while not all(unit.done for unit in self.active_actors()) and x < config.turn_time:
-            time.sleep(1)
-            x += 1
+            time.sleep(0.1)
+            x += 0.1
         for actor in [unit for unit in self.active_actors() if not unit.done]:
             actor.active = False
         for actor in [unit for unit in self.active_actors() if not unit.done]:

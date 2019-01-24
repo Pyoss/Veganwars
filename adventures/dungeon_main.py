@@ -98,11 +98,12 @@ class Party:
     def occupied(self):
         if any([member.occupied for member in self.members]):
             for member in self.members:
-                print(member.name + ':' + str(member.occupied))
+                print('Занятость {}: {}'.format(member.name, member.occupied))
             return True
         return False
 
     def distribute_loot(self, loot_container):
+        print('Инициализирована раздача добычи:{}'.format(loot_container.base_dict))
         loot_receivers = list(self.members)
         random.shuffle(loot_receivers)
         if not loot_container.empty():
@@ -173,14 +174,12 @@ class Member:
     def menu_keyboard(self):
         buttons = list()
         buttons.append(keyboards.DungeonButton('Инвентарь', self, 'menu', 'inventory', named=True))
-        print(buttons[-1].callback_data)
         buttons.append(keyboards.DungeonButton('На карту', self, 'menu', 'map', named=True))
-        print(buttons[-1].callback_data)
-        buttons.append(keyboards.DungeonButton('Покинуть данж', self, 'menu', 'leave', named=True))
-        print(buttons[-1].callback_data)
+        buttons.append(keyboards.DungeonButton('Покинуть карту', self, 'menu', 'leave', named=True))
+        if len(self.dungeon.party.members) > 1:
+            buttons.append(keyboards.DungeonButton('Обмен', self, 'menu', 'give', named=True))
         for button in self.dungeon.party.current_location.buttons(self):
             buttons.append(keyboards.DungeonButton(button['name'], self, 'location', button['act'], named=True))
-            print(buttons[-1].callback_data)
         keyboard = form_keyboard(*buttons)
         return keyboard
 
@@ -232,13 +231,15 @@ class Member:
     def use_item(self, item_id, call):
         item = self.inventory[item_id]
         item = standart_actions.object_dict[item[0]['name']](self, obj_dict=item[0])
-        item.map_act(call)
+        item.map_act(call, item_id)
 
     def menu_handler(self, call):
         call_data = call.data.split('_')
         action = call_data[3]
         if action == 'inventory':
             self.inventory.inventory_menu()
+        elif action == 'give':
+            self.inventory.inventory_menu(give=True)
         elif action == 'main':
             self.member_menu()
         elif action == 'map':
@@ -246,9 +247,34 @@ class Member:
         elif action == 'leave':
             if self.chat_id == self.dungeon.party.leader.chat_id:
                 self.dungeon.end_dungeon()
+        elif action == 'defeat':
+            if self.chat_id == self.dungeon.party.leader.chat_id:
+                self.dungeon.end_dungeon(defeat=True)
 
     def team_dict_item(self):
         return self.chat_id, self.unit_dict
+
+    def get_party_members_to_give(self, item_id, item_name):
+        item_name = self.inventory.get_string(item_id, self.lang)
+        text = 'Выберите, кому вы отдатите {}'.format(item_name)
+        self.edit_message(text, reply_markup=self.get_buttons_members_to_give(item_id))
+
+    def get_buttons_members_to_give(self, item_id):
+        buttons = []
+        members = self.dungeon.party.member_dict
+        for key in members:
+            if key != self.chat_id:
+                call_data = item_id
+                buttons.append(keyboards.DungeonButton(members[key].name,
+                                                       self,
+                                                       'item',
+                                                       'give',
+                                                       str(call_data),
+                                                       str(key),
+                                                       named=True))
+        buttons.append(keyboards.DungeonButton('Закрыть', self, 'menu', 'main', named=True))
+        keyboard = form_keyboard(*buttons)
+        return keyboard
 
     def __getitem__(self, item):
         return self.unit_dict[item]
@@ -275,6 +301,18 @@ class Inventory(engine.Container):
             item_id = call_data[4]
             item_name = call_data[5]
             self.get_item_menu(item_id, item_name)
+        elif action == 'givelist':
+            item_id = call_data[4]
+            item_name = call_data[5]
+            self.member.get_party_members_to_give(item_id, item_name)
+        elif action == 'give':
+            item_id = call_data[4]
+            member_id = int(call_data[5])
+            member = self.member.dungeon.party.member_dict[member_id]
+            item = self[item_id]
+            self.remove(item[0])
+            member.inventory.put(item[0])
+            self.update_menu()
         elif action == 'menu':
             self.update_menu()
         elif action == 'throw':
@@ -316,13 +354,14 @@ class Inventory(engine.Container):
         items_list = [item_dict for item_dict in self.member['inventory']]
         return items_list
 
-    def items(self):
+    def items(self, without_equipped=False):
         items_list = []
-        if self.member['weapon'] is not None:
-            if 'natural' not in standart_actions.object_dict[self.member['weapon']['name']].types:
-                items_list.append((self.member['weapon'], 'weapon'))
-        for armor in self.member['armor']:
-            items_list.append((armor, 'armor'))
+        if not without_equipped:
+            if self.member['weapon'] is not None:
+                if 'natural' not in standart_actions.object_dict[self.member['weapon']['name']].types:
+                    items_list.append((self.member['weapon'], 'weapon'))
+            for armor in self.member['armor']:
+                items_list.append((armor, 'armor'))
         items_list = [*items_list, *[(self.member['inventory'][key][0], key) for key in self.member['inventory'].keys()]]
         return items_list
 
@@ -361,9 +400,9 @@ class Inventory(engine.Container):
         for item in self:
             item_name = self.get_item_name(item, self.member.lang)
             call_data = item[1]
-            if item[0] == self.member['weapon']:
+            if item[1] == 'weapon':
                 item_name = emote_dict['weapon_em'] + item_name
-            elif item[0] in self.member['armor']:
+            elif item[1] == 'armor':
                 item_name = emote_dict['shield_em'] + item_name
             else:
                 item_name = self.get_string(call_data, self.member.lang)
@@ -377,10 +416,25 @@ class Inventory(engine.Container):
         buttons.append(keyboards.DungeonButton('Закрыть', self.member, 'menu', 'main', named=True))
         return buttons
 
-    def inventory_menu(self):
-        buttons = self.inventory_buttons()
+    def give_buttons(self):
+        buttons = []
+        for item in self.items(without_equipped=True):
+            call_data = item[1]
+            item_name = self.get_string(call_data, self.member.lang)
+            buttons.append(keyboards.DungeonButton(item_name,
+                                                   self.member,
+                                                   'item',
+                                                   'givelist',
+                                                   str(call_data),
+                                                   item[0]['name'],
+                                                   named=item_name))
+        buttons.append(keyboards.DungeonButton('Закрыть', self.member, 'menu', 'main', named=True))
+        return buttons
+
+    def inventory_menu(self, give=False):
+        buttons = self.inventory_buttons() if not give else self.give_buttons()
         keyboard = form_keyboard(*buttons)
-        self.member.edit_message(text='Инвентарь', reply_markup=keyboard)
+        self.member.edit_message(text='Инвентарь' if not give else 'Выберите предмет для передачи.', reply_markup=keyboard)
 
     def update_menu(self):
         buttons = self.inventory_buttons()
