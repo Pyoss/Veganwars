@@ -107,6 +107,28 @@ class SoulEviction(Spell):
         target.receive_damage(dmg)
         self.string(text)
         self.finish()
+        
+        
+class FlyingSpark(Spell):
+    name = 'flying_spark'
+    sigils = (emoji_utils.emote_dict['strong_em'], emoji_utils.emote_dict['wind_em'], emoji_utils.emote_dict['spark_em'])
+    turn_numbers = 3
+    targetable = True
+
+    def first_stage(self):
+        standart_actions.AddString('💨|'+self.unit.name+' концентрирует силы.')
+
+    def second_stage(self):
+        standart_actions.AddString('💨|'+self.unit.name+' взмывает в воздух и становится неуязвим для ближнего оружия!')
+        Flying(self,2)
+        
+    def third_stage(self):
+        target = self.target
+        dmg=3
+        text='👁|'+self.unit.name+' выпускает разряд электричества в '+target.name+'! Тот получает '+str(dmg)+' урона.\n' 
+        target.receive_damage(dmg)
+        self.string(text)
+        self.finish()
 
 
 
