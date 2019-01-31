@@ -209,7 +209,7 @@ class Lobby:
     def keyboard(self):
         buttons = [types.InlineKeyboardButton(url='https://telegram.me/vwarsbot?start=join_{}'.format(self.id),
                                               text='Присоединиться'),
-                   keyboards.Button('Начать атаку', '_'.join(['lobby', str(self.id), 'startlobby']))]
+                   keyboards.Button('Начать бой', '_'.join(['lobby', str(self.id), 'startlobby']))]
         keyboard = keyboards.form_keyboard(*buttons, row_width=2)
         return keyboard
 
@@ -495,12 +495,12 @@ class LobbyHandler:
             user_id = call.from_user.id
             weapon_name = call_data[-1]
             unit_dict = lobby[user_id]['dict']
-            chat = get_chat(lobby.chat_id)
+            user = get_user(call.from_user.id)
+            chat = user.chat
             if weapon_name != 'None':
                 free_armory = chat.get_free_armory()
                 if weapon_name not in free_armory:
                     bot_methods.answer_callback_query(call, 'Этого предмета уже нет на складе')
-                    user = get_user(call.from_user.id)
                     user.send_weapon_choice(call_data[1], message_id=call.message.message_id)
                     return False
                 else:
@@ -512,7 +512,8 @@ class LobbyHandler:
             user_id = call.from_user.id
             armor_action = call_data[-1]
             unit_dict = lobby[user_id]['dict']
-            chat = get_chat(lobby.chat_id)
+            user = get_user(call.from_user.id)
+            chat = user.chat
             if armor_action == 'reset':
                 for armor in unit_dict['armor']:
                     chat.delete_used_item(armor['name'])
@@ -528,7 +529,6 @@ class LobbyHandler:
                 free_armory = chat.get_free_armory()
                 if armor_action not in free_armory:
                     bot_methods.answer_callback_query(call, 'Этого предмета уже нет на складе')
-                    user = get_user(call.from_user.id)
                     user.send_armor_choice(call_data[1], message_id=call.message.message_id)
                     return False
                 else:
@@ -545,7 +545,8 @@ class LobbyHandler:
             user_id = call.from_user.id
             item_name = call_data[-1]
             unit_dict = lobby[user_id]['dict']
-            chat = get_chat(lobby.chat_id)
+            user = get_user(call.from_user.id)
+            chat = user.chat
             if item_name == 'reset':
                 for item in unit_dict['inventory'].values():
                     chat.delete_used_item(item[0]['name'], value=item[1])
@@ -562,7 +563,6 @@ class LobbyHandler:
                 free_armory = chat.get_free_armory()
                 if item_name not in free_armory:
                     bot_methods.answer_callback_query(call, 'Этого предмета уже нет на складе')
-                    user = get_user(call.from_user.id)
                     user.send_item_choice(call_data[1], message_id=call.message.message_id)
                     return False
                 else:

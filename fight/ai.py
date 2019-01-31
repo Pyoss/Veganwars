@@ -91,7 +91,8 @@ class Ai:
 
     def get_action(self, edit=False):
         self.form_actions()
-        print(self.unit.name.translate(self.fight.lang) + ':')
+        print('Выбор действий моба ' + self.unit.name.translate(self.fight.lang) + ':')
+        print('Энергия: {}'.format(self.unit.energy))
         for a in self.action_dict:
             print(str(a.name) + '     ' + str(self.action_dict[a]))
         chance_sum = sum([value for key, value in self.action_dict.items()])
@@ -124,6 +125,8 @@ class StandartMeleeAi(Ai):
     def find_target(self):
         if self.unit.weapon.targets():
             self.unit.target = get_lowest_energy(self.unit.weapon.targets())
+            if engine.roll_chance(30):
+                self.unit.target = random.choice(self.unit.weapon.targets())
         else:
             self.unit.target = None
 
@@ -223,29 +226,25 @@ class ZombieAi(Ai):
         self.attack(self.unit.energy if self.unit.target is not None else 0)
 
 
-class GoblinAi(Ai):
+class GoblinAi(StandartMeleeAi):
     ai_name = 'goblin'
     snatch_targets = []
 
     def __init__(self, fight):
         Ai.__init__(self, fight)
-        self.weapon_ai_dict = {'default': self.default_weapon_actions,
-                               'fist': self.snatch_weapon_action,
-                               'bow': self.bow_weapon_actions,
-                               'crossbow': self.crossbow_weapon_actions,
-                               'harpoon': self.harpoon_weapon_actions}
-
-    def find_target(self):
-        if self.unit.weapon.targets():
-            self.unit.target = get_lowest_energy(self.unit.weapon.targets())
-        else:
-            self.unit.target = None
+        self.action_pattern_dict = {'default': self.default_weapon_actions,
+                                    'fist': self.snatch_weapon_action,
+                                    'bow': self.bow_weapon_actions,
+                                    'crossbow': self.crossbow_weapon_actions,
+                                    'harpoon': self.harpoon_weapon_actions}
 
     def form_actions(self):
-        if self.unit.weapon.name in self.weapon_ai_dict:
-            self.weapon_ai_dict[self.unit.weapon.name]()
+        self.clear_actions()
+        self.find_target()
+        if self.unit.weapon.name in self.action_pattern_dict:
+            self.action_pattern_dict[self.unit.weapon.name]()
         else:
-            self.weapon_ai_dict['default']()
+            self.action_pattern_dict['default']()
 
     def snatch_weapon_action(self):
         self.clear_actions()
@@ -298,6 +297,48 @@ class GoblinAi(Ai):
             self.action_weapon(self.unit.energy if self.unit.target is not None else 0)
         else:
             self.attack(self.unit.energy if self.unit.target is not None else 0)
+
+
+class RatAi(StandartMeleeAi):
+    ai_name = 'rat'
+
+    def __init__(self, fight):
+        Ai.__init__(self, fight)
+        self.action_pattern_dict = {'default': self.default_weapon_action,
+                                    'sledgehammer': self.sledgehammer_weapon_action,
+                                    'dodge': lambda: self.action_ability('dodge', self.unit.max_energy - self.unit.energy
+                                                                         if self.state == 'victim' else 0)}
+        self.state = None
+
+    def get_fight_state(self):
+        self.state = None
+        if sum([unit.energy for unit in self.unit.team.units]) \
+            - max([sum([unit.energy for unit in team.units])/len(team.units) for team in self.unit.fight.teams]) < -1:
+            self.state = 'victim'
+
+    def form_actions(self):
+        self.clear_actions()
+        self.find_target()
+        self.get_fight_state()
+        if self.unit.weapon.name in self.action_pattern_dict:
+            self.action_pattern_dict[self.unit.weapon.name]()
+        else:
+            self.action_pattern_dict['default']()
+        for item in [*self.unit.items, *self.unit.armor, *self.unit.abilities]:
+            if item.name in self.action_pattern_dict:
+                self.action_pattern_dict[item.name]()
+
+    def default_weapon_action(self):
+        StandartMeleeAi.form_actions(self)
+
+    def sledgehammer_weapon_action(self):
+        self.move_forward(1 if not self.unit.weapon.targets() else 0)
+        self.attack(self.unit.energy if self.unit.target is not None else 0)
+        self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
+        if self.unit.weapon.special_available(target=self.unit.target):
+            self.action_weapon_option(self.unit.energy - 1 + self.unit.target.max_energy - self.unit.target.energy
+                                      if self.unit.energy > 0 and self.unit.target.energy > 1 else 0,
+                                      str(self.unit.target))
 
 
 # Монстры Артема

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from fight import standart_actions
 from locales import emoji_utils
+import engine
 import random
 # 1-20 До эффектов, 21-40 - эффекты, 41-60 результаты
 # 31-40 - неблокирующийся урон
@@ -35,6 +36,7 @@ class Status(standart_actions.GameObject):
         pass
 
     def finish(self):
+        print('Удаляется статус {} для {}...'.format(self.name, self.unit.name))
         del self.unit.statuses[self.name]
 
     def menu_string(self):
@@ -92,6 +94,36 @@ class PermaStatus(CustomStatus):
         self.func(*self.args)
         if self.delay <= 0:
             self.finish()
+
+
+class OnHitStatus(Status):
+    core_types = ['status', 'on_hit']
+    db_string = 'statuses'
+    order = 60
+
+    def __init__(self, unit, delay):
+        self.delay = delay
+        Status.__init__(self, unit)
+
+    def activate(self, action=None):
+        self.delay -= 1
+        if self.delay <= 0:
+            self.finish()
+
+
+class Running(OnHitStatus):
+    name = 'running'
+
+    def act(self, action=None):
+        if action is not None:
+            if action.weapon.melee and action.dmg_done > 0:
+                action.dmg_done += 1
+                action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
+        else:
+            self.unit.fight.edit_queue(self)
+
+    def menu_string(self):
+        return emoji_utils.emote_dict['running_em']
 
 
 class Buff:
@@ -161,6 +193,23 @@ class Poison(Status):
     def menu_string(self):
         return emoji_utils.emote_dict['poisoned_em'] + str(self.strength)
 
+
+class Casting(Status):
+    name = 'casting'
+    order = 60
+
+    def __init__(self, unit, spell_id):
+        Status.__init__(self, unit)
+        self.spell_id = spell_id
+        self.unit.disabled.append(self.name)
+
+    def activate(self, action=None):
+        if len(self.unit.disabled) > 1:
+            self.finish()
+
+    def finish(self):
+        self.unit.disabled.remove(self.name)
+        Status.finish(self)
 
 class Burning(Status):
     name = 'burning'
@@ -248,7 +297,7 @@ class Crippled(Status):
     def reapply(self, parent):
         if not hasattr(parent.unit, 'toughness'):
             parent.unit.change_attribute('wounds', -1)
-        elif parent.max_toughness - parent.unit.toughness < 4 and parent.unit.toughness > 1:
+        elif parent.unit.toughness > 2:
             parent.unit.change_attribute('toughness', -1)
             parent.strength += 1
 

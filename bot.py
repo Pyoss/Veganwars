@@ -19,7 +19,7 @@ WEBHOOK_URL_PATH = "/%s/" % (config.token)
 
 bot = telebot.TeleBot(config.token, threaded=False)
 
-proxy = 'http://5.189.172.203:3128'
+proxy = 'http://178.33.39.70:3128'
 telebot.apihelper.proxy = {
   'http': proxy,
   'https': proxy

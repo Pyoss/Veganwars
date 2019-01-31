@@ -151,8 +151,8 @@ class BaseAttack(Action):
             self.unit.waste_energy(waste)
         # Применение способностей и особых свойств оружия
         self.dmg_done += self.unit.damage if self.dmg_done else 0
-        self.target.receive_hit(self)
         self.unit.on_hit(self)
+        self.target.receive_hit(self)
         self.weapon.on_hit(self)
 
     def on_attack(self):
@@ -350,7 +350,7 @@ class ListAbilities(MenuAction):
         keyboard = keyboards.form_keyboard(*[ability.button() for ability
                                              in self.unit.abilities if ability.available()],
                                            keyboards.MenuButton(self.unit, 'back'))
-        self.unit.edit_message(localization.LangTuple('utils', 'abilities'), reply_markup=keyboard)
+        self.unit.controller.edit_message(localization.LangTuple('utils', 'abilities'), reply_markup=keyboard)
 
 
 class Ability(Action):
@@ -592,28 +592,6 @@ class GameObject:
     def on_cd(self):
         self.ready_turn = self.unit.fight.turn + 1 + self.cd
 
-    def add_to_build(self, info):
-        self.apply_start_option(info)
-        if 'ability' in self.types:
-            self.unit.abilities.append(self)
-        self.unit.statuses['ability_choice'][0] -= 1
-        if self.unit.statuses['ability_choice'][0] > 0:
-            self.unit.send_ability_choice(self.unit, self.unit.statuses['ability_choice'][1], edit=True)
-        elif 'ability_choice' in self.unit.statuses:
-            self.unit.edit_message(localization.LangTuple('build', 'abilities_chosen'))
-            self.unit.done = True
-            del self.unit.statuses['ability_choice']
-
-    def to_build(self, info):
-        if 'optional_start' in self.types:
-            if len(info) < 5:
-                self.ask_start_option()
-            else:
-                self.add_to_build(info)
-        else:
-            self.add_to_build(info)
-            self.build_act()
-
     def ask_start_option(self):
         pass
 
@@ -681,14 +659,14 @@ class TargetObject(GameObject):
 
 
 class SpecialObject(GameObject):
-    def target_keyboard(self):
-        return keyboards.form_keyboard(*self.options_keyboard(),
+    def target_keyboard(self, action=None):
+        return keyboards.form_keyboard(*self.options_keyboard(action=action),
                                        keyboards.MenuButton(self.unit, 'back'))
 
     def options(self):
         return []
 
-    def options_keyboard(self):
+    def options_keyboard(self, action=None):
         return [keyboards.OptionObject(self, name=option[0], option=option[1]) for option in self.options()]
 
     def act(self, action):

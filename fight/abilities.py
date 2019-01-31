@@ -24,6 +24,11 @@ class TargetAbility(standart_actions.TargetObject):
     db_string = 'abilities'
 
 
+class OptionAbility(standart_actions.SpecialObject):
+    core_types = ['ability', 'option']
+    db_string = 'abilities'
+
+
 class StartAbility(Ability):
     core_types = ['ability', 'start']
     active = False
@@ -64,6 +69,75 @@ class ReceiveHit(Ability):
         pass
 
 
+# Способность Уворот: повышает шанс увернуться от атаки. Увеличивает параметр "evasion"
+#  в начале хода и уменьшает в конце
+class Dodge(InstantAbility):
+    name = 'dodge'
+    types = ['dodge']
+    order = 1
+    cd = 3
+
+    def activate(self, action):
+        self.string('use', format_dict={'actor': self.unit.name})
+        statuses.Buff(self.unit, 'evasion', 6, 1)
+
+
+class SpellCaster(OptionAbility):
+    name = 'spellcast'
+    types = ['spell']
+    order = 1
+    sigils = [emoji_utils.emote_dict['current_map_em'], emoji_utils.emote_dict['miss_em'], emoji_utils.emote_dict['energy_em']]
+
+    def act(self, action):
+        if self.check_final(action.info):
+            self.act_options(action)
+            for action_type in action.action_type:
+                self.unit.action.append(action_type)
+            self.on_cd()
+            self.ask_action()
+        else:
+            self.ask_options(action)
+
+    def activate(self, action):
+        spell_list = tuple(action.info[-1].split('-'))
+        from fight import spells
+        if spell_list in spells.spell_dict:
+            spells.spell_dict[spell_list](self.unit).activate(action)
+        else:
+            self.fail()
+
+    def fail(self):
+        self.string('fail', format_dict={'actor':self.unit.name})
+
+
+    @staticmethod
+    def check_final(info):
+        spell_list = info[-1].split('-')
+        if len(spell_list) > 2:
+            return True
+        return False
+
+
+    def options(self):
+        return [(x, x) for x in self.sigils]
+
+    def options_keyboard(self, action=None):
+        if action.info[-1] == 'spellcast':
+            return OptionAbility.options_keyboard(self, action=action)
+        else:
+            current_spells = action.info[-1].split('-')
+            return [keyboards.OptionObject(self, name=option[0], option='-'.join([*current_spells, option[1]])) for option in self.options()]
+
+    def ask_options(self, action=None):
+        self.unit.active = True
+        keyboard = self.target_keyboard(action)
+        current_spells = action.info[-1].split('-')
+        current_spells = ['-'] if current_spells == ['spellcast'] else current_spells
+        self.unit.controller.edit_message(localization.LangTuple(self.table_row, 'options', format_dict={'spells':' '.join(current_spells)}),
+                               reply_markup=keyboard)
+
+
+################################# НИЖЕ НИЧЕГО НЕ ПРОВЕРЕНО #######################################
 # Способность Садист: прибавляет энергию, если у текущей цели отнялись жизни.
 class Sadist(Passive):
     name = 'sadist'
@@ -113,19 +187,6 @@ class Hypnotize(TargetAbility):
 
     def available(self):
         return True if self.actor.energy >= 3 else False
-
-
-# Способность Уворот: повышает шанс увернуться от атаки. Увеличивает параметр "evasion"
-#  в начале хода и уменьшает в конце
-class Dodge(InstantAbility):
-    name = 'dodge'
-    types = ['dodge']
-    order = 1
-    cd = 3
-
-    def activate(self, action):
-        self.string('use', format_dict={'actor': self.unit.name})
-        statuses.Buff(self.unit, 'evasion', 6, 1)
 
 
 # Способность Бицепс: Добавляет 25% вероятность нанести удвоенный урон при стандартной атаке

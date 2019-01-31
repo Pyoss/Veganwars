@@ -183,6 +183,7 @@ class Unit:
             if unit not in self.melee_targets:
                 unit.melee_targets.append(self)
                 self.melee_targets.append(unit)
+        statuses.Running(self, 1)
 
     # ------------------------- Активация способностей -------------------
 
@@ -404,7 +405,7 @@ class StandartCreature(Unit):
         self.inventory = []
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
-        self.energy = self.max_energy
+        self.energy = int(self.max_energy/2 + 1)
 
     def to_dict(self):
         unit_dict = {
@@ -493,19 +494,7 @@ class Human(StandartCreature):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         if unit_dict is None:
-            self.abilities = [abilities.Dodge(self)]
-
-
-class Rat(StandartCreature):
-    unit_name = 'rat'
-
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
-        StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
-        # Максимальные параметры
-        if unit_dict is None:
-            self.abilities = [abilities.Dodge(self), abilities.Muscle(self)]
-
-
+            self.abilities = [abilities.Dodge(self), abilities.SpellCaster(self)]
 
 
 class Necromancer(Human):
@@ -1186,7 +1175,7 @@ class Basilisk(Unit):
         self.inventory = []
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
-        self.energy = self.max_energy
+        self.energy = int(self.max_energy/2 + 1)
 
         self.stun_action = self.create_action('basilisk-stun', self.stun, 'button_1', order=5)
         self.rush_action = self.create_action('basilisk-rush', self.rush, 'button_2', order=10)
@@ -1292,8 +1281,30 @@ class Goblin(StandartCreature):
         self.weapon = random.choice([weapons.Harpoon(self)])
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
-        self.energy = self.max_energy
+        self.energy = int(self.max_energy / 2 + 1)
         self.loot_chances['weapon'] = 100
+
+
+class Rat(StandartCreature):
+    greet_msg = 'текст-крысы'
+    image = 'AgADAgAD4akxG-pMcUpRxwHDSLJLh-tYOQ8ABLh95nCjmWxtkAoCAAEC'
+    control_class = ai.RatAi
+    emote = emote_dict['rat_em']
+    unit_name = 'rat'
+
+    danger = 15
+
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
+        StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
+        # Максимальные параметры
+        self.damage = 2
+        self.toughness = 7
+        self.max_hp = 5
+        self.max_energy = 6
+        if unit_dict is None:
+            self.abilities = [abilities.Dodge(self), abilities.Muscle(self)]
+            self.weapon = weapons.SledgeHammer(self)
+        self.energy = int(self.max_energy / 2 + 1)
 
 
 class Worm(Unit):
@@ -1340,7 +1351,7 @@ class Worm(Unit):
             self.inventory = []
         else:
             self.equip_from_dict(unit_dict)
-        self.energy = self.max_energy
+        self.energy = int(self.max_energy / 2 + 1)
         self.crawl_action = self.create_action('worm-crawl-forward', self.crawl, 'button_1', order=10)
         self.crawl_back_action = self.create_action('worm-crawl-back', self.crawl_back, 'button_2', order=1)
 
@@ -1633,4 +1644,5 @@ units_dict = {Human.unit_name: Human,
               PedoBear.unit_name: PedoBear,
               BirdRukh.unit_name: BirdRukh,
               SperMonster.unit_name: SperMonster,
-              Pasyuk.unit_name: Pasyuk}
+              Pasyuk.unit_name: Pasyuk,
+              Rat.unit_name: Rat}

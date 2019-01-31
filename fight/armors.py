@@ -128,8 +128,9 @@ class Shield(Armor):
         return keyboards.FightButton('name', self.unit, 'armor', self.name, special=self.get_table_row())
 
     def try_placement(self, unit_dict):
-        if not standart_actions.object_dict[unit_dict['weapon']['name']].melee:
-            return False
+        if unit_dict['weapon'] is not None:
+            if not standart_actions.object_dict[unit_dict['weapon']['name']].melee:
+                return False
         return Armor.try_placement(self, unit_dict)
 
 

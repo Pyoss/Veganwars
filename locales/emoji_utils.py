@@ -36,6 +36,7 @@ emote_dict = {
     'crippled_em': u'\U0001F494',
     'confused_em': u'\U0001F915',
     'poisoned_em': '🤢',
+    'running_em': '\U0001f3c3',
 
     # Оружие
     "hammer_em": u'\U0001F528',
@@ -73,6 +74,17 @@ emote_dict = {
     'houndmaster_em': u'\U0001F436',
     'revenge_em': u'\U00002757',
     'chains_em': '\u26d3',
+
+    # Магия
+    "ignite_em": u'\U0001F4AA',
+    "spark_em": u'\U0001F9B5',
+    'ice_em': u'\U00002620',
+    'self_em': u'\U00002620',
+    'strength_em': u'\U00002620',
+    'world_em': u'\U00002620',
+    'earth_em': u'\U00002620',
+    'wind_em': u'\U00002620',
+    'random_em': u'\U00002620',
 
     # Мобы
     "dog_em": u'\U0001F436',

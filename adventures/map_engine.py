@@ -302,7 +302,7 @@ class FirstDungeon(DungeonMap):
     def __init__(self, dungeon, new=True, dungeon_dict=None):
         DungeonMap.__init__(self, 6, dungeon,  2, 2,  new=True, dungeon_dict=None)
         self.low_loot = ['bandages', 'chitin', 'stimulator', 'helmet', 'breastplate', 'bandages', 'knife', 'adrenalin']
-        self.enemy_dict = {'goblin': (7, 238), 'skeleton': (12, 238), 'skeleton+zombie': (12, 238), 'worm+goblin': (72, 238)}
+        self.enemy_dict = {'rat': (15, 238), 'skeleton': (12, 238), 'skeleton+zombie': (7, 238), 'worm+goblin': (7, 238)}
 
     def generate_location(self, x, y, map_tuple):
         if x == 0 and y == 0:
