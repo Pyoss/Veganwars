@@ -92,6 +92,7 @@ class SoulEviction(Spell):
     sigils = (emoji_utils.emote_dict['self_em'], emoji_utils.emote_dict['ignite_em'])
     turn_numbers = 3
     targetable = True
+    order = 20
 
     def first_stage(self):
         standart_actions.AddString(localization.LangTuple('abilities_spellcast',

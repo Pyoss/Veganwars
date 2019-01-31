@@ -88,7 +88,7 @@ class Shield(Armor):
     max_armor = 5
     rating = 5
     coverage = 10
-    order = 20
+    order = 19
     destructable = True
     real = True
 
