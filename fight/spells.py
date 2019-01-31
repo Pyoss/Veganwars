@@ -84,6 +84,29 @@ class StrongSpark(Spell):
         target.receive_damage(3)
         self.string('use', format_dict={'actor':self.unit.name, 'target': target.name})
         self.finish()
+        
+class SoulEviction(Spell):
+    name = 'soul_eviction'
+    sigils = (emoji_utils.emote_dict['self_em'], emoji_utils.emote_dict['ignite_em'])
+    turn_numbers = 3
+    targetable = True
+
+    def first_stage(self):
+        standart_actions.AddString('💨|'+self.unit.name+' концентрирует силы.')
+
+    def second_stage(self):
+        standart_actions.AddString('💨|'+self.unit.name+' читает заклинание.')
+        
+    def third_stage(self):
+        target = self.target
+        dmg=5
+        text='👁|'+self.unit.name+' изгоняет душу '+target.name+'! Тот получает '+str(dmg)+' урона.\n' 
+        if 'undead' in target.types:
+            dmg=8
+            text='👁|'+self.unit.name+' изгоняет душу андеда '+target.name+'! Тот получает '+str(dmg)+' урона.\n' 
+        target.receive_damage(dmg)
+        self.string(text)
+        self.finish()
 
 
 
