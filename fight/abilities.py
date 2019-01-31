@@ -168,6 +168,11 @@ class SpellCaster(OptionAbility):
         self.unit.controller.edit_message(localization.LangTuple(self.table_row, 'options', format_dict={'spells':' '.join(current_spells)}),
                                reply_markup=keyboard)
 
+    def available(self):
+        if self.unit.energy > 0:
+            return True
+        return False
+
 
 ################################# НИЖЕ НИЧЕГО НЕ ПРОВЕРЕНО #######################################
 # Способность Садист: прибавляет энергию, если у текущей цели отнялись жизни.

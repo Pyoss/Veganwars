@@ -31,6 +31,7 @@ emote_dict = {
     "bomb_em": emoji.emojize(':bomb:', use_aliases=True),
     "fire_em": emoji.emojize(':fire:', use_aliases=True),
     "stun_em": emoji.emojize(':cyclone:', use_aliases=True),
+    "flying_em": '\U0001f54a',
     "bleeding_em": u'\U00002763',
     'afk_em': u'\U0001F4F4',
     'crippled_em': u'\U0001F494',

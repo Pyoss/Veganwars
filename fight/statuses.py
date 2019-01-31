@@ -109,9 +109,10 @@ class OnHitStatus(Status):
         self.delay -= 1
         if self.delay <= 0:
             self.finish()
-            
-class RecieveHitStatus(Status):
-    core_types = ['status', 'recieve_hit']
+
+
+class ReceiveHitStatus(Status):
+    core_types = ['status', 'receive_hit']
     db_string = 'statuses'
     order = 60
 
@@ -140,14 +141,13 @@ class Running(OnHitStatus):
         return emoji_utils.emote_dict['running_em']
     
     
-class Flying(RecieveHitStatus):
+class Flying(ReceiveHitStatus):
     name = 'flying'
     
     def act(self, action=None):
         if action is not None:
             if action.weapon.melee and action.dmg_done > 0:
                 action.dmg_done = 0
-                action.to_emotes('💨|'+action.unit.name+' не дотянулся до парящего '+action.target.name+'!\n')
         else:
             self.unit.fight.edit_queue(self)
 

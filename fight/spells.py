@@ -15,6 +15,7 @@ class Spell(standart_actions.GameObject):
 
     def start_casting(self, action, turn_numbers):
         statuses.Casting(self.unit, self.id)
+        self.unit.waste_energy(3)
         if self.targetable:
             self.target = self.unit.fight[action.info[-2]]
         if turn_numbers > 1:
@@ -82,9 +83,10 @@ class StrongSpark(Spell):
     def second_stage(self):
         target = self.target
         target.receive_damage(3)
-        self.string('use', format_dict={'actor':self.unit.name, 'target': target.name})
+        self.string('use', format_dict={'actor': self.unit.name, 'target': target.name})
         self.finish()
-        
+
+
 class SoulEviction(Spell):
     name = 'soul_eviction'
     sigils = (emoji_utils.emote_dict['self_em'], emoji_utils.emote_dict['ignite_em'])
@@ -92,44 +94,55 @@ class SoulEviction(Spell):
     targetable = True
 
     def first_stage(self):
-        standart_actions.AddString('💨|'+self.unit.name+' концентрирует силы.')
+        standart_actions.AddString(localization.LangTuple('abilities_spellcast',
+                                                          'use',
+                                                          format_dict={'actor': self.unit.name}),
+                                   order=5,
+                                   unit=self.unit)
 
     def second_stage(self):
-        standart_actions.AddString('💨|'+self.unit.name+' читает заклинание.')
-        
+        standart_actions.AddString(localization.LangTuple('abilities_spellcast',
+                                                          'use',
+                                                          format_dict={'actor': self.unit.name}),
+                                   order=5,
+                                   unit=self.unit)
+
     def third_stage(self):
         target = self.target
-        dmg=5
-        text='👁|'+self.unit.name+' изгоняет душу '+target.name+'! Тот получает '+str(dmg)+' урона.\n' 
         if 'undead' in target.types:
-            dmg=8
-            text='👁|'+self.unit.name+' изгоняет душу андеда '+target.name+'! Тот получает '+str(dmg)+' урона.\n' 
+            dmg = 8
+            self.string('alternative', format_dict={'actor': self.unit.name, 'target': target.name, 'dmg': dmg})
+        else:
+            dmg = 5
+            self.string('use', format_dict={'actor': self.unit.name, 'target': target.name, 'dmg': dmg})
         target.receive_damage(dmg)
-        self.string(text)
         self.finish()
-        
-        
+
+
 class FlyingSpark(Spell):
     name = 'flying_spark'
-    sigils = (emoji_utils.emote_dict['strong_em'], emoji_utils.emote_dict['wind_em'], emoji_utils.emote_dict['spark_em'])
+    sigils = (
+    emoji_utils.emote_dict['strength_em'], emoji_utils.emote_dict['wind_em'], emoji_utils.emote_dict['spark_em'])
     turn_numbers = 3
     targetable = True
+    order = 2
 
     def first_stage(self):
-        standart_actions.AddString('💨|'+self.unit.name+' концентрирует силы.')
+        standart_actions.AddString(localization.LangTuple('abilities_spellcast',
+                                                          'use',
+                                                          format_dict={'actor': self.unit.name}),
+                                   order=5,
+                                   unit=self.unit)
 
     def second_stage(self):
-        standart_actions.AddString('💨|'+self.unit.name+' взмывает в воздух и становится неуязвим для ближнего оружия!')
-        Flying(self,2)
-        
+        self.string('alternative', format_dict={'actor': self.unit.name})
+        statuses.Flying(self.unit, 1)
+
     def third_stage(self):
         target = self.target
-        dmg=3
-        text='👁|'+self.unit.name+' выпускает разряд электричества в '+target.name+'! Тот получает '+str(dmg)+' урона.\n' 
-        target.receive_damage(dmg)
-        self.string(text)
+        target.receive_damage(3)
+        self.string('use', format_dict={'actor': self.unit.name, 'target': target.name})
         self.finish()
-
 
 
 spell_dict = {value.sigils: value for key, value
