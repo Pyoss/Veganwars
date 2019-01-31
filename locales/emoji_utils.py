@@ -76,15 +76,15 @@ emote_dict = {
     'chains_em': '\u26d3',
 
     # Магия
-    "ignite_em": u'\U0001F4AA',
-    "spark_em": u'\U0001F9B5',
-    'ice_em': u'\U00002620',
-    'self_em': u'\U00002620',
-    'strength_em': u'\U00002620',
-    'world_em': u'\U00002620',
-    'earth_em': u'\U00002620',
-    'wind_em': u'\U00002620',
-    'random_em': u'\U00002620',
+    "ignite_em": u'\U0001f525',
+    "spark_em": u'\u26a1',
+    'ice_em': u'\u2744',
+    'self_em': u'\U0001f64f',
+    'strength_em': u'\U0001f449',
+    'world_em': u'\U0001f590',
+    'earth_em': u'\U0001f311',
+    'wind_em': u'\U0001f32a',
+    'random_em': u'\U0001f3b2',
 
     # Мобы
     "dog_em": u'\U0001F436',

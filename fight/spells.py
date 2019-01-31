@@ -2,13 +2,21 @@ from fight import standart_actions, statuses
 from locales import emoji_utils, localization
 import sys, inspect, random
 
+
 class Spell(standart_actions.GameObject):
     sigils = None
     turn_numbers = 1
+    targetable = False
     db_string = 'spells'
 
-    def start_casting(self, turn_numbers):
+    def __init__(self, unit):
+        standart_actions.GameObject.__init__(self, unit=unit)
+        self.target = None
+
+    def start_casting(self, action, turn_numbers):
         statuses.Casting(self.unit, self.id)
+        if self.targetable:
+            self.target = self.unit.fight[action.info[-2]]
         if turn_numbers > 1:
             statuses.CustomStatus(func=self.second_stage_check, delay=1, order=self.order, unit=self.unit)
         if turn_numbers > 2:
@@ -21,7 +29,7 @@ class Spell(standart_actions.GameObject):
         return False
 
     def activate(self, action):
-        self.start_casting(self.turn_numbers)
+        self.start_casting(action, self.turn_numbers)
         self.first_stage()
 
     def second_stage_check(self):
@@ -47,11 +55,12 @@ class Spell(standart_actions.GameObject):
 
 class Spark(Spell):
     name = 'spark'
-    sigils = (emoji_utils.emote_dict['energy_em'], emoji_utils.emote_dict['energy_em'], emoji_utils.emote_dict['energy_em'])
+    sigils = (emoji_utils.emote_dict['spark_em'],)
     turn_numbers = 1
+    targetable = True
 
     def first_stage(self):
-        target = random.choice(self.unit.targets())
+        target = self.target
         target.receive_damage(1)
         self.string('use', format_dict={'actor':self.unit.name, 'target': target.name})
         self.finish()
@@ -59,8 +68,9 @@ class Spark(Spell):
 
 class StrongSpark(Spell):
     name = 'strong_spark'
-    sigils = (emoji_utils.emote_dict['energy_em'], emoji_utils.emote_dict['energy_em'], emoji_utils.emote_dict['miss_em'])
+    sigils = (emoji_utils.emote_dict['strength_em'], emoji_utils.emote_dict['spark_em'])
     turn_numbers = 2
+    targetable = True
 
     def first_stage(self):
         standart_actions.AddString(localization.LangTuple('abilities_spellcast',
@@ -70,7 +80,7 @@ class StrongSpark(Spell):
                                    unit=self.unit)
 
     def second_stage(self):
-        target = random.choice(self.unit.targets())
+        target = self.target
         target.receive_damage(3)
         self.string('use', format_dict={'actor':self.unit.name, 'target': target.name})
         self.finish()

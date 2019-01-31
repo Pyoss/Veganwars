@@ -659,9 +659,9 @@ class TargetObject(GameObject):
 
 
 class SpecialObject(GameObject):
-    def target_keyboard(self, action=None):
+    def target_keyboard(self, action=None, row_width=2):
         return keyboards.form_keyboard(*self.options_keyboard(action=action),
-                                       keyboards.MenuButton(self.unit, 'back'))
+                                       keyboards.MenuButton(self.unit, 'back'), row_width=row_width)
 
     def options(self):
         return []

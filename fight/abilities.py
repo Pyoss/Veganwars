@@ -86,10 +86,19 @@ class SpellCaster(OptionAbility):
     name = 'spellcast'
     types = ['spell']
     order = 1
-    sigils = [emoji_utils.emote_dict['current_map_em'], emoji_utils.emote_dict['miss_em'], emoji_utils.emote_dict['energy_em']]
+    start_sigils = [emoji_utils.emote_dict['self_em'], emoji_utils.emote_dict['strength_em'], emoji_utils.emote_dict['world_em']]
+    buff_sigils = [emoji_utils.emote_dict['wind_em'], emoji_utils.emote_dict['earth_em'], emoji_utils.emote_dict['random_em']]
+    end_sigils = [emoji_utils.emote_dict['spark_em'], emoji_utils.emote_dict['ice_em'], emoji_utils.emote_dict['ignite_em']]
 
     def act(self, action):
         if self.check_final(action.info):
+            spell_tuple = tuple(action.info[-1].split('-'))
+            from fight import spells
+            if spell_tuple in spells.spell_dict and len(action.info) < 7:
+                if spells.spell_dict[spell_tuple].targetable:
+                    self.ask_target(action.info[-1])
+                    return True
+
             self.act_options(action)
             for action_type in action.action_type:
                 self.unit.action.append(action_type)
@@ -97,6 +106,21 @@ class SpellCaster(OptionAbility):
             self.ask_action()
         else:
             self.ask_options(action)
+
+    def ask_target(self, spell_tuple):
+        self.unit.active = True
+        string = 'Выберите цель.'
+        targets = [*self.unit.targets(), *self.unit.get_allies()]
+        buttons = []
+        for target in targets:
+            buttons.append(keyboards.FightButton((target.name if isinstance(target.name, str)
+                                                                      else target.name.str(self.unit.controller.lang)),
+                                                 self.unit,
+                                                 self.types[0],
+                                 self.name, str(target), spell_tuple, named=True))
+        buttons.append(keyboards.MenuButton(self.unit, 'back'))
+        keyboard = keyboards.form_keyboard(*buttons)
+        self.unit.controller.edit_message(string, reply_markup=keyboard)
 
     def activate(self, action):
         spell_list = tuple(action.info[-1].split('-'))
@@ -109,17 +133,25 @@ class SpellCaster(OptionAbility):
     def fail(self):
         self.string('fail', format_dict={'actor':self.unit.name})
 
-
-    @staticmethod
-    def check_final(info):
+    def check_final(self, info):
         spell_list = info[-1].split('-')
-        if len(spell_list) > 2:
+        if spell_list[-1] in self.end_sigils or len(spell_list) > 2:
             return True
         return False
 
+    @staticmethod
+    def chunks(l, n):
+        """Yield successive n-sized chunks from l."""
+        for i in range(0, len(l), n):
+            yield l[i:i + n]
 
     def options(self):
-        return [(x, x) for x in self.sigils]
+        sigils = [*self.start_sigils, *self.buff_sigils, *self.end_sigils]
+        sigils = list(self.chunks(sigils, 3))
+        end_sigils = []
+        for i in range(len(sigils[0])):
+            end_sigils = [*end_sigils, *[sigil[i] for sigil in sigils]]
+        return [(x, x) for x in end_sigils]
 
     def options_keyboard(self, action=None):
         if action.info[-1] == 'spellcast':
@@ -130,7 +162,7 @@ class SpellCaster(OptionAbility):
 
     def ask_options(self, action=None):
         self.unit.active = True
-        keyboard = self.target_keyboard(action)
+        keyboard = self.target_keyboard(action, row_width=3)
         current_spells = action.info[-1].split('-')
         current_spells = ['-'] if current_spells == ['spellcast'] else current_spells
         self.unit.controller.edit_message(localization.LangTuple(self.table_row, 'options', format_dict={'spells':' '.join(current_spells)}),
