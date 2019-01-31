@@ -145,6 +145,7 @@ class SpellCaster(OptionAbility):
         for i in range(0, len(l), n):
             yield l[i:i + n]
 
+    #
     def options(self):
         sigils = [*self.start_sigils, *self.buff_sigils, *self.end_sigils]
         sigils = list(self.chunks(sigils, 3))
