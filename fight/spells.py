@@ -15,7 +15,7 @@ class Spell(standart_actions.GameObject):
 
     def start_casting(self, action, turn_numbers):
         statuses.Casting(self.unit, self.id)
-        self.unit.waste_energy(3)
+        self.unit.waste_energy(2)
         if self.targetable:
             self.target = self.unit.fight[action.info[-2]]
         if turn_numbers > 1:
@@ -64,6 +64,72 @@ class Spark(Spell):
         target = self.target
         target.receive_damage(1)
         self.string('use', format_dict={'actor':self.unit.name, 'target': target.name})
+        self.finish()
+
+
+class Ignite(Spell):
+    name = 'ignite'
+    sigils = (emoji_utils.emote_dict['ignite_em'],)
+    turn_numbers = 1
+    targetable = True
+
+    def first_stage(self):
+        target = self.target
+        statuses.Burning(target)
+        self.string('use', format_dict={'actor': self.unit.name, 'target': target.name})
+        self.finish()
+
+
+class Chill(Spell):
+    name = 'chill'
+    sigils = (emoji_utils.emote_dict['ice_em'],)
+    turn_numbers = 1
+    targetable = True
+
+    def first_stage(self):
+        target = self.target
+        statuses.Chilled(target, 2)
+        self.string('use', format_dict={'actor': self.unit.name, 'target': target.name})
+        self.finish()
+
+
+class StrongIgnite(Spell):
+    name = 'strong_ignite'
+    sigils = (emoji_utils.emote_dict['strength_em'], emoji_utils.emote_dict['ignite_em'])
+    turn_numbers = 2
+    targetable = True
+
+    def first_stage(self):
+        standart_actions.AddString(localization.LangTuple('abilities_spellcast',
+                                                          'use',
+                                                          format_dict={'actor': self.unit.name}),
+                                   order=5,
+                                   unit=self.unit)
+
+    def second_stage(self):
+        target = self.target
+        statuses.Burning(self.target, 2)
+        self.string('use', format_dict={'actor': self.unit.name, 'target': target.name})
+        self.finish()
+
+
+class StrongChill(Spell):
+    name = 'strong_chill'
+    sigils = (emoji_utils.emote_dict['strength_em'], emoji_utils.emote_dict['ice_em'])
+    turn_numbers = 2
+    targetable = True
+
+    def first_stage(self):
+        standart_actions.AddString(localization.LangTuple('abilities_spellcast',
+                                                          'use',
+                                                          format_dict={'actor': self.unit.name}),
+                                   order=5,
+                                   unit=self.unit)
+
+    def second_stage(self):
+        target = self.target
+        statuses.Chilled(self.target, 3)
+        self.string('use', format_dict={'actor': self.unit.name, 'target': target.name})
         self.finish()
 
 
@@ -122,8 +188,7 @@ class SoulEviction(Spell):
 
 class FlyingSpark(Spell):
     name = 'flying_spark'
-    sigils = (
-    emoji_utils.emote_dict['strength_em'], emoji_utils.emote_dict['wind_em'], emoji_utils.emote_dict['spark_em'])
+    sigils = (emoji_utils.emote_dict['strength_em'], emoji_utils.emote_dict['wind_em'], emoji_utils.emote_dict['spark_em'])
     turn_numbers = 3
     targetable = True
     order = 2

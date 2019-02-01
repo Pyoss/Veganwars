@@ -197,10 +197,24 @@ class SpecialAttack(BaseAttack):
         # Определение цели
         self.target = self.unit.target
         self.attack(waste=self.waste)
-        self.weapon.modify_attack(self)
         self.on_attack()
         # Добавление описания в строку отчета
         self.string('special')
+
+    def attack(self, waste=None):
+        self.weapon.before_hit(self)
+        # Вычисление нанесенного урона и трата энергии
+        self.dmg_done = self.weapon.get_damage(self.target)
+        if waste is None:
+            self.unit.waste_energy(self.weapon.energy)
+        else:
+            self.unit.waste_energy(waste)
+        # Применение способностей и особых свойств оружия
+        self.dmg_done += self.unit.damage if self.dmg_done else 0
+        self.unit.on_hit(self)
+        self.weapon.modify_attack(self)
+        self.target.receive_hit(self)
+        self.weapon.on_hit(self)
 
 
 class Suicide(Action):
@@ -257,6 +271,20 @@ class PickUpWeapon(Action):
                                                               'weapon': weapon.name_lang_tuple()
                                                           }
                                                           )
+
+
+class PutOutFire(Action):
+    name = 'put-out'
+    action_type = ['tech']
+    order = 1
+
+    def available(self):
+        if 'burning' in self.unit.statuses.keys():
+            return True
+        return False
+
+    def activate(self):
+        self.unit.action.append('skip')
 
 
 class MoveForward(Action):

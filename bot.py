@@ -144,11 +144,9 @@ def start(message):
 
 @bot.message_handler(content_types=['text'])
 def start(message):
-    print(message.text)
-    return False
-    if message.from_user.id in dynamic_dicts.unit_talk:
-        unit_id, fight = dynamic_dicts.unit_talk[message.from_user.id]
-        fight.unit_talk(unit_id, message.text)
+    if str(message.chat.id) != '-1001290009216':
+        print('left')
+        bot.leave_chat(message.chat.id)
 
 
 @bot.callback_query_handler(func=lambda call: call)

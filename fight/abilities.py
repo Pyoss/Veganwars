@@ -169,7 +169,7 @@ class SpellCaster(OptionAbility):
                                reply_markup=keyboard)
 
     def available(self):
-        if self.unit.energy > 0:
+        if self.unit.energy > 1:
             return True
         return False
 

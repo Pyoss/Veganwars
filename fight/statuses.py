@@ -37,7 +37,10 @@ class Status(standart_actions.GameObject):
 
     def finish(self):
         print('Удаляется статус {} для {}...'.format(self.name, self.unit.name))
-        del self.unit.statuses[self.name]
+        try:
+            del self.unit.statuses[self.name]
+        except KeyError:
+            pass
 
     def menu_string(self):
         return False
@@ -240,32 +243,60 @@ class Casting(Status):
         self.unit.disabled.remove(self.name)
         Status.finish(self)
 
+
 class Burning(Status):
     name = 'burning'
     order = 21
 
     def __init__(self, actor, stacks=1):
         self.stacks = stacks
-        self.turns = 3
         Status.__init__(self, actor, acting=True)
 
     def reapply(self, parent):
         parent.stacks += self.stacks
-        parent.turns = 3
 
     def activate(self, action=None):
         if 'skip' in self.unit.action:
             self.string('end', format_dict={'actor': self.unit.name})
             self.finish()
         else:
-            self.turns -= 1
-            self.unit.dmg_received += self.stacks
-            self.string('damage', format_dict={'actor': self.unit.name, 'damage_dealt': self.stacks})
-            if self.turns == 0:
+            if self.stacks:
+                self.unit.dmg_received += self.stacks
+                self.string('damage', format_dict={'actor': self.unit.name, 'damage_dealt': self.stacks})
+            self.stacks -= 1
+            if self.stacks < 1:
                 self.finish()
 
     def menu_string(self):
         return emoji_utils.emote_dict['fire_em'] + str(self.stacks)
+
+
+class Chilled(Status):
+    name = 'chilled'
+    order = 21
+
+    def __init__(self, actor, stacks=1):
+        if 'frozen' not in actor.statuses:
+            self.stacks = stacks
+            Status.__init__(self, actor)
+
+    def reapply(self, parent):
+        parent.stacks += self.stacks
+
+    def activate(self, action=None):
+        if self.stacks < 1:
+            self.finish()
+        elif self.stacks:
+            self.unit.waste_energy(self.stacks)
+            self.string('damage', format_dict={'actor': self.unit.name, 'energy_lost': self.stacks})
+        self.stacks -= 1
+        if self.unit.energy - self.unit.wasted_energy < 0:
+            self.finish()
+            freeze = Frozen(self.unit)
+            freeze.string('use', format_dict={'actor': self.unit.name})
+
+    def menu_string(self):
+        return emoji_utils.emote_dict['ice_em'] + str(self.stacks)
 
 
 class AFK(Status):
@@ -306,6 +337,28 @@ class Stun(Status):
         if self.turns == 0:
             self.string('end', format_dict={'actor': self.unit.name})
             self.unit.disabled.remove('stun')
+            self.finish()
+
+
+class Frozen(Status):
+    name = 'frozen'
+    order = 60
+    effect = False
+
+    def __init__(self, actor, turns=1):
+        self.turns = turns
+        if 'frozen' not in actor.disabled:
+            actor.disabled.append('frozen')
+            Status.__init__(self, actor)
+
+    def reapply(self, parent):
+        pass
+
+    def activate(self, action=None):
+        self.turns -= 1
+        if self.turns == 0:
+            self.string('end', format_dict={'actor': self.unit.name})
+            self.unit.disabled.remove('frozen')
             self.finish()
 
 

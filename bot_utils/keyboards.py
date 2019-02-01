@@ -88,6 +88,8 @@ class RangeReloadButton(FightButton):
 
 
 class SkipButton(FightButton):
+    name = 'skip'
+
     def __init__(self, unit):
         FightButton.__init__(self, 'skip', unit, 'skip')
 
@@ -98,6 +100,8 @@ class SuicideButton(FightButton):
 
 
 class MoveForward(FightButton):
+    name = 'move'
+
     def __init__(self, unit):
         self.unit = unit
         FightButton.__init__(self, 'move', unit, 'move')
@@ -114,6 +118,8 @@ class MoveForward(FightButton):
 
 
 class PickUpButton(FightButton):
+    name = 'pick-up'
+
     def __init__(self, unit):
         self.unit = unit
         FightButton.__init__(self, 'pick-up', unit, 'pick-up')
@@ -129,7 +135,27 @@ class PickUpButton(FightButton):
         return False
 
 
+class PutOutButton(FightButton):
+    name = 'put-out'
+
+    def __init__(self, unit):
+        self.unit = unit
+        FightButton.__init__(self, 'put-out', unit, 'put-out')
+
+    def available(self):
+        if 'burning' in self.unit.statuses.keys():
+            return True
+        return False
+
+    def add_available(self):
+        if 'burning' in self.unit.statuses.keys():
+            return True
+        return False
+
+
 class MoveBack(FightButton):
+    name = 'move_back'
+
     def __init__(self, unit):
         self.unit = unit
         FightButton.__init__(self, 'move_back', unit, 'move-back')
@@ -148,7 +174,15 @@ class MenuButton(FightButton):
 class AdditionalKeyboard(FightButton):
     def __init__(self, unit):
         self.unit = unit
-        FightButton.__init__(self, 'additional_keyboard', unit, 'add-keyboard')
+        additional_actions = [(available_action[0],
+                                       available_action[1]) for available_action in unit.additional_actions()
+                                       if available_action[1].add_available()]
+        urgent = False
+        if any(additional_action[1].name not in self.unit.standart_additional for additional_action in additional_actions):
+            urgent = True
+        FightButton.__init__(self, 'additional_keyboard' if not urgent else '!_additional_keyboard',
+                             unit,
+                             'add-keyboard')
 
 
 class Info(FightButton):

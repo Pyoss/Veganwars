@@ -18,6 +18,7 @@ class Unit:
     emote = '?'
     types = ['alive']
     summoned = False
+    standart_additional = ['move', 'move_back', 'skip']
 
     # Список предметов, выпадающих из юнита при убийстве. Имеет вид [name: (quantity, chance)]
     loot = []
@@ -81,7 +82,11 @@ class Unit:
         return actions
 
     def additional_actions(self):
-        actions = [(1, MoveForward(self)), (1, MoveBack(self)), (2, PickUpButton(self)), (2, SkipButton(self))]
+        actions = [(1, MoveForward(self)),
+                   (1, MoveBack(self)),
+                   (2, PickUpButton(self)),
+                   (2, SkipButton(self)),
+                    (3, PutOutButton(self))]
         return actions
 
     def equip_from_dict(self, unit_dict):

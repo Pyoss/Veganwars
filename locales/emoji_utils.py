@@ -38,6 +38,7 @@ emote_dict = {
     'confused_em': u'\U0001F915',
     'poisoned_em': '🤢',
     'running_em': '\U0001f3c3',
+    'frozen_em': '\U0001f976',
 
     # Оружие
     "hammer_em": u'\U0001F528',
