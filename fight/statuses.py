@@ -129,6 +129,27 @@ class ReceiveHitStatus(Status):
             self.finish()
 
 
+class Pudged(Status):
+    name = 'pudged'
+    def __init__(self, dmg):
+        self.pudgedmg=dmg
+        
+    def reapply(self,count):
+        self.pudgedmg+=count
+    
+    def act(self, action=None):
+        if 'reload' in self.unit.action:
+            self.to_emotes('💨|'+self.name+' отдохнул. Он больше не пудж.\n')
+            self.finish()
+        else:
+            self.dmg_recieved+=self.pudgedmg  #Не знаю, как найти входящий в тебя урон (dmg_recieved), исправь, если не так
+
+            self.to_emotes('💩|Пудж '+self.name+' воняет и наносит '+str(self.pudgedmg)+' урона себе!\n')
+            self.pudgedmg+=1
+
+    def menu_string(self):
+        return '💩'   
+            
 class Running(OnHitStatus):
     name = 'running'
 
