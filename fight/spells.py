@@ -131,6 +131,27 @@ class StrongChill(Spell):
         statuses.Chilled(self.target, 3)
         self.string('use', format_dict={'actor': self.unit.name, 'target': target.name})
         self.finish()
+        
+class HexPudge(Spell):
+    name = 'hex_pudge'
+    sigils = (emoji_utils.emote_dict['self_em'], emoji_utils.emote_dict['world_em'])
+    turn_numbers = 2
+    targetable = True
+
+    def first_stage(self):
+        standart_actions.AddString(localization.LangTuple('abilities_spellcast',
+                                                          'use',
+                                                          format_dict={'actor': self.unit.name}),
+                                   order=5,
+                                   unit=self.unit)
+
+        
+    def second_stage(self):
+        target = self.target
+        count=1
+        statuses.Pudged(target,count)
+        self.string('💩|'+self.name+' превращает '+target.name+' в пуджа!')
+        self.finish()
 
 
 class StrongSpark(Spell):
