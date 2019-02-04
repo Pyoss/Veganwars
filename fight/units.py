@@ -46,6 +46,7 @@ class Unit:
         self.range_accuracy = 0
         self.evasion = 0
         self.damage = 0
+        self.spell_damage = 0
         self.energy = 0
         self.weapon = weapons.Fist(self)
         self.weapons = []
@@ -144,7 +145,8 @@ class Unit:
     def get_weapon(self, weapon):
         self.weapon = weapon
 
-    def get_hit_chance(self, weapon):
+    @staticmethod
+    def get_hit_chance(weapon):
         # Шанс попасть в противника из заданного оружия
         return weapon.get_hit_chance()
 
@@ -210,6 +212,12 @@ class Unit:
         self.activate_statuses('on_hit', action=action)
         self.activate_abilities('on_hit', action=action)
 
+    def on_spell(self, spell):
+        if spell.dmg_done > 0:
+            spell.dmg_done += self.spell_damage
+        self.activate_statuses('on_spell', action=spell)
+        self.activate_abilities('on_spell', action=spell)
+
     def receive_hit(self, action):
         # Применение брони
         if action.dmg_done > 0:
@@ -220,6 +228,12 @@ class Unit:
                 action.dmg_done = 0
                 action.armored = armor_data[1]
             self.activate_abilities('receive_hit', action)
+
+    def receive_spell(self, spell):
+        self.activate_statuses('receive_spell', action=spell)
+        self.activate_abilities('receive_spell', action=spell)
+        if spell.dmg_done > 0:
+            self.receive_damage(spell.dmg_done)
 
     def activate_passives(self):
         self.activate_abilities('passive')
@@ -331,7 +345,8 @@ class Unit:
         else:
             standart_actions.AddString(lang_tuple=lang_tuple, unit=self, order=order)
 
-    def create_action(self, name, func, button_name, order=5):
+    @staticmethod
+    def create_action(name, func, button_name, order=5):
         if name not in standart_actions.action_dict:
             standart_actions.UnitAction(name, func, button_name, order=order)
         return standart_actions.action_dict[name]
@@ -395,7 +410,7 @@ class StandartCreature(Unit):
         self.max_hp = 4
         self.hp = self.max_hp
         self.max_energy = 5
-        self.toughness = 4
+        self.toughness = 5
         self.recovery_energy = 5
         self.melee_accuracy = 0
         self.range_accuracy = 0
@@ -422,6 +437,7 @@ class StandartCreature(Unit):
             'recovery_energy': self.recovery_energy,
             'melee_accuracy': self.melee_accuracy,
             'range_accuracy': self.range_accuracy,
+            'spell_damage': self.spell_damage,
             'evasion': self.evasion,
             'damage': self.damage,
             'toughness': self.toughness,
@@ -737,6 +753,7 @@ class Skeleton(Unit):
         self.default_weapon = weapons.Teeth(self)
         self.crawling = False
         self.energy = 5
+        self.max_energy = 5
         self.loot_chances['weapon'] = 50
         self.recovery_energy = 5
         self.toughness = 5

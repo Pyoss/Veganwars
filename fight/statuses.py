@@ -104,9 +104,9 @@ class OnHitStatus(Status):
     db_string = 'statuses'
     order = 60
 
-    def __init__(self, unit, delay):
+    def __init__(self, unit, delay=1, acting=False):
         self.delay = delay
-        Status.__init__(self, unit)
+        Status.__init__(self, unit, acting=acting)
 
     def activate(self, action=None):
         self.delay -= 1
@@ -119,9 +119,9 @@ class ReceiveHitStatus(Status):
     db_string = 'statuses'
     order = 60
 
-    def __init__(self, unit, delay):
+    def __init__(self, unit, delay=1, acting=False):
         self.delay = delay
-        Status.__init__(self, unit)
+        Status.__init__(self, unit, acting=acting)
 
     def activate(self, action=None):
         self.delay -= 1
@@ -129,27 +129,34 @@ class ReceiveHitStatus(Status):
             self.finish()
 
 
+class ReceiveSpellStatus(ReceiveHitStatus):
+    core_types = ['status', 'receive_spell']
+
+
 class Pudged(Status):
     name = 'pudged'
-    def __init__(self, dmg):
-        self.pudgedmg=dmg
+    order = 21
+
+    def __init__(self, unit,  dmg):
+        self.pudgedmg = dmg
+        Status.__init__(self, unit)
         
-    def reapply(self,count):
-        self.pudgedmg+=count
+    def reapply(self, parent):
+        parent.pudgedmg += self.pudgedmg
     
     def act(self, action=None):
         if 'reload' in self.unit.action:
-            self.to_emotes('💨|'+self.name+' отдохнул. Он больше не пудж.\n')
+            self.string('end', format_dict={'actor': self.unit.name})
             self.finish()
         else:
-            self.dmg_recieved+=self.pudgedmg  #Не знаю, как найти входящий в тебя урон (dmg_recieved), исправь, если не так
-
-            self.to_emotes('💩|Пудж '+self.name+' воняет и наносит '+str(self.pudgedmg)+' урона себе!\n')
-            self.pudgedmg+=1
+            self.unit.dmg_received += self.pudgedmg
+            self.string('damage', format_dict={'actor': self.unit.name, 'dmg': self.pudgedmg})
+            self.pudgedmg += 1
 
     def menu_string(self):
         return '💩'   
-            
+
+
 class Running(OnHitStatus):
     name = 'running'
 
@@ -163,15 +170,45 @@ class Running(OnHitStatus):
 
     def menu_string(self):
         return emoji_utils.emote_dict['running_em']
-    
-    
+
+
 class Flying(ReceiveHitStatus):
     name = 'flying'
-    
+
     def act(self, action=None):
         if action is not None:
             if action.weapon.melee and action.dmg_done > 0:
                 action.dmg_done = 0
+        else:
+            self.unit.fight.edit_queue(self)
+
+    def menu_string(self):
+        return '💨'
+
+
+class SpellShield(ReceiveSpellStatus):
+    name = 'spell_shield'
+
+    def __init__(self, unit, strength):
+        ReceiveSpellStatus.__init__(self, unit, acting=True)
+        self.strength = strength
+        self.activated = False
+
+    def act(self, action=None):
+        if action is not None:
+            if action.dmg_done > 0:
+                if not self.activated:
+                    self.unit.waste_energy(-2)
+                    self.activated = 1
+                dmg = action.dmg_done - self.strength
+                if dmg <= 0:
+                    self.strength = -dmg
+                    dmg = 0
+                    self.string('use', format_dict={'actor': action.target.name, 'target': action.unit.name})
+                else:
+                    self.strength = 0
+                    self.string('end', format_dict={'actor': action.target.name})
+                action.dmg_done = dmg
         else:
             self.unit.fight.edit_queue(self)
 
@@ -186,7 +223,8 @@ class Buff:
         self.unit = unit
         setattr(self.unit, self.attr, getattr(self.unit, self.attr) + self.value)
         self.unit.boost_attribute(attr, value)
-        CustomStatus(unit, delay=length-1, func=self.stop_buff, order=60, acting=True)
+        CustomStatus(unit, delay=length, func=self.stop_buff, order=60, acting=True,
+                     name='buff_{}_{}'.format(attr, engine.rand_id()))
 
     def stop_buff(self):
         setattr(self.unit, self.attr, getattr(self.unit, self.attr) - self.value)
@@ -281,6 +319,14 @@ class Burning(Status):
             self.string('end', format_dict={'actor': self.unit.name})
             self.finish()
         else:
+            if 'chilled' in self.unit.statuses:
+                if self.unit.statuses['chilled'].stacks < self.stacks:
+                    self.stacks -= self.unit.statuses['chilled'].stacks
+                    self.unit.statuses['chilled'].finish()
+                else:
+                    self.unit.statuses['chilled'].stacks -= self.stacks
+                    self.finish()
+                    return False
             if self.stacks:
                 self.unit.dmg_received += self.stacks
                 self.string('damage', format_dict={'actor': self.unit.name, 'damage_dealt': self.stacks})
@@ -305,6 +351,14 @@ class Chilled(Status):
         parent.stacks += self.stacks
 
     def activate(self, action=None):
+        if 'burning' in self.unit.statuses:
+            if self.unit.statuses['burning'].stacks < self.stacks:
+                self.stacks -= self.unit.statuses['burning'].stacks
+                self.unit.statuses['burning'].finish()
+            else:
+                self.unit.statuses['burning'].stacks -= self.stacks
+                self.finish()
+                return False
         if self.stacks < 1:
             self.finish()
         elif self.stacks:

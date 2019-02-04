@@ -36,9 +36,11 @@ emote_dict = {
     'afk_em': u'\U0001F4F4',
     'crippled_em': u'\U0001F494',
     'confused_em': u'\U0001F915',
+    'pudged_em': '💩',
     'poisoned_em': '🤢',
     'running_em': '\U0001f3c3',
     'frozen_em': '\U0001f976',
+    'spell_shield_em': '\U0001f535',
 
     # Оружие
     "hammer_em": u'\U0001F528',
@@ -83,7 +85,7 @@ emote_dict = {
     'ice_em': u'\u2744',
     'self_em': u'\U0001f64f',
     'strength_em': u'\U0001f449',
-    'world_em': u'\U0001f590',
+    'palm_em': u'\U0001f590',
     'earth_em': u'\U0001f311',
     'wind_em': u'\U0001f32a',
     'random_em': u'\U0001f3b2',
