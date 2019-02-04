@@ -24,7 +24,11 @@ chats_table = Table('chats', metadata,
                     Column('receipts', String),
                     Column('resources', Integer),
                     Column('armory', String),
-                    Column('used_armory', String))
+                    Column('used_armory', String),
+                    Column('daily_income', Integer),
+                    Column('construction_lvl', Integer),
+                    Column('conquerors_list', String),
+                    Column('conquered_list', String))
 
 users_table = Table('users', metadata,
                     Column('id', Integer, primary_key=True),
@@ -39,7 +43,18 @@ metadata.create_all(engn)
 class SqlChat(object):
     pyosession = None
 
-    def __init__(self, chat_id, name=None, data=None, receipts=None, armory=None, used_armory=None, resources=0):
+    def __init__(self,
+                 chat_id,
+                 name=None,
+                 data=None,
+                 receipts='{"knife": "inf", "spear": "inf", "hatchet": "inf"}',
+                 armory=None,
+                 used_armory=None,
+                 resources=100,
+                 daily_income=10,
+                 construction_lvl=1,
+                 conquerors_list='[]',
+                 conquered_list='[]'):
         self.chat_id = chat_id
         self.name = name
         self.data = data
@@ -47,6 +62,10 @@ class SqlChat(object):
         self.armory = armory
         self.used_armory = used_armory
         self.resources = resources
+        self.daily_income = daily_income
+        self.construction_lvl = construction_lvl
+        self.conquerors_list = conquerors_list
+        self.conquered_list = conquered_list
 
     # Пользователи
 
@@ -133,6 +152,15 @@ class SqlChat(object):
     def clear_used_items(self):
         self.used_armory = '{}'
         session.commit()
+
+    def add_conqueror(self, chat_id):
+        conquerors = json.loads(self.conquerors_list)
+        conquerors.append(str(chat_id))
+        self.conquerors_list = json.dumps(conquerors)
+        session.commit()
+
+    def get_income(self):
+        imcome_receivers = []
 
     # Ресурсы
 

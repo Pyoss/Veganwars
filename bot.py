@@ -5,7 +5,7 @@ from bot_utils import config, bot_handlers, bot_methods
 import dynamic_dicts
 from fight import fight_main, units
 import time, requests, threading, asyncio
-from chat_wars import chat_main
+from chat_wars import chat_main, chat_lobbies
 
 WEBHOOK_HOST = '167.99.131.174'
 WEBHOOK_PORT = 443  # 443, 80, 88 или 8443 (порт должен быть открыт!)
@@ -59,14 +59,14 @@ def start(message):
 def start(message):
     chat = chat_main.pyossession.get_chat(message.chat.id)
     chat.clear_used_items()
-    dung = chat_main.Dungeon(message.chat.id)
+    dung = chat_lobbies.Dungeon(message.chat.id)
     dung.send_lobby()
 
 @bot.message_handler(commands=['ffa'])
 def start(message):
     chat = chat_main.pyossession.get_chat(message.chat.id)
     chat.clear_used_items()
-    dung = chat_main.FFA(message.chat.id)
+    dung = chat_lobbies.FFA(message.chat.id)
     dung.send_lobby()
 
 
