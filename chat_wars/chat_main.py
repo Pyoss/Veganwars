@@ -14,6 +14,7 @@ import time
 import asyncio
 
 
+
 class Chat(sql_alchemy.SqlChat):
 
     def get_chat_obj(self):
@@ -34,17 +35,15 @@ class Chat(sql_alchemy.SqlChat):
     def alert_attack(self):
         self.send_message('В течение следующего часа можно выбрать чат для нападения.')
 
-    def ask_attack(self, user_id):
-        if self.chat_id in dynamic_dicts.attack_choosers:
-            self.send_message('Цель уже выбирается кем-то другим')
-        elif self.ask_rights(user_id) == 'admin':
+    def ask_attack(self, user_id, message_id):
+        if self.ask_rights(user_id) == 'admin':
             dynamic_dicts.attack_choosers.append(self.chat_id)
             targets = self.get_target_chats()
             buttons = []
             for target in targets:
-                buttons.append(keyboards.Button(target.name, callback_data='_'.join(['chat', self.chat_id, 'attack',  target.chat_id])))
+                buttons.append(keyboards.Button(target.name, callback_data='_'.join(['mngt', 'attack',  target.chat_id])))
             keyboard = keyboards.form_keyboard(*buttons)
-            bot_methods.send_message(user_id, 'Выберите чат для атаки', reply_markup=keyboard)
+            bot_methods.edit_message(user_id, message_id, 'Выберите чат для атаки', reply_markup=keyboard)
         else:
             self.send_message('У вас нет прав. Вы бесправный.')
 
@@ -102,7 +101,6 @@ class Chat(sql_alchemy.SqlChat):
     def print_resources(self):
         message = 'Количество ресурсов - ' + str(self.resources)
         self.send_message(message)
-
 
 
 

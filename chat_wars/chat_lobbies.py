@@ -282,7 +282,8 @@ class LobbyHandler:
     def __init__(self, handler):
         self.handler = handler
 
-    def handle(self, call):
+    @staticmethod
+    def handle(call):
         call_data = call.data.split('_')
         action = call_data[2]
         try:

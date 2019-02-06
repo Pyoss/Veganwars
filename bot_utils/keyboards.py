@@ -32,6 +32,25 @@ class FightButton(Button):
         return True
 
 
+class ChatButton(Button):
+    def __init__(self, text, lang, *args, special='', named=False, emoji=None):
+        if not isinstance(text, str):
+            text = text.translate(lang)
+        else:
+            text = LangTuple('buttons' if not len(special) else special,
+                             text).translate(lang) if not named else text
+        if emoji is not None:
+            text = emoji + ' ' + text
+        callback = '_'.join(('mngt', *args))
+        Button.__init__(self, text, callback)
+
+    def available(self):
+        return True
+
+    def add_available(self):
+        return True
+
+
 class DungeonButton(Button):
     def __init__(self, text, member, *args, special='', named=False):
         dungeon = member.dungeon

@@ -111,6 +111,9 @@ emote_dict = {
     "leg_em": u'\U0001F9B5',
     'bone_em': u'\U00002620',
 
+    # Чат
+    "locked_em": '\U0001f513',
+
 
     # Карта
     'current_map_em': emoji.emojize(':busts_in_silhouette:', use_aliases=True),

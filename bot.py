@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import telebot
 from bot_utils import config, bot_handlers, bot_methods
 import dynamic_dicts
 from fight import fight_main, units
 import time, requests, threading, asyncio
-from chat_wars import chat_main, chat_lobbies
+from chat_wars import chat_main, chat_lobbies, chat_management
 
 WEBHOOK_HOST = '167.99.131.174'
 WEBHOOK_PORT = 443  # 443, 80, 88 или 8443 (порт должен быть открыт!)
@@ -55,12 +56,19 @@ def start(message):
     if message.chat.id in game_dict:
         game_dict[message.chat.id].ask_start()
 
+
 @bot.message_handler(commands=['map'])
 def start(message):
     chat = chat_main.pyossession.get_chat(message.chat.id)
     chat.clear_used_items()
     dung = chat_lobbies.Dungeon(message.chat.id)
     dung.send_lobby()
+
+
+@bot.message_handler(commands=['chat_management'])
+def start(message):
+    chat_management.get_chat_menu(message.from_user.id)
+
 
 @bot.message_handler(commands=['ffa'])
 def start(message):
