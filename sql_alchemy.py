@@ -188,15 +188,16 @@ class SqlUser(object):
 
 
 class Pyossession:
-    def __init__(self, chat_class, user_class):
+    def __init__(self, chat_class, user_class, non_primary=False):
         self.chat_class = chat_class
         self.user_class = user_class
+        self.non_primary = non_primary
         chat_class.pyossession = self
         user_class.pyossession = self
 
     def start_session(self):
-        mapper(self.chat_class, chats_table, properties={'users': relationship(self.user_class)})
-        mapper(self.user_class, users_table, properties={'chat': relationship(self.chat_class)})
+        mapper(self.chat_class, chats_table, properties={'users': relationship(self.user_class)}, non_primary=self.non_primary)
+        mapper(self.user_class, users_table, properties={'chat': relationship(self.chat_class)}, non_primary=self.non_primary)
 
     def create_chat(self, chat_id, name):
         session.add(self.chat_class(chat_id, name, '{}', '{}', '{}', '{}'))

@@ -31,9 +31,10 @@ def run_fight(game, *args, chat_id=None):
 
 
 class Team:
-    def __init__(self, *args):
+    def __init__(self, *args, team_marker=None):
         self.units = list(args)
         self.captain = self.units[0]
+        self.team_marker = team_marker
 
     def name(self):
         if len(self.units) < 2:
@@ -119,7 +120,7 @@ class Fight:
     def __init__(self, chat_id=None, test=False):
         self.turn = 1
         self.id = str(engine.rand_id())
-        self.chat_id = chat_id
+        self.chat_id = [] if chat_id is None else chat_id
         self.units_dict = dict()
         self.units = list()
         self.langs = ['rus']
@@ -134,16 +135,20 @@ class Fight:
 
     #  ---------- Основная функция, отвечающая за сражение между готовыми командами -------
 
-    def run(self):
+    def run(self, func=None):
         # self._send_chosen_weapons_()
         results = self.fight_loop()
-        return results
+        if func is None:
+            return results
+        else:
+            func(results)
 
     def send_message(self, *args):
         message = PlayerString(self)
         message.row(*args)
         message.construct()
-        return bot_methods.send_message(self.chat_id, message.result_dict[self.lang])
+        for chat_id in self.chat_id:
+            bot_methods.send_message(chat_id, message.result_dict[self.lang])
 
     def unit_talk(self, unit_id, message):
         unit = self.units_dict[unit_id]
@@ -161,7 +166,8 @@ class Fight:
         self.units_dict[unit.id] = unit
         dynamic_dicts.unit_talk[unit.controller.chat_id] = (unit.id, self)
         self.units.append(unit)
-        self.listeners.append(controller)
+        if not any(controller.chat_id == listener.chat_id for listener in self.listeners):
+            self.listeners.append(controller)
         return unit
 
     def add_ai(self, unit, name, unit_dict=None, **kwargs):
@@ -186,9 +192,11 @@ class Fight:
 
     def form_teams(self, team_dicts):
         # [team={chat_id:(name, unit_dict)} or team={(ai_class.name, id):(name/None, unit_dict)}]
-        self.teams = [Team(*[self.add_unit(key, value['name'],
-                                           unit_dict=value) for key, value in team_dict.items()])
-                      for team_dict in team_dicts]
+        self.teams = []
+        for team in team_dicts:
+            self.teams.append(Team(*[self.add_unit(key, value['name'],
+                                               unit_dict=value) for key, value in team.items()
+                                 if key if key != 'marker'], team_marker=team['marker'] if 'marker' in team else None))
         for team in self.teams:
             for actor in team.units:
                 actor.team = team
@@ -211,7 +219,7 @@ class Fight:
         return [unit for unit in self.units if unit.alive()]
 
     def announce(self, lang_tuple, image=None):
-        for listener in [listener for listener in self.listeners if listener.chat_id != self.chat_id]:
+        for listener in [listener for listener in self.listeners if listener.chat_id not in self.chat_id]:
             text = lang_tuple.translate(listener.lang)
             if image is None:
                 bot_methods.send_message(listener.chat_id, text)
@@ -322,7 +330,7 @@ class Fight:
     def send_string(self):
         self.string_tuple.construct()
         if self.string_tuple.active:
-            for listener in [listener for listener in self.listeners if listener.chat_id != self.chat_id]:
+            for listener in [listener for listener in self.listeners if listener.chat_id not in self.chat_id]:
                 time.sleep(2)
                 listener.send_message(self.string_tuple[listener.lang])
                 if not listener.unit.alive():
@@ -346,10 +354,14 @@ class Fight:
         ending_dict = {'winners': [], 'loser': [], 'loot': engine.Container()}
         for team in self.teams:
             if team in won_teams:
+                if team.team_marker is not None:
+                    ending_dict['won_team'] = team.team_marker
                 for unit in team.units:
                     if not unit.summoned:
                         ending_dict['winners'].append(unit.to_dict())
             else:
+                if team.team_marker is not None:
+                    ending_dict['lost_team'] = team.team_marker
                 for unit in team.units:
                     if not unit.summoned:
                         ending_dict['loser'].append(unit.to_dict())

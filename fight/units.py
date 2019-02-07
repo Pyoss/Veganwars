@@ -415,7 +415,7 @@ class StandartCreature(Unit):
         self.melee_accuracy = 0
         self.range_accuracy = 0
         self.evasion = 0
-        self.damage = 0
+        self.damage = 40
         self.weapon = None
         self.default_weapon = 'fist'
         self.weapons = []

@@ -83,9 +83,17 @@ class ManageHandler:
         elif action == 'close':
             delete_message(user_id, call.message.message_id)
         elif action == 'attack':
-            target = call.data[2]
-            chat.start_attack(user_id, call.message.message_id, target)
+            target = call_data[2]
+            chat.attack_chat(user_id, target, call.message.message_id)
         elif action == 'build':
             building_name = call.data[2]
             chat.building_menu(building_name, call.message.message_id)
+        elif action == 'besiege':
+            target_chat_id = call_data[2]
+            current_war_id = call_data[3]
+            chat.win_siege(target_chat_id, current_war_id, call.message.message_id)
+        elif action == 'marauder':
+            target_chat_id = call_data[2]
+            current_war_id = call_data[3]
+            chat.marauder(target_chat_id, current_war_id, call.message.message_id)
 

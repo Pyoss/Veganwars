@@ -65,6 +65,12 @@ def start(message):
     dung.send_lobby()
 
 
+@bot.message_handler(commands=['join_chat'])
+def start(message):
+    chat = chat_main.pyossession.get_chat(message.chat.id)
+    chat.add_user(message.from_user.id)
+
+
 @bot.message_handler(commands=['chat_management'])
 def start(message):
     chat_management.get_chat_menu(message.from_user.id)
@@ -145,16 +151,15 @@ def start(message):
         chat.ask_craft(message.from_user.id)
 
 
+@bot.message_handler(commands=['next_step'])
+def start(message):
+        chat_main.current_war.next_step(message.chat.id)
+
+
+
 @bot.message_handler(content_types=['photo'])
 def start(message):
     print(message.photo[0].file_id)
-
-
-@bot.message_handler(content_types=['text'])
-def start(message):
-    if str(message.chat.id) != '-1001290009216':
-        print('left')
-        bot.leave_chat(message.chat.id)
 
 
 @bot.callback_query_handler(func=lambda call: call)

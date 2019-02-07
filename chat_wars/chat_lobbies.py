@@ -130,7 +130,7 @@ class Lobby:
         return False
 
     def to_team(self):
-        return {member[0]: (member[1][0], member[1][1]) for member in list(self.team.items())}
+        pass
 
     def __getitem__(self, item):
         for team in self.teams:
@@ -264,6 +264,116 @@ class Dungeon(Lobby):
             for member in self.party.members:
                 bot_methods.delete_message(message_id=member.message_id, chat_id=member.chat_id)
                 member.message_id = None
+
+
+class AttackLobby(Lobby):
+    def __init__(self, chat, attack_action, target_chat):
+        Lobby.__init__(self, chat.chat_id, skip_armory=True)
+        self.team = self.teams[0]
+        self.attack_action = attack_action
+        attack_action.attacker_lobby = self
+        self.target_chat_id = target_chat.chat_id
+        self.target_chat_name = target_chat.name
+        self.target_chat = target_chat
+        self.defence_send = False
+        self.chat = chat
+        self.text = 'Нападение на чат {}'.format(self.target_chat_name)
+
+    def join_lobby(self, user_id, unit_dict):
+        if self.started:
+            return False
+        if not any(user_id in team for team in self.teams):
+            unit_data = {
+                'dict': unit_dict,
+                'equipment_choice':
+                    [
+                        'weapon',
+                        'armor',
+                        'items'
+                    ] if not self.skip_armory else [],
+                'ready': False
+            }
+            self.team[user_id] = unit_data
+            self.update_lobby()
+            chat = get_chat(self.chat_id)
+            chat.add_user(user_id)
+            bot_methods.send_message(user_id, 'Вы успешно присоединились')
+        else:
+            self.error('player_exists')
+
+    def next_step(self, user_id, message_id=None):
+        print(self[user_id])
+        if not self.defence_send:
+            DefenceLobby(self.attack_action, self).send_lobby()
+            self.defence_send = True
+        if 'weapon' in self[user_id]['equipment_choice']:
+            user = pyossession.get_user(user_id=user_id)
+            user.send_weapon_choice(self.id, message_id=message_id)
+
+        elif 'armor' in self[user_id]['equipment_choice']:
+            user = pyossession.get_user(user_id=user_id)
+            user.send_armor_choice(self.id, message_id=message_id)
+
+        elif 'items' in self[user_id]['equipment_choice']:
+            user = pyossession.get_user(user_id=user_id)
+            user.send_item_choice(self.id, message_id=message_id)
+
+        else:
+            self.run()
+
+    def run(self):
+        self.attack_action.attack_ready = True
+        if self.attack_action.defense_ready:
+            self.attack_action.start()
+
+    def to_team(self):
+        team_dict = {chat_id: self.team[chat_id]['dict'] for chat_id in self.team}
+        team_dict['marker'] = 'attacker'
+        return team_dict
+
+
+class DefenceLobby(Lobby):
+    def __init__(self, attack_action, attack_lobby):
+        Lobby.__init__(self, attack_lobby.target_chat.chat_id, skip_armory=True)
+        self.chat = attack_lobby.target_chat
+        self.team = self.teams[0]
+        self.attack_action = attack_action
+        attack_action.defender_lobby = self
+        self.attack_lobby = attack_lobby
+        self.name = attack_lobby.target_chat.name
+        self.text = 'Защита от чата {}'.format(attack_lobby.chat.name)
+
+    def join_lobby(self, user_id, unit_dict):
+        if self.started:
+            return False
+        if not any(user_id in team for team in self.teams):
+            unit_data = {
+                'dict': unit_dict,
+                'equipment_choice':
+                    [
+                        'weapon',
+                        'armor',
+                        'items'
+                    ] if not self.skip_armory else [],
+                'ready': False
+            }
+            self.team[user_id] = unit_data
+            self.update_lobby()
+            chat = get_chat(self.chat_id)
+            chat.add_user(user_id)
+            bot_methods.send_message(user_id, 'Вы успешно присоединились')
+        else:
+            self.error('player_exists')
+
+    def run(self):
+        self.attack_action.attack_ready = True
+        if self.attack_action.attack_ready:
+            self.attack_action.start()
+
+    def to_team(self):
+        team_dict = {chat_id: self.team[chat_id]['dict'] for chat_id in self.team}
+        team_dict['marker'] = 'defender'
+        return team_dict
 
 
 class FFA(Lobby):

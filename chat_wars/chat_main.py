@@ -8,7 +8,8 @@ from fight import fight_main, units, standart_actions
 from adventures import dungeon_main, map_engine
 import engine
 import dynamic_dicts
-from chat_wars.chat_war import current_war
+from chat_wars.chat_war import current_war, AttackAction
+from threading import Thread
 
 
 class Chat(sql_alchemy.SqlChat):
@@ -27,7 +28,15 @@ class Chat(sql_alchemy.SqlChat):
             return 'admin'
         return 'member'
 
-    ###########################################################        АТАКА ЧАТОВ           ############################################################
+    def is_admin(self, user_id):
+        admins = get_chat_administrators(self.chat_id)
+        if any(member.user.id == user_id for member in admins):
+            return True
+        return False
+
+# --------------------       АТАКА ЧАТОВ      ------------------------ #
+
+
     def alert_attack(self):
         self.send_message('В течение следующего часа можно выбрать чат для нападения.')
 
@@ -37,14 +46,14 @@ class Chat(sql_alchemy.SqlChat):
             targets = self.get_target_chats()
             buttons = []
             for target in targets:
-                buttons.append(keyboards.Button(target.name, callback_data='_'.join(['mngt', 'attack',  target])))
+                buttons.append(keyboards.Button(target.name, callback_data='_'.join(['mngt', 'attack',  target.chat_id])))
             keyboard = keyboards.form_keyboard(*buttons)
         elif current_war.stage == 'attack':
             string = 'Выберите чат на атаки'
             targets = self.get_target_chats()
             buttons = []
             for target in targets:
-                buttons.append(keyboards.Button(target.name, callback_data='_'.join(['mngt', 'attack',  target])))
+                buttons.append(keyboards.Button(target.name, callback_data='_'.join(['mngt', 'attack',  target.chat_id])))
             keyboard = keyboards.form_keyboard(*buttons)
         else:
             delete_message(user_id, message_id)
@@ -55,10 +64,10 @@ class Chat(sql_alchemy.SqlChat):
 
     def get_target_chats(self):
         if current_war.stage == 'siege':
-            return [chat.chat_id for chat in pyossession.get_chats() if chat.chat_id != self.chat_id]
+            return [chat for chat in pyossession.get_chats() if chat.chat_id != self.chat_id]
         elif current_war.stage == 'attack':
             war_data = self.get_current_war_data()
-            return [chat_id for chat_id in war_data.chats_besieged]
+            return [chat for chat in [pyossession.get_chat(chat_id) for chat_id in war_data['chats_besieged']]]
 
     def get_free_equipment(self, equipment_types=None):
         equipment = []
@@ -69,7 +78,40 @@ class Chat(sql_alchemy.SqlChat):
                     equipment.append([key, armory[key]])
         return equipment
 
-        ###########################################################        КРАФТ           ############################################################
+    def attack_chat(self, user_id, chat_id, message_id):
+        delete_message(user_id, message_id)
+        if not self.is_admin(user_id):
+            print('failed')
+            return False
+        target_chat = pyossession.get_chat(chat_id)
+        from chat_wars.chat_lobbies import AttackLobby
+        action = AttackAction()
+        action.mode = current_war.stage
+        AttackLobby(self, action, target_chat).send_lobby()
+
+    def win_siege(self, target_chat_id, current_war_code, message_id):
+        delete_message(self.chat_id, message_id)
+        if current_war_code == current_war.id:
+            target_chat = pyossession.get_chat(target_chat_id)
+            send_message(target_chat.chat_id, 'Чат {} осаждает ваши укрепления!'.format(self.name))
+            send_message(self.chat_id, 'Вы успешно осаждаете чат {}'.format(target_chat.name))
+            war_data = self.get_current_war_data()
+            war_data['chats_besieged'].append(target_chat_id)
+            self.set_current_war_data(war_data)
+
+    def marauder(self, target_chat_id, current_war_code, message_id):
+        delete_message(self.chat_id, message_id)
+        if current_war_code == current_war.id:
+            target_chat = pyossession.get_chat(target_chat_id)
+            send_message(target_chat.chat_id, 'Чат {} раграбляет ваши сокровища!'.format(self.name))
+            send_message(self.chat_id, 'Чат {} ограблен!'.format(target_chat.name))
+            war_data = target_chat.get_current_war_data()
+            war_data['attacked_by_chats'].append(self.chat_id)
+            target_chat.set_current_war_data(war_data)
+
+
+# ---------------------------------- КРАФТ ------------------------------------ #
+
     def print_receipts(self):
         receipts = self.get_receipts()
         message = ''
@@ -201,10 +243,6 @@ class ChatWar:
         # [team={chat_id:(name, unit_dict)} or team={ai_class:(ai_class.name, unit_dict)}].
         fight = fight_main.Fight()
         fight.form_teams(args)
-        self.results = fight.run()
-
-    def process_results(self):
-        print(self.results['winners'])
 
 
 class ChatHandler:
