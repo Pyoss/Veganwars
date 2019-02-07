@@ -63,8 +63,6 @@ def get_chat_menu(user_id, message_id=None):
         edit_message(user_id, message_id, message_text=string, reply_markup=keyboard)
 
 
-
-
 class ManageHandler:
     def __init__(self, handler):
         self.handler = handler

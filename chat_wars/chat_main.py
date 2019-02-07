@@ -1,54 +1,64 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sql_alchemy
-from bot_utils import bot_methods, keyboards
+from bot_utils import keyboards
+from bot_utils.bot_methods import send_message, edit_message, delete_message, get_chat_administrators
 from sql_alchemy import Pyossession
-from locales import localization
 from fight import fight_main, units, standart_actions
 from adventures import dungeon_main, map_engine
-from telebot import types
 import engine
 import dynamic_dicts
-import threading
-import time
-import asyncio
-
+from chat_wars.chat_war import current_war
 
 
 class Chat(sql_alchemy.SqlChat):
-
     def get_chat_obj(self):
-        return bot_methods.get_chat_administrators(self.chat_id)
+        return get_chat_administrators(self.chat_id)
 
     def send_message(self, text, image=None):
-        bot_methods.send_message(chat_id=self.chat_id, message=text)
+        send_message(chat_id=self.chat_id, message=text)
 
     def print_rights(self, user_id):
         self.send_message(self.ask_rights(user_id))
 
     def ask_rights(self, user_id):
-        admins = bot_methods.get_chat_administrators(self.chat_id)
+        admins = get_chat_administrators(self.chat_id)
         if any(member.user.id == user_id for member in admins):
             return 'admin'
         return 'member'
 
+    ###########################################################        АТАКА ЧАТОВ           ############################################################
     def alert_attack(self):
         self.send_message('В течение следующего часа можно выбрать чат для нападения.')
 
     def ask_attack(self, user_id, message_id):
-        if self.ask_rights(user_id) == 'admin':
-            dynamic_dicts.attack_choosers.append(self.chat_id)
+        if current_war.stage == 'siege':
+            string = 'Выберите чат для начала осады'
             targets = self.get_target_chats()
             buttons = []
             for target in targets:
-                buttons.append(keyboards.Button(target.name, callback_data='_'.join(['mngt', 'attack',  target.chat_id])))
+                buttons.append(keyboards.Button(target.name, callback_data='_'.join(['mngt', 'attack',  target])))
             keyboard = keyboards.form_keyboard(*buttons)
-            bot_methods.edit_message(user_id, message_id, 'Выберите чат для атаки', reply_markup=keyboard)
+        elif current_war.stage == 'attack':
+            string = 'Выберите чат на атаки'
+            targets = self.get_target_chats()
+            buttons = []
+            for target in targets:
+                buttons.append(keyboards.Button(target.name, callback_data='_'.join(['mngt', 'attack',  target])))
+            keyboard = keyboards.form_keyboard(*buttons)
+        else:
+            delete_message(user_id, message_id)
+        if self.ask_rights(user_id) == 'admin':
+            edit_message(user_id, message_id, string, reply_markup=keyboard)
         else:
             self.send_message('У вас нет прав. Вы бесправный.')
 
     def get_target_chats(self):
-        return [chat for chat in pyossession.get_chats() if chat.chat_id != self.chat_id]
+        if current_war.stage == 'siege':
+            return [chat.chat_id for chat in pyossession.get_chats() if chat.chat_id != self.chat_id]
+        elif current_war.stage == 'attack':
+            war_data = self.get_current_war_data()
+            return [chat_id for chat_id in war_data.chats_besieged]
 
     def get_free_equipment(self, equipment_types=None):
         equipment = []
@@ -59,7 +69,7 @@ class Chat(sql_alchemy.SqlChat):
                     equipment.append([key, armory[key]])
         return equipment
 
-    # Демонстрация списка доступных рецептов
+        ###########################################################        КРАФТ           ############################################################
     def print_receipts(self):
         receipts = self.get_receipts()
         message = ''
@@ -95,13 +105,23 @@ class Chat(sql_alchemy.SqlChat):
                 buttons.append(keyboards.Button(standart_actions.get_name(item[0], 'rus') + ' (' + str(price) + ')',
                                                 callback_data='_'.join(['chat', self.chat_id, 'craft',  item[0]])))
             keyboard = keyboards.form_keyboard(*buttons)
-            bot_methods.send_message(user_id, message, reply_markup=keyboard)
+            send_message(user_id, message, reply_markup=keyboard)
 
     # Распечатка количества ресурсов
     def print_resources(self):
         message = 'Количество ресурсов - ' + str(self.resources)
         self.send_message(message)
 
+    def complete_attack(self, chat_id):
+        war_data = self.get_current_war_data()
+        war_data.chats_attacked.append(chat_id)
+        self.set_current_war_data(war_data)
+
+    def conquer(self, chat_id):
+        chat = get_chat(chat_id)
+        war_data = chat.get_current_war_data()
+        war_data.conquered_by_chats.append(self.chat_id)
+        chat.set_current_war_data(war_data)
 
 
 class User(sql_alchemy.SqlUser):
@@ -128,9 +148,9 @@ class User(sql_alchemy.SqlUser):
                                                                 'weapon',
                                                                 'None'])))
         if message_id is None:
-            bot_methods.send_message(self.user_id, message, reply_markup=keyboards.form_keyboard(*buttons))
+            send_message(self.user_id, message, reply_markup=keyboards.form_keyboard(*buttons))
         else:
-            bot_methods.edit_message(chat_id=self.user_id, message_id=message_id,
+            edit_message(chat_id=self.user_id, message_id=message_id,
                                      message_text=message, reply_markup=keyboards.form_keyboard(*buttons) )
 
     def send_armor_choice(self, lobby_id, message_id=None):
@@ -148,9 +168,9 @@ class User(sql_alchemy.SqlUser):
                                                                 'armor',
                                                                 'reset'])))
         if message_id is None:
-            bot_methods.send_message(self.user_id, message, reply_markup=keyboards.form_keyboard(*buttons))
+            send_message(self.user_id, message, reply_markup=keyboards.form_keyboard(*buttons))
         else:
-            bot_methods.edit_message(chat_id=self.user_id, message_id=message_id,
+            edit_message(chat_id=self.user_id, message_id=message_id,
                                      message_text=message, reply_markup=keyboards.form_keyboard(*buttons) )
 
     def send_item_choice(self, lobby_id, message_id=None):
@@ -168,9 +188,9 @@ class User(sql_alchemy.SqlUser):
                                                                 'item',
                                                                 'reset'])))
         if message_id is None:
-            bot_methods.send_message(self.user_id, message, reply_markup=keyboards.form_keyboard(*buttons))
+            send_message(self.user_id, message, reply_markup=keyboards.form_keyboard(*buttons))
         else:
-            bot_methods.edit_message(chat_id=self.user_id, message_id=message_id,
+            edit_message(chat_id=self.user_id, message_id=message_id,
                                      message_text=message, reply_markup=keyboards.form_keyboard(*buttons) )
 
 
@@ -204,9 +224,9 @@ class ChatHandler:
             chat.add_resources(-item_class.price)
             chat.add_item(item_name)
             chat.delete_receipt(item_name)
-            bot_methods.edit_message(call.message.chat.id, call.message.message_id, name + ' - произведено.')
+            edit_message(call.message.chat.id, call.message.message_id, name + ' - произведено.')
         elif action == 'cancel':
-            bot_methods.delete_message(call.message.chat.id, call.message.message_id)
+            delete_message(call.message.chat.id, call.message.message_id)
 
 
 def add_chat(chat_id, name, creator):

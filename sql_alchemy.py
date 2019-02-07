@@ -25,15 +25,16 @@ chats_table = Table('chats', metadata,
                     Column('resources', Integer),
                     Column('armory', String),
                     Column('used_armory', String),
-                    Column('daily_income', Integer),
-                    Column('construction_lvl', Integer),
-                    Column('conquerors_list', String),
-                    Column('conquered_list', String))
+                    Column('buildings', String),
+                    Column('current_war_data', String),
+                    Column('daily_dungeon_sponsored', Integer))
 
 users_table = Table('users', metadata,
                     Column('id', Integer, primary_key=True),
                     Column('user_id', Integer, unique=True),
-                    Column('chat_id', String, ForeignKey('chats.chat_id')))
+                    Column('chat_id', String, ForeignKey('chats.chat_id')),
+                    Column('occupied', Integer, default=0),
+                    Column('attacked', Integer, default=0))
 
 # Занесение таблицы в базу данных с помощью metadata через engine
 metadata.create_all(engn)
@@ -51,10 +52,9 @@ class SqlChat(object):
                  armory=None,
                  used_armory=None,
                  resources=100,
-                 daily_income=10,
-                 construction_lvl=1,
-                 conquerors_list='[]',
-                 conquered_list='[]'):
+                 buildings='{"armory": 0, "walls": 0, "treasury:0"}',
+                 current_war_data='{"attacked_by_chats": [], "attacks_left": 1, "chats_besieged": []}',
+                 daily_dungeon_sponsored=0):
         self.chat_id = chat_id
         self.name = name
         self.data = data
@@ -62,11 +62,9 @@ class SqlChat(object):
         self.armory = armory
         self.used_armory = used_armory
         self.resources = resources
-        self.daily_income = daily_income
-        self.construction_lvl = construction_lvl
-        self.conquerors_list = conquerors_list
-        self.conquered_list = conquered_list
-
+        self.buildings = buildings
+        self.current_war_data = current_war_data
+        self.daily_dungeon_sponsored = daily_dungeon_sponsored
     # Пользователи
 
     def add_user(self, user_id):
@@ -102,6 +100,14 @@ class SqlChat(object):
 
     def get_receipts(self):
         return json.loads(self.receipts)
+
+    def get_current_war_data(self):
+        return json.loads(self.current_war_data)
+
+    def set_current_war_data(self, war_data_dict):
+        self.current_war_data = json.dumps(war_data_dict)
+        session.commit()
+
 
     # Предметы
     # Обработка предметов
@@ -151,12 +157,6 @@ class SqlChat(object):
 
     def clear_used_items(self):
         self.used_armory = '{}'
-        session.commit()
-
-    def add_conqueror(self, chat_id):
-        conquerors = json.loads(self.conquerors_list)
-        conquerors.append(str(chat_id))
-        self.conquerors_list = json.dumps(conquerors)
         session.commit()
 
     def get_income(self):
