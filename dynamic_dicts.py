@@ -12,6 +12,7 @@ unit_talk = DynamicDict('unit_talk')
 
 
 lobby_list = DynamicDict('lobby_list')
+occupied_list = []
 
 dicts = [dungeons, fight_dict, unit_talk, lobby_list]
 

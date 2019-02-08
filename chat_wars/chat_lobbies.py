@@ -57,7 +57,8 @@ class Lobby:
 
     def next_step(self, user_id, message_id=None):
         print(self[user_id])
-
+        if not self.started:
+            self.started = True
         if 'weapon' in self[user_id]['equipment_choice']:
             user = pyossession.get_user(user_id=user_id)
             user.send_weapon_choice(self.id, message_id=message_id)
@@ -80,14 +81,24 @@ class Lobby:
         # В качестве аргумента должны быть переданы словари команд в виде
         # [team={chat_id: unit_dict} or team={(ai_class, n):unit_dict}].
         fight = fight_main.Fight(chat_id=self.chat_id)
-        self.fight = fight
-        self.fight.form_teams(args)
+        fight.form_teams(args)
         results = fight.run()
         return results
 
     def send_lobby(self):
         message = bot_methods.send_message(self.chat_id, self.create_lobby(), reply_markup=self.keyboard())
         self.message_id = message.message_id
+
+    def join_lobby(self, user_id, unit_dict):
+        if self.started:
+            return False
+        user = get_user(user_id)
+        if user_id not in dynamic_dicts.occupied_list:
+            dynamic_dicts.occupied_list.append(user_id)
+            return user
+        else:
+            bot_methods.send_message(user_id, 'Вы не можете сейчас присоединиться.')
+            return False
 
     def update_lobby(self, keyboard=True):
         message = self.create_lobby()
@@ -98,31 +109,6 @@ class Lobby:
         bot_methods.send_message(self.chat_id,
                                  localization.LangTuple('errors', error).
                                  translate(self.lang))
-
-    def join_lobby(self, user_id, unit_dict):
-        if self.started:
-            return False
-        if not any(user_id in team for team in self.teams):
-            unit_data = {
-                'dict': unit_dict,
-                'equipment_choice':
-                    [
-                        'weapon',
-                        'armor',
-                        'items'
-                    ] if not self.skip_armory else [],
-                'ready': False
-            }
-            if not self.teams[0]:
-                self.teams[0][user_id] =  unit_data
-            else:
-                self.teams.append({user_id: unit_data})
-            self.update_lobby()
-            chat = get_chat(self.chat_id)
-            chat.add_user(user_id)
-            bot_methods.send_message(user_id, 'Вы успешно присоединились')
-        else:
-            self.error('player_exists')
 
     def team_ready(self):
         if all(all(team[key]['ready'] for key in team.keys()) for team in self.teams):
@@ -139,6 +125,11 @@ class Lobby:
 
     def end(self):
         del dynamic_dicts.lobby_list[self.id]
+        if not self.started:
+            for team in self.teams:
+                for key in team:
+                    dynamic_dicts.occupied_list.remove(key)
+
 
 
 class StartChecker:
@@ -280,6 +271,12 @@ class AttackLobby(Lobby):
         self.text = 'Нападение на чат {}'.format(self.target_chat_name)
 
     def join_lobby(self, user_id, unit_dict):
+        user = Lobby.join_lobby(self, user_id, unit_dict)
+        if not user:
+            return False
+        elif user.attacked:
+            bot_methods.send_message(user_id, 'Вы уже принимали участие в атаке!')
+            return False
         if self.started:
             return False
         if not any(user_id in team for team in self.teams):
@@ -344,7 +341,8 @@ class DefenceLobby(Lobby):
         self.text = 'Защита от чата {}'.format(attack_lobby.chat.name)
 
     def join_lobby(self, user_id, unit_dict):
-        if self.started:
+        user = Lobby.join_lobby(self, user_id, unit_dict)
+        if not user:
             return False
         if not any(user_id in team for team in self.teams):
             unit_data = {
@@ -384,6 +382,31 @@ class FFA(Lobby):
             args.append({chat_id: team[chat_id]['dict'] for chat_id in team})
         fight_main.thread_fight(None, *args, chat_id=self.chat_id)
         self.end()
+
+    def join_lobby(self, user_id, unit_dict):
+        if self.started:
+            return False
+        if not any(user_id in team for team in self.teams):
+            unit_data = {
+                'dict': unit_dict,
+                'equipment_choice':
+                    [
+                        'weapon',
+                        'armor',
+                        'items'
+                    ] if not self.skip_armory else [],
+                'ready': False
+            }
+            if not self.teams[0]:
+                self.teams[0][user_id] =  unit_data
+            else:
+                self.teams.append({user_id: unit_data})
+            self.update_lobby()
+            chat = get_chat(self.chat_id)
+            chat.add_user(user_id)
+            bot_methods.send_message(user_id, 'Вы успешно присоединились')
+        else:
+            self.error('player_exists')
 
 
 class LobbyHandler:

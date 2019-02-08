@@ -352,6 +352,8 @@ class Fight:
             self.string_tuple.row(LangTuple('fight', 'draw'))
 
         ending_dict = {'winners': [], 'loser': [], 'loot': engine.Container()}
+        if not won_teams:
+            ending_dict['won_team'] = 'draw'
         for team in self.teams:
             if team in won_teams:
                 if team.team_marker is not None:

@@ -33,7 +33,6 @@ users_table = Table('users', metadata,
                     Column('id', Integer, primary_key=True),
                     Column('user_id', Integer, unique=True),
                     Column('chat_id', String, ForeignKey('chats.chat_id')),
-                    Column('occupied', Integer, default=0),
                     Column('attacked', Integer, default=0))
 
 # Занесение таблицы в базу данных с помощью metadata через engine
@@ -160,7 +159,7 @@ class SqlChat(object):
         session.commit()
 
     def get_income(self):
-        imcome_receivers = []
+        return 10
 
     # Ресурсы
 
@@ -179,12 +178,22 @@ class SqlUser(object):
     def __init__(self, user_id, chat_id):
         self.user_id = user_id
         self.chat_id = chat_id
+        self.attacked = 0
 
     def __repr__(self):
         return "<User('%s', '%s')>" % (self.chat_id, self.user_id)
 
     def get_armory(self):
         return self.chat.armory
+
+    def attack(self):
+        self.attacked = 1
+        session.commit()
+
+    def refresh(self):
+        self.attacked = 0
+        session.commit()
+
 
 
 class Pyossession:
@@ -228,5 +237,9 @@ class Pyossession:
             return user
         else:
             return None
+
+    def get_users(self):
+        users = session.query(self.user_class).all()
+        return users
 
 

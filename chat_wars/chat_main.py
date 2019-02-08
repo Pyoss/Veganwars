@@ -46,7 +46,9 @@ class Chat(sql_alchemy.SqlChat):
             targets = self.get_target_chats()
             buttons = []
             for target in targets:
-                buttons.append(keyboards.Button(target.name, callback_data='_'.join(['mngt', 'attack',  target.chat_id])))
+                buttons.append(keyboards.Button(target.name + ' - ' + str(self.get_attack_price(target)),
+                                                callback_data='_'.join(['mngt', 'attack',
+                                                                        target.chat_id])))
             keyboard = keyboards.form_keyboard(*buttons)
         elif current_war.stage == 'attack':
             string = 'Выберите чат на атаки'
@@ -57,6 +59,7 @@ class Chat(sql_alchemy.SqlChat):
             keyboard = keyboards.form_keyboard(*buttons)
         else:
             delete_message(user_id, message_id)
+            return False
         if self.ask_rights(user_id) == 'admin':
             edit_message(user_id, message_id, string, reply_markup=keyboard)
         else:
@@ -64,10 +67,20 @@ class Chat(sql_alchemy.SqlChat):
 
     def get_target_chats(self):
         if current_war.stage == 'siege':
-            return [chat for chat in pyossession.get_chats() if chat.chat_id != self.chat_id]
+            target_chats = [chat for chat
+                            in pyossession.get_chats() if chat.chat_id != self.chat_id]
+            return target_chats
         elif current_war.stage == 'attack':
             war_data = self.get_current_war_data()
             return [chat for chat in [pyossession.get_chat(chat_id) for chat_id in war_data['chats_besieged']]]
+
+    def get_attack_price(self, chat):
+        attack_price = self.get_income()
+        alternative = chat.resources*0.1
+        if alternative > attack_price:
+            attack_price = int(alternative)
+        return attack_price
+
 
     def get_free_equipment(self, equipment_types=None):
         equipment = []
@@ -235,16 +248,6 @@ class User(sql_alchemy.SqlUser):
             edit_message(chat_id=self.user_id, message_id=message_id,
                                      message_text=message, reply_markup=keyboards.form_keyboard(*buttons) )
 
-
-class ChatWar:
-    def __init__(self, attacker_lobby, defender_lobby):
-        args = [attacker_lobby.to_team(), defender_lobby.to_team()]
-        # В качестве аргумента должны быть переданы словари команд в виде
-        # [team={chat_id:(name, unit_dict)} or team={ai_class:(ai_class.name, unit_dict)}].
-        fight = fight_main.Fight()
-        fight.form_teams(args)
-
-
 class ChatHandler:
     name = None
 
@@ -283,6 +286,10 @@ def get_chat(chat_id):
 
 def get_user(chat_id):
     return pyossession.get_user(chat_id)
+
+
+def get_users():
+    return pyossession.get_users()
 
 pyossession = Pyossession(Chat, User)
 pyossession.start_session()

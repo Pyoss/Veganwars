@@ -3,13 +3,15 @@ from threading import Thread
 from bot_utils.bot_methods import send_message, edit_message, delete_message, get_chat_administrators
 from bot_utils import keyboards
 from sql_alchemy import Pyossession
+from dynamic_dicts import occupied_list
 
 import engine
 
+
 class GlobalWar:
     def __init__(self):
-        self.stage = 'siege'
-        self.stage_choices = ['siege', 'peace', 'attack', 'final']
+        self.stage = 'before_siege'
+        self.stage_choices = ['siege', 'peace', 'before_attack', 'before_siege']
         self.war_actors = {}
         self.id = str(engine.rand_id())
 
@@ -24,21 +26,25 @@ class GlobalWar:
         self.id = str(engine.rand_id())
 
     def next_step(self, chat_id):
-        if self.stage == 'peace':
+        if self.stage == 'before_siege':
             self.start_siege()
             send_message(chat_id, 'Текущий этап войны - осада.')
         elif self.stage == 'siege':
+            self.stage = 'before_attack'
+            self.refresh_users()
+            send_message(chat_id, 'Текущий этап войны - мир.')
+        elif self.stage == 'before_attack':
             self.start_attack()
             send_message(chat_id, 'Текущий этап войны - атака.')
         elif self.stage == 'attack':
-            self.stage = 'final'
+            self.stage = 'before_siege'
+            self.refresh_users()
             self.get_results()
             send_message(chat_id, 'Текущий этап войны - мир.')
 
     def get_results(self):
         from chat_wars.chat_main import Chat, User
-        pyossession = Pyossession(Chat, User, non_primary=True)
-        pyossession.start_session()
+        pyossession = Pyossession(Chat, User)
         chats = pyossession.get_chats()
         for chat in chats:
             war_data = chat.get_current_war_data()
@@ -49,8 +55,16 @@ class GlobalWar:
                     chat.add_resources(-prize_amount)
                     won_chat.add_resources(prize_amount)
                     send_message(chat.chat_id, 'Чат {} отнимает у вас {} ресурсов'.format(won_chat.name, prize_amount))
-                    send_message(chat.chat_id, 'Вы отнимаете {} ресурсов у чата {}'.format(prize_amount, chat.name))
+                    send_message(won_chat.chat_id, 'Вы отнимаете {} ресурсов у чата {}'.format(prize_amount, chat.name))
             chat.set_current_war_data({"attacked_by_chats": [], "attacks_left": 1, "chats_besieged": []})
+
+    def refresh_users(self):
+        from chat_wars.chat_main import Chat, User
+        pyossession = Pyossession(Chat, User)
+        users = pyossession.get_users()
+        for user in users:
+            user.refresh()
+
 
 
 
@@ -70,7 +84,21 @@ class AttackAction:
         self.attacker_ready = False
         self.mode = None
 
+    def users_attack(self):
+        from chat_wars.chat_main import get_user
+        user_list = [get_user(key) for key in self.attacker_lobby.team]
+        for user in user_list:
+            user.attack()
+
+    def get_all_user_ids(self):
+        from chat_wars.chat_main import get_user
+        user_list = [key for key in self.attacker_lobby.team]
+        user_list = [*user_list, *[key for key in self.defender_lobby.team]]
+        return user_list
+
+
     def start(self):
+        self.users_attack()
         args = [self.attacker_lobby.to_team(), self.defender_lobby.to_team()]
         # В качестве аргумента должны быть переданы словари команд в виде
         # [team={chat_id:(name, unit_dict)} or team={ai_class:(ai_class.name, unit_dict)}].
@@ -109,6 +137,10 @@ class AttackAction:
             elif self.mode == 'attack':
                 send_message(self.attacker_lobby.chat_id,
                              '{} успешно обороняется!'.format(self.defender_lobby.name))
+        for user_id in self.get_all_user_ids():
+            if user_id in occupied_list:
+                occupied_list.remove(user_id)
+
 
 
 current_war = GlobalWar()
