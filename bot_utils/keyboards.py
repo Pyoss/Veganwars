@@ -8,6 +8,8 @@ LangTuple = localization.LangTuple
 
 
 class Button(types.InlineKeyboardButton):
+    name = None
+
     def __init__(self, text, callback_data=None):
         types.InlineKeyboardButton.__init__(self, text, url=None, callback_data=callback_data,
                                             switch_inline_query=None,

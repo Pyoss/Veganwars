@@ -9,10 +9,12 @@ from adventures import dungeon_main, map_engine
 import engine
 import dynamic_dicts
 from chat_wars.chat_war import current_war, AttackAction
+from chat_wars.buildings import building_dict
 from threading import Thread
 
 
 class Chat(sql_alchemy.SqlChat):
+
     def get_chat_obj(self):
         return get_chat_administrators(self.chat_id)
 
@@ -35,7 +37,6 @@ class Chat(sql_alchemy.SqlChat):
         return False
 
 # --------------------       АТАКА ЧАТОВ      ------------------------ #
-
 
     def alert_attack(self):
         self.send_message('В течение следующего часа можно выбрать чат для нападения.')
@@ -81,7 +82,6 @@ class Chat(sql_alchemy.SqlChat):
             attack_price = int(alternative)
         return attack_price
 
-
     def get_free_equipment(self, equipment_types=None):
         equipment = []
         armory = self.get_free_armory()
@@ -125,6 +125,55 @@ class Chat(sql_alchemy.SqlChat):
 
 # ---------------------------------- КРАФТ ------------------------------------ #
 
+    def complete_attack(self, chat_id):
+        war_data = self.get_current_war_data()
+        war_data.chats_attacked.append(chat_id)
+        self.set_current_war_data(war_data)
+
+    def conquer(self, chat_id):
+        chat = get_chat(chat_id)
+        war_data = chat.get_current_war_data()
+        war_data.conquered_by_chats.append(self.chat_id)
+        chat.set_current_war_data(war_data)
+
+# --------------------       ЗДАНИЯ      ------------------------ #
+
+    def available_buildings(self):
+        buildings = self.get_buildings()
+        return [key for key, value in building_dict.items() if key not in buildings or
+                building_dict[key].max_lvl > buildings[key]]
+
+    def buy_building(self, building_name):
+        if self.resources >= building_name[building_dict].get_price(self) and building_name in self.available_buildings():
+            return True
+        else:
+            return False
+
+    def build(self, user, building_name):
+        buildings = self.get_buildings()
+        if building_name in buildings:
+            buildings[building_name] += 1
+        else:
+            buildings[building_name] = 1
+        self.set_buildings(buildings)
+
+    def construction_lvl(self):
+        return sum([value for key, value in self.get_buildings().items()])
+
+    def available_buildings_message(self, user, message_id):
+        available_buildings = self.available_buildings()
+        buttons = []
+        for building in available_buildings:
+            building_object = building_dict[building]()
+            price = building_object.get_price(self)
+            name = building_object.get_string('name').translate('rus')
+            button = keyboards.Button('{} - {}'.format(name, price),
+                                      callback_data='_'.join(['mngt', 'build','menu', building]))
+            buttons.append(button)
+        buttons.append(keyboards.ChatButton('Назад', 'rus', 'menu', named=True))
+        edit_message(user.user_id, message_id=message_id, message_text='Доступные для постройки здания',
+                     reply_markup=keyboards.form_keyboard(*buttons))
+
     def print_receipts(self):
         receipts = self.get_receipts()
         message = ''
@@ -166,17 +215,6 @@ class Chat(sql_alchemy.SqlChat):
     def print_resources(self):
         message = 'Количество ресурсов - ' + str(self.resources)
         self.send_message(message)
-
-    def complete_attack(self, chat_id):
-        war_data = self.get_current_war_data()
-        war_data.chats_attacked.append(chat_id)
-        self.set_current_war_data(war_data)
-
-    def conquer(self, chat_id):
-        chat = get_chat(chat_id)
-        war_data = chat.get_current_war_data()
-        war_data.conquered_by_chats.append(self.chat_id)
-        chat.set_current_war_data(war_data)
 
 
 class User(sql_alchemy.SqlUser):
@@ -247,6 +285,7 @@ class User(sql_alchemy.SqlUser):
         else:
             edit_message(chat_id=self.user_id, message_id=message_id,
                                      message_text=message, reply_markup=keyboards.form_keyboard(*buttons) )
+
 
 class ChatHandler:
     name = None

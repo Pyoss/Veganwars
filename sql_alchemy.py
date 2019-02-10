@@ -107,6 +107,13 @@ class SqlChat(object):
         self.current_war_data = json.dumps(war_data_dict)
         session.commit()
 
+    def get_buildings(self):
+        return json.loads(self.buildings)
+
+    def set_buildings(self, building_dict):
+        self.buildings = json.dumps(building_dict)
+        session.commit()
+
 
     # Предметы
     # Обработка предметов

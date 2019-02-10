@@ -3,6 +3,7 @@ from chat_wars.chat_main import get_chat, get_user
 from bot_utils import keyboards
 from locales.emoji_utils import emote_dict
 from bot_utils.bot_methods import send_message, edit_message, delete_message, get_chat_administrators
+from chat_wars.buildings import building_dict
 chat_wars_activated = False
 
 
@@ -54,7 +55,7 @@ def get_chat_menu(user_id, message_id=None):
         keyboards.ChatButton('Атака','rus', 'attackchoice', named=True, emoji=emote_dict['locked_em']
         if not chat_wars_activated else None),
         keyboards.ChatButton('Арсенал', 'rus', 'arsenal', named=True),
-        keyboards.ChatButton('Постройки', 'rus', 'buildings', named=True),
+        keyboards.ChatButton('Постройки', 'rus', 'build', 'list', named=True),
         keyboards.ChatButton('Закрыть', 'rus', 'close', named=True)]
     keyboard = keyboards.form_keyboard(*buttons)
     if message_id is None:
@@ -86,8 +87,15 @@ class ManageHandler:
             target = call_data[2]
             chat.attack_chat(user_id, target, call.message.message_id)
         elif action == 'build':
-            building_name = call.data[2]
-            chat.building_menu(building_name, call.message.message_id)
+            argument = call_data[2]
+            if argument == 'list':
+                chat.available_buildings_message(user, call.message.message_id)
+            elif argument == 'menu':
+                building_name = call_data[3]
+                building_dict[building_name]().send_menu(user, chat, call.message.message_id)
+            elif argument == 'make':
+                building_name = call_data[3]
+                chat.build(user_id, building_name)
         elif action == 'besiege':
             target_chat_id = call_data[2]
             current_war_id = call_data[3]
@@ -96,4 +104,5 @@ class ManageHandler:
             target_chat_id = call_data[2]
             current_war_id = call_data[3]
             chat.marauder(target_chat_id, current_war_id, call.message.message_id)
-
+        elif action == 'menu':
+            get_chat_menu(user_id, message_id=call.message.message_id)

@@ -39,6 +39,8 @@ def get_string(lang_tuple, lang):
 
 
 class LangTuple:
+    name = None
+
     def __init__(self, table_row, tuple_string, format_dict=None):
         table_row = table_row.split('_', maxsplit=1)
         self.table = table_row[0]
