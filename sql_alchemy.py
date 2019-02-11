@@ -51,7 +51,7 @@ class SqlChat(object):
                  armory=None,
                  used_armory=None,
                  resources=100,
-                 buildings='{"armory": 0, "walls": 0, "treasury:0"}',
+                 buildings='{}',
                  current_war_data='{"attacked_by_chats": [], "attacks_left": 1, "chats_besieged": []}',
                  daily_dungeon_sponsored=0):
         self.chat_id = chat_id

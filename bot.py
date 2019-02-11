@@ -45,6 +45,7 @@ def game(message):
             dynamic_dicts.lobby_list[data[1]].join_lobby(message.from_user.id,
                                                      unit_dict=units.Human(name=message.from_user.first_name).to_dict())
 
+
 @bot.message_handler(commands=["dicts"])
 def switch(message):
     import dynamic_dicts
@@ -121,6 +122,12 @@ def start(message):
 def start(message):
         chat = chat_main.get_chat(message.chat.id)
         chat.print_resources()
+
+
+@bot.message_handler(commands=['show_items'])
+def start(message):
+        chat = chat_main.get_chat(message.chat.id)
+        chat.print_items()
 
 
 @bot.message_handler(commands=['resources'])

@@ -192,7 +192,20 @@ class Chat(sql_alchemy.SqlChat):
         string += used_items.to_string('rus', marked=True, emoted=True)
         self.send_message(string)
 
-    def ask_craft(self, user_id):
+# --------------------      ПРЕДМЕТЫ        ------------------------ #
+
+    def items_menu(self, user_id, message_id):
+        item_string = 'Меню предметов.'
+        buttons = []
+        buttons.append(keyboards.ChatButton('Крафт', 'rus', 'craft-list', named=True))
+        buttons.append(keyboards.ChatButton('Назад', 'rus', 'menu', named=True))
+        edit_message(user_id, message_id, item_string, reply_markup=keyboards.form_keyboard(*buttons))
+
+    def item_menu_string(self, user_id):
+        item_list = self.get_armory()
+        item_string = 'Меню предметов.'
+
+    def ask_craft(self, user_id, message_id):
         if self.ask_rights(user_id) == 'admin':
             message = 'Выберите предмет для крафта.'
             craft_list = []
@@ -206,10 +219,23 @@ class Chat(sql_alchemy.SqlChat):
             buttons = []
             for item in craft_list:
                 price = standart_actions.get_class(item[0]).price
-                buttons.append(keyboards.Button(standart_actions.get_name(item[0], 'rus') + ' (' + str(price) + ')',
-                                                callback_data='_'.join(['chat', self.chat_id, 'craft',  item[0]])))
-            keyboard = keyboards.form_keyboard(*buttons)
-            send_message(user_id, message, reply_markup=keyboard)
+                buttons.append(keyboards.ChatButton(standart_actions.get_name(item[0], 'rus') + ' (' + str(price) + ')',
+                                                'rus', 'craft', item[0], named=True))
+            buttons.append(keyboards.ChatButton('Назад', 'rus', 'menu', named=True))
+            edit_message(user_id, message_id, message, reply_markup=keyboards.form_keyboard(*buttons))
+
+    def ask_add_item(self, item_name, user_id, message_id):
+        if self.ask_rights(user_id) == 'admin':
+            receipts = self.get_receipts()
+            item_price = standart_actions.object_dict[item_name].price
+            if item_name in receipts.keys() and self.resources >= item_price:
+                self.create_item(item_name, item_price)
+            delete_message(user_id, message_id)
+
+    def create_item(self, item_name, item_price):
+        self.add_item(item_name)
+        self.delete_receipt(item_name)
+        self.add_resources(-item_price)
 
     # Распечатка количества ресурсов
     def print_resources(self):

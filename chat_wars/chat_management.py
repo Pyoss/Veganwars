@@ -77,8 +77,6 @@ class ManageHandler:
         action = call_data[1]
         if action == 'attackchoice':
             chat.ask_attack(user_id, call.message.message_id)
-        elif action == 'craft':
-            chat.ask_craft(user_id, call.message.message_id)
         elif action == 'buildings':
             chat.ask_buildings(user_id, call.message.message_id)
         elif action == 'close':
@@ -106,3 +104,10 @@ class ManageHandler:
             chat.marauder(target_chat_id, current_war_id, call.message.message_id)
         elif action == 'menu':
             get_chat_menu(user_id, message_id=call.message.message_id)
+        elif action == 'arsenal':
+            chat.items_menu(user_id, call.message.message_id)
+        elif action == 'craft-list':
+            chat.ask_craft(user_id, call.message.message_id)
+        elif action == 'craft':
+            item_name = call_data[2]
+            chat.ask_add_item(item_name, user_id, call.message.message_id)
