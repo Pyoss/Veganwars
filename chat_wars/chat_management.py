@@ -1,5 +1,6 @@
 import random
 from chat_wars.chat_main import get_chat, get_user
+from chat_wars.chat_menu import chat_action_dict
 from bot_utils import keyboards
 from locales.emoji_utils import emote_dict
 from bot_utils.bot_methods import send_message, edit_message, delete_message, get_chat_administrators
@@ -75,39 +76,4 @@ class ManageHandler:
         user = get_user(user_id)
         chat = user.chat
         action = call_data[1]
-        if action == 'attackchoice':
-            chat.ask_attack(user_id, call.message.message_id)
-        elif action == 'buildings':
-            chat.ask_buildings(user_id, call.message.message_id)
-        elif action == 'close':
-            delete_message(user_id, call.message.message_id)
-        elif action == 'attack':
-            target = call_data[2]
-            chat.attack_chat(user_id, target, call.message.message_id)
-        elif action == 'build':
-            argument = call_data[2]
-            if argument == 'list':
-                chat.available_buildings_message(user, call.message.message_id)
-            elif argument == 'menu':
-                building_name = call_data[3]
-                building_dict[building_name]().send_menu(user, chat, call.message.message_id)
-            elif argument == 'make':
-                building_name = call_data[3]
-                chat.build(user_id, building_name)
-        elif action == 'besiege':
-            target_chat_id = call_data[2]
-            current_war_id = call_data[3]
-            chat.win_siege(target_chat_id, current_war_id, call.message.message_id)
-        elif action == 'marauder':
-            target_chat_id = call_data[2]
-            current_war_id = call_data[3]
-            chat.marauder(target_chat_id, current_war_id, call.message.message_id)
-        elif action == 'menu':
-            get_chat_menu(user_id, message_id=call.message.message_id)
-        elif action == 'arsenal':
-            chat.items_menu(user_id, call.message.message_id)
-        elif action == 'craft-list':
-            chat.ask_craft(user_id, call.message.message_id)
-        elif action == 'craft':
-            item_name = call_data[2]
-            chat.ask_add_item(item_name, user_id, call.message.message_id)
+        chat_action_dict[action](chat, user_id, call).func()

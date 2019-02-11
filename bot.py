@@ -6,7 +6,7 @@ from bot_utils import config, bot_handlers, bot_methods
 import dynamic_dicts
 from fight import fight_main, units
 import time, requests, threading, asyncio
-from chat_wars import chat_main, chat_lobbies, chat_management
+from chat_wars import chat_main, chat_lobbies, chat_management, chat_menu
 
 WEBHOOK_HOST = '167.99.131.174'
 WEBHOOK_PORT = 443  # 443, 80, 88 или 8443 (порт должен быть открыт!)
@@ -74,7 +74,8 @@ def start(message):
 
 @bot.message_handler(commands=['chat_management'])
 def start(message):
-    chat_management.get_chat_menu(message.from_user.id)
+    chat = chat_main.get_chat(message.chat.id)
+    chat_menu.chat_action_dict['main'](chat, message.from_user.id, call=None).func()
 
 
 @bot.message_handler(commands=['ffa'])
