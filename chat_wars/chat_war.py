@@ -10,7 +10,7 @@ import engine
 
 class GlobalWar:
     def __init__(self):
-        self.stage = 'before_siege'
+        self.stage = 'siege'
         self.stage_choices = ['siege', 'peace', 'before_attack', 'before_siege']
         self.war_actors = {}
         self.id = str(engine.rand_id())
@@ -95,7 +95,6 @@ class AttackAction:
         user_list = [key for key in self.attacker_lobby.team]
         user_list = [*user_list, *[key for key in self.defender_lobby.team]]
         return user_list
-
 
     def start(self):
         self.users_attack()

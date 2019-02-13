@@ -6,7 +6,7 @@ from fight import standart_actions, build, fight_main
 import dynamic_dicts
 from locales import localization
 from adventures import dungeon_main
-from chat_wars import chat_main, chat_lobbies, chat_management
+from chat_wars import chat_main, chat_lobbies, chat_menu, user_menu
 
 types = telebot.types
 bot = telebot.TeleBot(config.token)
@@ -23,7 +23,8 @@ class CallbackHandler:
                            'map': dungeon_main.MapHandler(self),
                            'chat': chat_main.ChatHandler(self),
                            'lobby': chat_lobbies.LobbyHandler(self),
-                           'mngt': chat_management.ManageHandler(self)}
+                           'mngt': chat_menu.ManageHandler(self),
+                           'user': user_menu.UserHandler(self)}
 
     def handle(self, call):
         call_split = call.data.split('_')

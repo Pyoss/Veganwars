@@ -4,6 +4,7 @@ from locales.emoji_utils import emote_dict
 from bot_utils.bot_methods import send_message, edit_message
 import inspect, sys
 
+
 class Building:
     name = None
     default_price = 100

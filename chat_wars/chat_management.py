@@ -43,37 +43,3 @@ class TestChat:
     def get_final(self):
         print(self.resources)
         print(self.given_resources)
-
-
-def get_chat_menu(user_id, message_id=None):
-    user = get_user(user_id)
-    chat = user.chat
-    if not any(user.user.id == user_id for user in get_chat_administrators(chat.chat_id)):
-        send_message(chat.chat_id, 'Кажется, вы не администратор.')
-        return False
-    string = 'Управление чатом ВВарс'
-    buttons = [
-        keyboards.ChatButton('Атака','rus', 'attackchoice', named=True, emoji=emote_dict['locked_em']
-        if not chat_wars_activated else None),
-        keyboards.ChatButton('Арсенал', 'rus', 'arsenal', named=True),
-        keyboards.ChatButton('Постройки', 'rus', 'build', 'list', named=True),
-        keyboards.ChatButton('Закрыть', 'rus', 'close', named=True)]
-    keyboard = keyboards.form_keyboard(*buttons)
-    if message_id is None:
-        send_message(user_id, string, reply_markup=keyboard)
-    else:
-        edit_message(user_id, message_id, message_text=string, reply_markup=keyboard)
-
-
-class ManageHandler:
-    def __init__(self, handler):
-        self.handler = handler
-
-    @staticmethod
-    def handle(call):
-        call_data = call.data.split('_')
-        user_id = call.from_user.id
-        user = get_user(user_id)
-        chat = user.chat
-        action = call_data[1]
-        chat_action_dict[action](chat, user_id, call).func()
