@@ -85,7 +85,10 @@ class UserMainMenu(UserPage):
         return 'Управление персонажем'
 
     def form_actions(self):
-        self.children_actions = []
+        self.children_actions = [
+            UserSettings(self.user),
+            CloseMenu(self.user)
+        ]
 
 
 class UserSettings(UserPage):
@@ -99,12 +102,10 @@ class UserSettings(UserPage):
         self.children_actions = []
 
 
-
-
-
 class UserHandler:
 
     name = None
+
     def __init__(self, handler):
         self.handler = handler
 
@@ -113,11 +114,8 @@ class UserHandler:
         call_data = call.data.split('_')
         user_id = call.from_user.id
         user = get_user(user_id)
-        chat = user.chat
         action = call_data[1]
-        user_action_dict[action](chat, user_id, call).func()
-        
-
+        user_action_dict[action](user, call).func()
 
 
 user_action_dict = {value.name: value for key, value

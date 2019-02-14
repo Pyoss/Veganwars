@@ -49,6 +49,7 @@ class Party:
         self.members = [Member(key, value['dict'], dungeon=dynamic_dicts.dungeons[dungeon_id]) for key, value in player_dict.items()]
         self.leader = self.members[0]
         self.member_dict = {member.chat_id: member for member in self.members}
+        self.experience = 0
 
     # Перемещение группы
 
@@ -123,6 +124,11 @@ class Party:
                         self.member_dict[key.chat_id].inventory += loot_list[key]
                 bot_methods.send_message(member.chat_id, message)
 
+    def distribute_experience(self, user_list):
+        solo_experience = int(self.experience/len(user_list))
+        for user in user_list:
+            user.add_experience(solo_experience)
+
 
 class Member:
     def __init__(self, chat_id, unit_dict, dungeon, lang='rus'):
@@ -165,11 +171,9 @@ class Member:
         inventory = self.inventory.get_inventory_string(self.lang)
         inventory_fill = LangTuple('utils', 'empty') if not inventory else LangTuple('utils', 'inventory')
         return LangTuple('unit_' + self['unit_name'], 'dungeon_menu',
-                         format_dict={'name': self.name,
-                                      'hp': self['hp'],
-                                      'max_hp': self['max_hp'] - self['hp'],
-                                      'equipment': self.inventory.get_equipment_string(self.lang),
-                                      'inventory': inventory, 'fill': inventory_fill}).translate(self.lang)
+                         format_dict=units.units_dict[self['unit_name']].get_dungeon_format_dict(self,
+                                                                                                 inventory,
+                                                                                                 inventory_fill)).translate(self.lang)
 
     def menu_keyboard(self):
         buttons = list()

@@ -42,8 +42,9 @@ def game(message):
         data = message.text.split(' ')[1].split('_')
         import dynamic_dicts
         if data[1] in dynamic_dicts.lobby_list:
-            dynamic_dicts.lobby_list[data[1]].join_lobby(message.from_user.id,
-                                                     unit_dict=units.Human(name=message.from_user.first_name).to_dict())
+            user = chat_menu.get_user(message.from_user.id)
+            unit_dict = user.get_unit_dict(name=message.from_user.first_name)
+            dynamic_dicts.lobby_list[data[1]].join_lobby(message.from_user.id, unit_dict=unit_dict)
 
 
 @bot.message_handler(commands=["dicts"])
@@ -81,7 +82,7 @@ def start(message):
 @bot.message_handler(commands=['player'])
 def start(message):
     user = chat_main.get_user(message.from_user.id)
-    user_menu.user_action_dict['main'](user, message.from_user.id, call=None).func()
+    user_menu.user_action_dict['main'](user).func()
 
 
 @bot.message_handler(commands=['ffa'])

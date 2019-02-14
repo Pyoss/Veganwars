@@ -242,11 +242,9 @@ class CreateBuildingAction(ChatAction):
     rus_name = 'Построить'
 
 
-
-
 class ManageHandler:
-
     name = None
+
     def __init__(self, handler):
         self.handler = handler
 

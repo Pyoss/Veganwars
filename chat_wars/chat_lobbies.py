@@ -131,7 +131,6 @@ class Lobby:
                     dynamic_dicts.occupied_list.remove(key)
 
 
-
 class StartChecker:
     def __init__(self, lobby):
         self.lobby = lobby
@@ -218,6 +217,8 @@ class Dungeon(Lobby):
                                      (self.party.leader.name, farmed_resources))
         chat = pyossession.get_chat(self.chat_id)
         chat.add_resources(farmed_resources)
+        user_list = list(map(get_user, [member.chat_id for member in self.party.members]))
+        self.party.distribute_experience(user_list)
 
     def __del__(self):
         print('Удаление объекта данжа {}...'.format(self.id))

@@ -8,10 +8,13 @@ from operator import attrgetter
 
 
 def get_lowest_hp(team):
-    if team:
-        return min(team, key=attrgetter('hp'))
-    else:
-        return None
+    try:
+        if team:
+            return min(team, key=attrgetter('hp'))
+        else:
+            return None
+    except AttributeError:
+        return random.choices(team)
 
 
 def get_lowest_energy(team):

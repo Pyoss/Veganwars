@@ -120,7 +120,7 @@ class Fight:
     def __init__(self, chat_id=None, test=False):
         self.turn = 1
         self.id = str(engine.rand_id())
-        self.chat_id = [] if chat_id is None else chat_id
+        self.chat_id = [] if chat_id is None else [chat_id]
         self.units_dict = dict()
         self.units = list()
         self.langs = ['rus']
@@ -331,7 +331,6 @@ class Fight:
         self.string_tuple.construct()
         if self.string_tuple.active:
             for listener in [listener for listener in self.listeners if listener.chat_id not in self.chat_id]:
-                time.sleep(2)
                 listener.send_message(self.string_tuple[listener.lang])
                 if not listener.unit.alive():
                     self.listeners.remove(listener)

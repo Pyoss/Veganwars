@@ -19,6 +19,8 @@ class Unit:
     types = ['alive']
     summoned = False
     standart_additional = ['move', 'move_back', 'skip']
+    experience = 10
+    danger = 10
 
     # Список предметов, выпадающих из юнита при убийстве. Имеет вид [name: (quantity, chance)]
     loot = []
@@ -379,6 +381,15 @@ class Unit:
         new_unit.summoned = True
         return new_unit
 
+    @staticmethod
+    def get_dungeon_format_dict(member, inventory, inventory_fill):
+
+        return {'name': member.name,
+         'hp': member['hp'],
+         'max_hp': member['max_hp'] - member['hp'],
+         'equipment': member.inventory.get_equipment_string(member.lang),
+         'inventory': inventory, 'fill': inventory_fill}
+
     # Выдавание конечного списка лута при смерти.
     def generate_loot(self):
         if self.lost_weapon:
@@ -415,7 +426,7 @@ class StandartCreature(Unit):
         self.melee_accuracy = 0
         self.range_accuracy = 0
         self.evasion = 0
-        self.damage = 40
+        self.damage = 0
         self.weapon = None
         self.default_weapon = 'fist'
         self.weapons = []
@@ -515,7 +526,7 @@ class Human(StandartCreature):
         StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         if unit_dict is None:
-            self.abilities = [abilities.Dodge(self), abilities.SpellCaster(self)]
+            self.abilities = [abilities.Dodge(self)]
 
 
 class Necromancer(Human):
@@ -867,6 +878,16 @@ class Skeleton(Unit):
                                       'leg': emote_dict['check_em' if self.bone_dict['legs'] else 'cross_em'],
                                       'weapon': LangTuple('weapon_' + self.weapon.name, 'name'),
                                       'statuses': self.get_status_string()})
+
+    @staticmethod
+    def get_dungeon_format_dict(member, inventory, inventory_fill):
+        return {'name': member.name,
+          'bones': member['wounds'],
+          'head': emote_dict['check_em' if member['bone_dict']['head'] else 'cross_em'],
+          'arm': emote_dict['check_em' if member['bone_dict']['arms'] else 'cross_em'],
+          'leg': emote_dict['check_em' if member['bone_dict']['legs'] else 'cross_em'],
+          'equipment': member.inventory.get_equipment_string(member.lang),
+          'inventory': inventory, 'fill': inventory_fill}
 
     def crawl_available(self):
         if self.melee_targets or not self.weapon.melee:

@@ -13,18 +13,27 @@ class Ability(standart_actions.GameObject):
     core_types = ['ability']
     db_string = 'abilities'
 
+    def __init__(self, unit=None, obj_dict=None):
+        standart_actions.GameObject.__init__(self, unit=unit, obj_dict=obj_dict)
+        self.lvl = obj_dict.get('lvl', 1) if obj_dict is not None else 1
 
-class InstantAbility(standart_actions.InstantObject):
+    def to_dict(self):
+        this_dict = standart_actions.GameObject.to_dict(self)
+        this_dict['lvl'] = self.lvl
+        return this_dict
+
+
+class InstantAbility(standart_actions.InstantObject, Ability):
     core_types = ['ability']
     db_string = 'abilities'
 
 
-class TargetAbility(standart_actions.TargetObject):
+class TargetAbility(standart_actions.TargetObject, Ability):
     core_types = ['ability', 'target']
     db_string = 'abilities'
 
 
-class OptionAbility(standart_actions.SpecialObject):
+class OptionAbility(standart_actions.SpecialObject, Ability):
     core_types = ['ability', 'option']
     db_string = 'abilities'
 

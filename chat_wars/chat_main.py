@@ -312,6 +312,19 @@ class User(sql_alchemy.SqlUser):
             edit_message(chat_id=self.user_id, message_id=message_id,
                                      message_text=message, reply_markup=keyboards.form_keyboard(*buttons) )
 
+    def add_experience(self, experience):
+        send_message(self.user_id, 'Вы получаете {} опыта'.format(experience))
+        sql_alchemy.SqlUser.add_experience(self, experience)
+
+    def get_unit_dict(self, name=None):
+        class_dict = self.get_class()
+        abilities_list = self.get_abilities()
+        unit_dict = units.units_dict[class_dict['unit']](name=name).to_dict()
+        for ability in abilities_list:
+            if not any(ablty['name'] == ability['name'] for ablty in unit_dict['abilities']):
+                unit_dict['abilities'].append(ability)
+        return unit_dict
+
 
 class ChatHandler:
     name = None

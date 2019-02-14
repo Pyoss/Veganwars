@@ -163,6 +163,8 @@ class MobLocation(OpenLocation):
                                     if unit_dict['name'] == member.unit_dict['name']][0]
                 member.inventory.update()
             loot = results['loot'] + self.loot
+            experience = sum([units.units_dict[mob].experience for mob in self.mobs.mob_units if self.mobs is not None])
+            self.dungeon.party.experience += experience
             print('Раздача добычи:{}'.format(loot))
             self.dungeon.party.distribute_loot(loot)
             self.dungeon.update_map()
