@@ -1,6 +1,7 @@
 from bot_utils.keyboards import UserButton, form_keyboard
 from bot_utils.bot_methods import send_message, edit_message, delete_message
-from fight.standart_actions import object_dict, get_name
+from fight.abilities import ability_dict
+from fight.standart_actions import get_name
 from chat_wars.buildings import building_dict
 from chat_wars.chat_main import get_chat, get_user
 import sys, inspect
@@ -89,6 +90,12 @@ class UserMainMenu(UserPage):
             UserSettings(self.user),
             CloseMenu(self.user)
         ]
+        for ability in possible_abilities:
+            self.children_actions.append(UserAbilityMenu(self.user, ability=ability()))
+
+
+class LVLUP(UserPage):
+    name = 'lvlup'
 
 
 class UserSettings(UserPage):
@@ -117,7 +124,35 @@ class UserHandler:
         action = call_data[1]
         user_action_dict[action](user, call).func()
 
+# --------------------------- Прокачка -------------------------- #
 
+
+class UserAbilityMenu(UserPage):
+    name = 'ability-menu'
+    rus_name = 'Цель'
+    parent_menu = UserMainMenu
+
+    def __init__(self, user, call=None, ability=None):
+        UserPage.__init__(self, user, call=call)
+        if ability is None:
+            self.ability = ability_dict[(call.data.split('_')[-1])]
+        else:
+            self.ability = ability
+        self.ability_name = self.ability.name_lang_tuple().translate('rus')
+
+    def form_actions(self):
+        self.children_actions = []
+
+    def get_menu_string(self):
+        return 'Способность {}'.format(self.ability_name)
+
+    def button_to_page(self, name=None):
+        return UserButton(self.ability_name, 'rus', self.name, self.ability.name, named=True)
+
+
+# --------------------------- классы -------------------------- #
+
+possible_abilities = [ability_dict['dodge']]
 user_action_dict = {value.name: value for key, value
               in dict(inspect.getmembers(sys.modules[__name__], inspect.isclass)).items()
               if value.name is not None}

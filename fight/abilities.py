@@ -12,6 +12,7 @@ import sys
 class Ability(standart_actions.GameObject):
     core_types = ['ability']
     db_string = 'abilities'
+    prerequisites = {}
 
     def __init__(self, unit=None, obj_dict=None):
         standart_actions.GameObject.__init__(self, unit=unit, obj_dict=obj_dict)
@@ -21,6 +22,19 @@ class Ability(standart_actions.GameObject):
         this_dict = standart_actions.GameObject.to_dict(self)
         this_dict['lvl'] = self.lvl
         return this_dict
+
+    def user_available(self, user):
+        user_abilities = user.get_abilities()
+        if self.prerequisites:
+            for key in self.prerequisites:
+                if not any(ability['name'] == key and ability['lvl'] == self.prerequisites[key] for ability in user_abilities):
+                    return False
+        return True
+
+    def to_user(self, user):
+        user_abilities = user.get_abilities()
+        user_abilities.append(self.to_dict())
+        user.set_abilities(user_abilities)
 
 
 class InstantAbility(standart_actions.InstantObject, Ability):
