@@ -51,9 +51,13 @@ class Lobby:
             return None
         self.update_lobby(keyboard=False)
         self.start_checker.start()
+        anyone_present = False
         for team in self.teams:
             for chat_id in team:
+                anyone_present = True
                 self.next_step(user_id=chat_id, message_id=None)
+        if not anyone_present:
+            self.run()
 
     def next_step(self, user_id, message_id=None):
         print(self[user_id])

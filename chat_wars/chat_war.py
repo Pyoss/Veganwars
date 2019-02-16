@@ -101,11 +101,14 @@ class AttackAction:
         args = [self.attacker_lobby.to_team(), self.defender_lobby.to_team()]
         # В качестве аргумента должны быть переданы словари команд в виде
         # [team={chat_id:(name, unit_dict)} or team={ai_class:(ai_class.name, unit_dict)}].
-        fight = fight_main.Fight((self.attacker_lobby.chat_id, self.defender_lobby.chat_id))
-        fight.form_teams(args)
-        thread = Thread(target=fight.run, kwargs={'func': self.process_results})
-        thread.daemon = True
-        thread.start()
+        if len(args[1]) < 2:
+            self.process_results({'won_team': 'attacker'})
+        else:
+            fight = fight_main.Fight((self.attacker_lobby.chat_id, self.defender_lobby.chat_id))
+            fight.form_teams(args)
+            thread = Thread(target=fight.run, kwargs={'func': self.process_results})
+            thread.daemon = True
+            thread.start()
 
     def process_results(self, fight_results):
         if fight_results['won_team'] == 'attacker':
