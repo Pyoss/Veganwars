@@ -576,6 +576,9 @@ class GameObject:
     def name_lang_tuple(self):
         return localization.LangTuple(self.table_row, 'name')
 
+    def lang_tuple(self, string_row):
+        return localization.LangTuple(self.table_row, string_row)
+
     def available(self):
         if not self.active:
             return False

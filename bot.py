@@ -82,7 +82,7 @@ def start(message):
 @bot.message_handler(commands=['player'])
 def start(message):
     user = chat_main.get_user(message.from_user.id)
-    user_menu.user_action_dict['main'](user).func()
+    user_menu.user_action_dict['main'](user, message.from_user.id).func()
 
 
 @bot.message_handler(commands=['ffa'])

@@ -4,7 +4,7 @@ import sql_alchemy
 from bot_utils import keyboards
 from bot_utils.bot_methods import send_message, edit_message, delete_message, get_chat_administrators
 from sql_alchemy import Pyossession
-from fight import fight_main, units, standart_actions
+from fight import fight_main, units, standart_actions, abilities
 from adventures import dungeon_main, map_engine
 import engine
 import dynamic_dicts
@@ -75,9 +75,12 @@ class Chat(sql_alchemy.SqlChat):
             war_data = self.get_current_war_data()
             return [chat for chat in [pyossession.get_chat(chat_id) for chat_id in war_data['chats_besieged']]]
 
-    def get_attack_price(self, chat):
+    def get_prize(self):
+        return int(self.resources*0.2)
+
+    def get_attack_price(self, target_chat):
         attack_price = self.get_income()
-        alternative = chat.resources*0.1
+        alternative = target_chat.resources*0.1
         if alternative > attack_price:
             attack_price = int(alternative)
         return attack_price
@@ -91,12 +94,8 @@ class Chat(sql_alchemy.SqlChat):
                     equipment.append([key, armory[key]])
         return equipment
 
-    def attack_chat(self, user_id, chat_id, message_id):
-        delete_message(user_id, message_id)
-        if not self.is_admin(user_id):
-            print('failed')
-            return False
-        target_chat = pyossession.get_chat(chat_id)
+    def attack_chat(self, call, target_chat):
+        delete_message(call.from_user.id, call.message.message_id)
         from chat_wars.chat_lobbies import AttackLobby
         action = AttackAction()
         action.mode = current_war.stage
@@ -324,6 +323,30 @@ class User(sql_alchemy.SqlUser):
             if not any(ablty['name'] == ability['name'] for ablty in unit_dict['abilities']):
                 unit_dict['abilities'].append(ability)
         return unit_dict
+
+    def add_ability(self, ability):
+        ability_list = self.get_abilities()
+        ability_list.append(ability.to_dict())
+        self.set_abilities(ability_list)
+
+    def get_possible_abilities_amount(self):
+        experience = self.experience
+        ability_number = len(self.get_abilities())
+        experience_list = (10, 50)
+        i = 0
+        for exp in experience_list:
+            if experience >= exp:
+                i += 1
+        i -= ability_number
+        return i if i > 0 else False
+
+    def get_experience_to_lvl(self):
+        experience_list = (10, 50)
+        for item in experience_list:
+            if self.experience < item:
+                return item
+        return 10000
+
 
 
 class ChatHandler:

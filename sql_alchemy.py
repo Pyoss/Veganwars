@@ -226,7 +226,6 @@ class SqlUser(object):
         session.commit()
 
 
-
 class Pyossession:
     def __init__(self, chat_class, user_class, non_primary=False):
         self.chat_class = chat_class

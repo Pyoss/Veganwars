@@ -51,7 +51,7 @@ class GlobalWar:
             if war_data['attacked_by_chats']:
                 for attacked_chat in war_data['attacked_by_chats']:
                     won_chat = pyossession.get_chat(attacked_chat)
-                    prize_amount = int(chat.resources*0.2)
+                    prize_amount = chat.get_prize()
                     chat.add_resources(-prize_amount)
                     won_chat.add_resources(prize_amount)
                     send_message(chat.chat_id, 'Чат {} отнимает у вас {} ресурсов'.format(won_chat.name, prize_amount))
