@@ -132,6 +132,12 @@ def start(message):
         chat.print_resources()
 
 
+@bot.message_handler(commands=['add_resources'])
+def start(message):
+        chat = chat_main.get_chat(message.chat.id)
+        chat.add_resources(500)
+
+
 @bot.message_handler(commands=['show_items'])
 def start(message):
         chat = chat_main.get_chat(message.chat.id)

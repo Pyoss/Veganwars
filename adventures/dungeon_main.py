@@ -50,6 +50,7 @@ class Party:
         self.leader = self.members[0]
         self.member_dict = {member.chat_id: member for member in self.members}
         self.experience = 0
+        self.collected_receipts = engine.ChatContainer()
 
     # Перемещение группы
 
@@ -58,6 +59,12 @@ class Party:
         x, y = call_data[3].split('-')
         location = dynamic_dicts.dungeons[call.message.chat.id].map.get_location(x, y)
         map_engine.PartyMovement(self, self.current_location, location).execute(call)
+
+    def collect_receipt(self, name, amount, alarm=True):
+        if alarm:
+            name = standart_actions.get_name(name, 'rus')
+            self.send_message('Вы находите рецепт на {}({})'.format(name, amount))
+        self.collected_receipts.put(name, value=amount)
 
     def move(self, location):
         if self.current_location is not None:

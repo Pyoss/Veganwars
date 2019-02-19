@@ -55,7 +55,7 @@ class SqlChat(object):
                  used_armory=None,
                  resources=100,
                  buildings='{}',
-                 current_war_data='{"attacked_by_chats": [], "attacks_left": 1, "chats_besieged": []}',
+                 current_war_data='{"attacked_by_chats": [], "chats_besieged": []}',
                  daily_dungeon_sponsored=0):
         self.chat_id = chat_id
         self.name = name
@@ -89,7 +89,10 @@ class SqlChat(object):
     def add_receipt(self, receipt):
         container = engine.ChatContainer()
         container.from_json(self.receipts)
-        container.put(receipt)
+        if isinstance(receipt, engine.ChatContainer) or isinstance(receipt, engine.Container):
+            container += receipt
+        else:
+            container.put(receipt)
         self.receipts = container.to_json()
         session.commit()
 
@@ -198,10 +201,6 @@ class SqlUser(object):
 
     def get_armory(self):
         return self.chat.armory
-
-    def attack(self):
-        self.attacked = 1
-        session.commit()
 
     def refresh(self):
         self.attacked = 0

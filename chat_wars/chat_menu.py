@@ -193,13 +193,10 @@ class AttackMenu(ChatMenuPage):
     rus_name = 'Атака'
     parent_menu = MainMenu
 
-
-
     def __init__(self, chat, user_id, call=None):
         ChatMenuPage.__init__(self, chat, user_id, call=call)
         from chat_wars.chat_war import current_war
         self.current_war = current_war
-
 
     def form_actions(self):
         self.children_actions = []
@@ -222,7 +219,6 @@ class AttackMenu(ChatMenuPage):
             return 'Атака'
         else:
             return emote_dict['locked_em'] + ' Атака'
-
 
 
 class TargetMenu(ChatMenuPage):
@@ -266,17 +262,81 @@ class AttackTargetAction(ChatAction):
     def available(self):
         if self.current_war.stage != 'siege' and self.current_war.stage != 'attack':
             return False, 'В данный момент нападение на другой чат недоступно.'
+        elif self.current_war.stage == 'siege' and self.current_war.attacked_chat.get(self.chat.chat_id, False) and\
+                        self.current_war.attacked_chat[self.chat.chat_id][1] >= self.chat.get_maximum_attacks():
+            return False, 'Ваш чат не может больше атаковать сегодня.'
+        elif self.current_war.attacked_chat.get(self.chat.chat_id, False) and\
+                        self.target_chat.chat_id in self.current_war.attacked_chat[self.chat.chat_id][0]:
+            return False, 'Вы уже нападали на этот чат!'
+        elif self.chat.resources < self.chat.get_attack_price(self.target_chat):
+            return False, 'У вас недостаточно средств для атаки.'
+        elif self.current_war.stage == 'siege' and self.target_chat.chat_id in self.chat.get_current_war_data()['chats_besieged']:
+            return False, 'Вы уже осадили этот чат!'
+        elif self.current_war.stage == 'attack' and self.chat.chat_id in self.target_chat.get_current_war_data()['attacked_by_chats']:
+            return False, 'Вы уже победили этот чат!'
         return True, True
 
     def button_to_page(self, name=None):
         return ChatButton('Напасть', 'rus', self.name, self.target_chat.chat_id, named=True)
 
     def act(self):
+        if self.current_war.stage == 'siege':
+            self.chat.add_resources(-self.chat.get_attack_price(self.target_chat))
+            answer_callback_query(self.call,
+                                  'Вы платите {} ресурсов за атаку.'.format(self.chat.get_attack_price(self.target_chat)),
+                                  alert=False)
         self.chat.attack_chat(self.call, self.target_chat)
 
 
+class SiegeTargetAction(ChatAction):
+    name = 'besiege'
+    rus_name = 'Напасть'
+
+    def __init__(self, chat, user_id, call=None):
+        ChatAction.__init__(self, chat, user_id, call=call)
+        self.target_chat = get_chat(call.data.split('_')[-2])
+        self.current_war_id = call.data.split('_')[-1]
+        from chat_wars.chat_war import current_war
+        self.current_war = current_war
+
+    def act(self):
+        if self.current_war.id != self.current_war_id:
+            self.refuse('Ошибка! Вы пытаетесь воспользоваться неактуальной кнопкой!')
+            delete_message(call=self.call)
+        elif str(self.chat.chat_id) in self.chat.get_current_war_data()['chats_besieged']:
+            self.refuse('Ошибка! Вы уже осадили этот чат!')
+            delete_message(call=self.call)
+        else:
+            self.chat.win_siege(self.target_chat.chat_id)
+            delete_message(call=self.call)
+
+
+class MarauderTargetAction(ChatAction):
+    name = 'marauder'
+    rus_name = 'Напасть'
+
+    def __init__(self, chat, user_id, call=None):
+        ChatAction.__init__(self, chat, user_id, call=call)
+        self.target_chat = get_chat(call.data.split('_')[-2])
+        self.current_war_id = call.data.split('_')[-1]
+        from chat_wars.chat_war import current_war
+        self.current_war = current_war
+
+    def act(self):
+        if self.current_war.id != self.current_war_id:
+            self.refuse('Ошибка! Вы пытаетесь воспользоваться неактуальной кнопкой!')
+            delete_message(call=self.call)
+
+        elif self.chat.chat_id in self.target_chat.get_current_war_data()['attacked_by_chats']:
+            self.refuse('Ошибка! Вы уже атаковали этот чат!')
+            delete_message(call=self.call)
+        else:
+            self.chat.marauder(self.target_chat.chat_id)
+            delete_message(call=self.call)
+
 
 # -------------------------------------- ВЕТКА ПОСТРОЕК
+
 class BuildingListMenu(ChatMenuPage):
     name = 'buildings'
     rus_name = 'Постройки'

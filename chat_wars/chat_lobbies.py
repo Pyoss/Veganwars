@@ -3,6 +3,7 @@ from telebot import types
 from bot_utils import bot_methods, keyboards
 from locales import localization
 from chat_wars.chat_main import pyossession, get_chat, get_user
+from chat_wars.chat_war import current_war
 from fight import fight_main, standart_actions
 from adventures import dungeon_main, map_engine
 
@@ -51,13 +52,9 @@ class Lobby:
             return None
         self.update_lobby(keyboard=False)
         self.start_checker.start()
-        anyone_present = False
         for team in self.teams:
             for chat_id in team:
-                anyone_present = True
                 self.next_step(user_id=chat_id, message_id=None)
-        if not anyone_present:
-            self.run()
 
     def next_step(self, user_id, message_id=None):
         print(self[user_id])
@@ -216,13 +213,24 @@ class Dungeon(Lobby):
         del dynamic_dicts.dungeons[self.id]
         for member in self.party.members:
             del dynamic_dicts.dungeons[member.chat_id]
+
+        message = self.form_result_string(farmed_resources, self.party.collected_receipts.to_string('rus'))
         bot_methods.send_message(self.chat_id,
-                                 'Поход группы {} окончен. Количество заработанных ресурсов - {}.'.format
-                                     (self.party.leader.name, farmed_resources))
+                                 message)
         chat = pyossession.get_chat(self.chat_id)
         chat.add_resources(farmed_resources)
+        chat.add_receipt(self.party.collected_receipts)
+        if not defeat:
+            chat.add_receipt(self.party.collected_receipts)
         user_list = list(map(get_user, [member.chat_id for member in self.party.members]))
         self.party.distribute_experience(user_list)
+
+    def form_result_string(self, resources, receipts_string, boss_beaten=False):
+        message = 'Поход группы {} окончен.\n' \
+                  ' Количество заработанных ресурсов - {}\n'.format(self.party.leader.name, resources)
+        if receipts_string != 'Пусто.':
+            message += 'Группа добыла рецепты: {}'.format(receipts_string)
+        return message
 
     def __del__(self):
         print('Удаление объекта данжа {}...'.format(self.id))
@@ -279,7 +287,7 @@ class AttackLobby(Lobby):
         user = Lobby.join_lobby(self, user_id, unit_dict)
         if not user:
             return False
-        elif user.attacked:
+        elif user_id in current_war.attacked_dict:
             bot_methods.send_message(user_id, 'Вы уже принимали участие в атаке!')
             return False
         if self.started:
@@ -326,6 +334,7 @@ class AttackLobby(Lobby):
     def run(self):
         self.attack_action.attack_ready = True
         if self.attack_action.defense_ready:
+            print('Starting from attacking...')
             self.attack_action.start()
 
     def to_team(self):
@@ -371,6 +380,7 @@ class DefenceLobby(Lobby):
     def run(self):
         self.attack_action.attack_ready = True
         if self.attack_action.attack_ready:
+            print('Starting from defending...')
             self.attack_action.start()
 
     def to_team(self):

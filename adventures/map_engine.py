@@ -141,6 +141,8 @@ class Location:
         self.dungeon = dungeon
         self.special = '0'
         self.mobs = None
+        self.receipts = engine.ChatContainer()
+        self.receipts.put('bandages')
         if map_tuple is not None:
             self.complexity = map_tuple.complexity
 
@@ -192,7 +194,13 @@ class Location:
 
     # Функция, запускающаяся при входе в комнату. Именно сюда планируется пихать события.
     def on_enter(self):
+        self.collect_reward()
         self.dungeon.update_map()
+
+    def collect_reward(self):
+        if self.receipts:
+            self.dungeon.party.send_message('Вы находите следующие рецепты: {}'.format(self.receipts.to_string('rus')))
+            self.dungeon.party.collected_receipts += self.receipts
 
     def leave_location(self):
         self.current = False

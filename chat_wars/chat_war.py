@@ -14,6 +14,11 @@ class GlobalWar:
         self.stage_choices = ['siege', 'peace', 'before_attack', 'before_siege']
         self.war_actors = {}
         self.id = str(engine.rand_id())
+        self.attacked_dict = {}
+        self.attacked_chat = {}
+
+    def add_user_to_attacked(self, user_id):
+        self.attacked_dict[user_id] = 1
 
     def start_siege(self):
         self.announce_siege()
@@ -59,14 +64,8 @@ class GlobalWar:
             chat.set_current_war_data({"attacked_by_chats": [], "attacks_left": 1, "chats_besieged": []})
 
     def refresh_users(self):
-        from chat_wars.chat_main import Chat, User
-        pyossession = Pyossession(Chat, User)
-        users = pyossession.get_users()
-        for user in users:
-            user.refresh()
-
-
-
+        self.attacked_dict = {}
+        self.attacked_chat = {}
 
     def announce_siege(self):
         pass
@@ -84,23 +83,29 @@ class AttackAction:
         self.attacker_ready = False
         self.mode = None
 
-    def users_attack(self):
-        from chat_wars.chat_main import get_user
-        user_list = [get_user(key) for key in self.attacker_lobby.team]
-        for user in user_list:
-            user.attack()
-
     def get_all_user_ids(self):
-        from chat_wars.chat_main import get_user
         user_list = [key for key in self.attacker_lobby.team]
         user_list = [*user_list, *[key for key in self.defender_lobby.team]]
         return user_list
 
+    def add_users_to_attacked(self):
+        for user_id in self.get_all_user_ids():
+            current_war.add_user_to_attacked(user_id)
+
+    def add_chat_to_attacked(self):
+        chat = self.attacker_lobby.chat_id
+        if chat in current_war.attacked_chat:
+            current_war.attacked_chat[chat][1] += 1
+            current_war.attacked_chat[chat][0].append(self.defender_lobby.chat_id)
+        else:
+            current_war.attacked_chat[chat] = ([self.defender_lobby.chat_id], 1)
+
     def start(self):
-        self.users_attack()
         args = [self.attacker_lobby.to_team(), self.defender_lobby.to_team()]
         # В качестве аргумента должны быть переданы словари команд в виде
         # [team={chat_id:(name, unit_dict)} or team={ai_class:(ai_class.name, unit_dict)}].
+        self.add_users_to_attacked()
+        self.add_chat_to_attacked()
         if len(args[1]) < 2:
             self.process_results({'won_team': 'attacker'})
         else:
@@ -142,8 +147,6 @@ class AttackAction:
         for user_id in self.get_all_user_ids():
             if user_id in occupied_list:
                 occupied_list.remove(user_id)
-
-
 
 current_war = GlobalWar()
 

@@ -28,7 +28,9 @@ def send_image(image, chat_id, message, reply_markup=None, parse_mode='markdown'
     return bot.send_photo(chat_id=chat_id, caption=message, photo=image, reply_markup=reply_markup)
 
 
-def delete_message(chat_id, message_id):
+def delete_message(chat_id=None, message_id=None, call=None):
+    if call is not None:
+        return bot.delete_message(call.message.chat.id, call.message.message_id)
     return bot.delete_message(chat_id, message_id)
 
 

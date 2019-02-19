@@ -135,7 +135,7 @@ class MobLocation(OpenLocation):
         map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
         mobs = map_engine.get_enemy(self.complexity, dungeon.map.enemy_dict) if mobs is None else mobs
         self.mobs = map_engine.MobPack(*mobs, complexity=self.complexity)
-        self.loot = engine.Container()
+        self.loot = engine.ChatContainer()
         if self.mobs is not None:
             main_mob = units.units_dict[max(mobs, key=lambda mob: units.units_dict[mob].danger)]
             self.emote = main_mob.emote

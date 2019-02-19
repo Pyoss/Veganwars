@@ -101,25 +101,24 @@ class Chat(sql_alchemy.SqlChat):
         action.mode = current_war.stage
         AttackLobby(self, action, target_chat).send_lobby()
 
-    def win_siege(self, target_chat_id, current_war_code, message_id):
-        delete_message(self.chat_id, message_id)
-        if current_war_code == current_war.id:
-            target_chat = pyossession.get_chat(target_chat_id)
-            send_message(target_chat.chat_id, 'Чат {} осаждает ваши укрепления!'.format(self.name))
-            send_message(self.chat_id, 'Вы успешно осаждаете чат {}'.format(target_chat.name))
-            war_data = self.get_current_war_data()
-            war_data['chats_besieged'].append(target_chat_id)
-            self.set_current_war_data(war_data)
+    def win_siege(self, target_chat_id):
+        target_chat = pyossession.get_chat(target_chat_id)
+        send_message(target_chat.chat_id, 'Чат {} осаждает ваши укрепления!'.format(self.name))
+        send_message(self.chat_id, 'Вы успешно осаждаете чат {}'.format(target_chat.name))
+        war_data = self.get_current_war_data()
+        war_data['chats_besieged'].append(target_chat_id)
+        self.set_current_war_data(war_data)
 
-    def marauder(self, target_chat_id, current_war_code, message_id):
-        delete_message(self.chat_id, message_id)
-        if current_war_code == current_war.id:
-            target_chat = pyossession.get_chat(target_chat_id)
-            send_message(target_chat.chat_id, 'Чат {} раграбляет ваши сокровища!'.format(self.name))
-            send_message(self.chat_id, 'Чат {} ограблен!'.format(target_chat.name))
-            war_data = target_chat.get_current_war_data()
-            war_data['attacked_by_chats'].append(self.chat_id)
-            target_chat.set_current_war_data(war_data)
+    def marauder(self, target_chat_id):
+        target_chat = pyossession.get_chat(target_chat_id)
+        send_message(target_chat.chat_id, 'Чат {} раграбляет ваши сокровища!'.format(self.name))
+        send_message(self.chat_id, 'Чат {} ограблен!'.format(target_chat.name))
+        war_data = target_chat.get_current_war_data()
+        war_data['attacked_by_chats'].append(self.chat_id)
+        target_chat.set_current_war_data(war_data)
+
+    def get_maximum_attacks(self):
+        return 1
 
 
 # ---------------------------------- КРАФТ ------------------------------------ #

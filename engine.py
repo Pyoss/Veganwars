@@ -5,7 +5,7 @@ import random
 import uuid
 import json
 from fight import standart_actions
-
+dict
 
 class Container:
     def __init__(self, base_dict=None, base_list=None):
@@ -13,6 +13,9 @@ class Container:
         # Структура контейнера {случайный_айди: (словарь_предмета, количество)}
         if base_list is not None:
             [self.put(item) for item in base_list]
+
+    def __len__(self):
+        return self.base_dict.__len__()
 
     def __getitem__(self, item_id):
         return self.base_dict[int(item_id)]
@@ -189,6 +192,18 @@ class ChatContainer(Container):
         if emoted:
             string = item_obj.emote + string
         return string
+
+    def __add__(self, other):
+        for item in other.base_dict:
+            item, value = item, other[item]
+            self.put(item, value=value)
+        return self
+
+    def __iadd__(self, other):
+        return self.__add__(other)
+
+    def __getitem__(self, item):
+        return self.base_dict[item]
 
 
 def throw_dice(cap: int):
