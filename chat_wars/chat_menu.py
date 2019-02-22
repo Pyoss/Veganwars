@@ -5,12 +5,15 @@ from chat_wars.buildings import building_dict
 from chat_wars.chat_main import get_chat, get_user
 from locales.emoji_utils import emote_dict
 import sys, inspect
+import engine
 
 
 class MenuAction:
     name = None
     rus_name = None
     acting = True
+    return_to_parent = False
+    parent_menu = None
 
     def __init__(self, menu_object, user_id, call=None):
         self.menu_object = menu_object
@@ -26,7 +29,11 @@ class MenuAction:
         if not available_result[0]:
             return self.refuse(available_result[1])
         if self.acting:
+            if available_result[1] is not True:
+                answer_callback_query(self.call, available_result[1], alert=False)
             self.act()
+            if self.return_to_parent:
+                self.parent_menu(self.menu_object, self.user_id, call=self.call).send_page()
         else:
             self.send_page()
 
@@ -47,11 +54,11 @@ class MenuAction:
 
 
 class MenuPage(MenuAction):
-    parent_menu = None
     acting = False
 
     def __init__(self, chat, user_id, call=None):
         MenuAction.__init__(self, chat, user_id, call)
+        self.chat = chat
         self.children_actions = None
 
     def form_actions(self):
@@ -136,7 +143,8 @@ class ArsenalMenu(ChatMenuPage):
         self.children_actions = [CraftMenu(self.chat, self.user_id)]
 
     def get_menu_string(self):
-        return 'Арсенал чата {}'.format(self.chat.name)
+        return 'Арсенал чата {}:\n' \
+               '{}'.format(self.chat.name, engine.ChatContainer(self.chat.get_armory()).to_string('rus'))
 
 
 class CraftMenu(ChatMenuPage):
@@ -167,24 +175,50 @@ class ReceiptMenu(ChatMenuPage):
             self.item_name = item_name
 
     def form_actions(self):
-        self.children_actions = [CraftItemAction(self.chat, self.user_id)]
+        self.children_actions = [CraftItemAction(self.chat, self.user_id, item_name=self.item_name)]
 
     def get_item_object(self):
-        return building_dict[self.item_name]
+        return object_dict[self.item_name]
 
     def get_name(self):
         return get_name(self.get_item_object().name, 'rus')
 
     def get_menu_string(self):
-        return self.get_name()
+        return self.get_name() + ' ' + str(self.get_item_object().price)
 
     def button_to_page(self, name=None):
         return ChatButton(self.get_name() if name is None else name, 'rus', self.name, self.item_name, named=True)
 
 
 class CraftItemAction(ChatAction):
-    name = 'craft_item'
+    name = 'craft-item'
     rus_name = 'Создать'
+
+    def __init__(self, chat, user_id, call=None, item_name=None):
+        ChatAction.__init__(self, chat, user_id, call=call)
+        if item_name is None:
+            self.item_name = call.data.split('_')[-1]
+        else:
+            self.item_name = item_name
+
+    def get_item_object(self):
+        return object_dict[self.item_name]
+
+    def get_name(self):
+        return get_name(self.get_item_object().name, 'rus')
+
+    def act(self):
+        self.chat.create_item(self.item_name, self.get_item_object().price)
+
+    def available(self):
+        if self.get_item_object().price > self.chat.resources:
+            return False, 'Недостаточно ресурсов для создания предмета.'
+        elif self.item_name not in self.chat.get_receipts():
+            return False, 'У вас нет такого рецепта.'
+        return True, 'Предмет "{}" успешно добавлен в арсенал чата.'.format(self.get_name())
+
+    def button_to_page(self, name=None):
+        return ChatButton('Создать', 'rus', self.name, self.item_name, named=True)
 
 
 # -------------------------------------- ВЕТКА НАПАДЕНИЯ
@@ -363,20 +397,47 @@ class BuildingMenu(ChatMenuPage):
             self.building = building_dict[call.data.split('_')[-1]]()
         else:
             self.building = building_dict[building]()
+        self.chat_buildings = self.chat.get_buildings()
 
     def form_actions(self):
-        self.children_actions = [CreateBuildingAction(self.chat, self.user_id)]
+        self.children_actions = [CreateBuildingAction(self.chat, self.user_id, building=self.building.name)]
 
     def get_menu_string(self):
-        return 'Меню постройки {}'.format(self.building.get_string('name').translate('rus'))
+        return 'Меню постройки {}\n' \
+               'Цена постройки - {}'.format(self.building.get_string('name').translate('rus'), 100*(self.chat.construction_lvl() + 1))
 
     def button_to_page(self, name=None):
-        return ChatButton(self.building.get_string('name'), 'rus', self.name, self.building.name, named=True)
+        lvl = self.chat_buildings[self.building.name] + 1 if self.building.name in self.chat_buildings else None
+        lvl = str(' ({})'.format(lvl)) if lvl is not None else ''
+        return ChatButton(self.building.get_string('name').translate('rus') + lvl, 'rus', self.name, self.building.name, named=True)
 
 
 class CreateBuildingAction(ChatAction):
     name = 'build'
     rus_name = 'Построить'
+    parent_menu = BuildingListMenu
+    return_to_parent = True
+
+    def __init__(self, chat, user_id, call=None, building=None):
+        ChatAction.__init__(self, chat, user_id, call=call)
+        if building is None:
+            self.building = building_dict[call.data.split('_')[-1]]()
+        else:
+            self.building = building_dict[building]()
+
+    def act(self):
+        self.chat.add_resources(-self.building.get_price(self.chat))
+        self.chat.build(self.user_id, self.building.name)
+
+    def available(self):
+        if self.chat.resources < self.building.get_price(self.chat):
+            return False, 'У вас не хватает ресурсов для приобретения'
+        elif self.building.name not in self.chat.available_buildings():
+            return False, 'Вы не можете построить это здание'
+        return True, 'Здание успешно построено'
+
+    def button_to_page(self, name=None):
+        return ChatButton(self.get_name(), 'rus', self.name, self.building.name, named=True)
 
 
 class ManageHandler:

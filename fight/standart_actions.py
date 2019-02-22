@@ -539,6 +539,7 @@ class GameObject:
     effect = False
     one_time = True
     action_type = []
+    price = 100
     emote = emoji_utils.emote_dict['question_em']
 
     def __init__(self, unit=None, obj_dict=None):

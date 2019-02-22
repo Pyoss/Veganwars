@@ -158,20 +158,6 @@ class Chat(sql_alchemy.SqlChat):
     def construction_lvl(self):
         return sum([value for key, value in self.get_buildings().items()])
 
-    def available_buildings_message(self, user, message_id):
-        available_buildings = self.available_buildings()
-        buttons = []
-        for building in available_buildings:
-            building_object = building_dict[building]()
-            price = building_object.get_price(self)
-            name = building_object.get_string('name').translate('rus')
-            button = keyboards.Button('{} - {}'.format(name, price),
-                                      callback_data='_'.join(['mngt', 'build','menu', building]))
-            buttons.append(button)
-        buttons.append(keyboards.ChatButton('Назад', 'rus', 'menu', named=True))
-        edit_message(user.user_id, message_id=message_id, message_text='Доступные для постройки здания',
-                     reply_markup=keyboards.form_keyboard(*buttons))
-
     def print_receipts(self):
         receipts = self.get_receipts()
         message = ''
