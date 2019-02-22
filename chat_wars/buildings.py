@@ -23,16 +23,6 @@ class Building:
     def get_price(self, chat):
         return Building.default_price * (chat.construction_lvl() + 1)
 
-    def send_menu(self, user, chat, message_id):
-        buttons = []
-        build_string = 'Построить'
-        if self.name not in chat.available_buildings() or chat.resources <= self.get_price(chat):
-            build_string = emote_dict['locked_em'] + build_string
-        buttons.append(ChatButton(build_string, 'rus', 'build', 'make', self.name, named=True))
-        buttons.append(ChatButton('Назад', 'rus', 'menu', named=True))
-        edit_message(user.user_id, message_id,
-                          self.get_string('desc').translate('rus'), reply_markup=form_keyboard(*buttons))
-
 
 class Wall(Building):
     name = 'wall'

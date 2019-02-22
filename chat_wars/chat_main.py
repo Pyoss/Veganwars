@@ -178,44 +178,6 @@ class Chat(sql_alchemy.SqlChat):
 
 # --------------------      ПРЕДМЕТЫ        ------------------------ #
 
-    def items_menu(self, user_id, message_id):
-        item_string = 'Меню предметов.'
-        buttons = []
-        buttons.append(keyboards.ChatButton('Крафт', 'rus', 'craft-list', named=True))
-        buttons.append(keyboards.ChatButton('Назад', 'rus', 'menu', named=True))
-        edit_message(user_id, message_id, item_string, reply_markup=keyboards.form_keyboard(*buttons))
-
-    def item_menu_string(self, user_id):
-        item_list = self.get_armory()
-        item_string = 'Меню предметов.'
-
-    def ask_craft(self, user_id, message_id):
-        if self.ask_rights(user_id) == 'admin':
-            message = 'Выберите предмет для крафта.'
-            craft_list = []
-            receipts = self.get_receipts()
-            for key in receipts:
-                if receipts[key] == 'inf':
-                    value = 'Много'
-                else:
-                    value = str(receipts[key])
-                craft_list.append((key, value))
-            buttons = []
-            for item in craft_list:
-                price = standart_actions.get_class(item[0]).price
-                buttons.append(keyboards.ChatButton(standart_actions.get_name(item[0], 'rus') + ' (' + str(price) + ')',
-                                                'rus', 'craft', item[0], named=True))
-            buttons.append(keyboards.ChatButton('Назад', 'rus', 'menu', named=True))
-            edit_message(user_id, message_id, message, reply_markup=keyboards.form_keyboard(*buttons))
-
-    def ask_add_item(self, item_name, user_id, message_id):
-        if self.ask_rights(user_id) == 'admin':
-            receipts = self.get_receipts()
-            item_price = standart_actions.object_dict[item_name].price
-            if item_name in receipts.keys() and self.resources >= item_price:
-                self.create_item(item_name, item_price)
-            delete_message(user_id, message_id)
-
     def create_item(self, item_name, item_price):
         self.add_item(item_name)
         self.delete_receipt(item_name)
@@ -240,12 +202,12 @@ class User(sql_alchemy.SqlUser):
                                                       equipment[0]])))
         return buttons
 
-    def send_weapon_choice(self, lobby_id, message_id=None):
+    def send_weapon_choice(self, lobby_id, chat_id, message_id=None):
         message = 'Выберите оружие из доступного.'
         inventory = dungeon_main.Inventory(member=dynamic_dicts.lobby_list[lobby_id][self.user_id]['dict'])
         message += '\n Экипировка: ' + inventory.get_equipment_string(self.lang)
         message += '\n Инвентарь: ' + inventory.get_inventory_string(self.lang)
-        buttons = self.create_choice_equipment(lobby_id, self.chat.get_free_equipment(['weapon']), 'weapon')
+        buttons = self.create_choice_equipment(lobby_id, get_chat(chat_id).get_free_equipment(['weapon']), 'weapon')
         buttons.append(keyboards.Button('Без оружия', '_'.join(['lobby',
                                                                 lobby_id,
                                                                 'weapon',
@@ -256,12 +218,12 @@ class User(sql_alchemy.SqlUser):
             edit_message(chat_id=self.user_id, message_id=message_id,
                                      message_text=message, reply_markup=keyboards.form_keyboard(*buttons) )
 
-    def send_armor_choice(self, lobby_id, message_id=None):
+    def send_armor_choice(self, lobby_id, chat_id, message_id=None):
         message = 'Выберите комплект брони.'
         inventory = dungeon_main.Inventory(member=dynamic_dicts.lobby_list[lobby_id][self.user_id]['dict'])
         message += '\n Экипировка: ' + inventory.get_equipment_string(self.lang)
         message += '\n Инвентарь: ' + inventory.get_inventory_string(self.lang)
-        buttons = self.create_choice_equipment(lobby_id, self.chat.get_free_equipment(['armor']), 'armor')
+        buttons = self.create_choice_equipment(lobby_id, get_chat(chat_id).get_free_equipment(['armor']), 'armor')
         buttons.append(keyboards.Button('Готово', '_'.join(['lobby',
                                                                 lobby_id,
                                                                 'armor',
@@ -276,12 +238,12 @@ class User(sql_alchemy.SqlUser):
             edit_message(chat_id=self.user_id, message_id=message_id,
                                      message_text=message, reply_markup=keyboards.form_keyboard(*buttons) )
 
-    def send_item_choice(self, lobby_id, message_id=None):
+    def send_item_choice(self, lobby_id, chat_id, message_id=None):
         message = 'Выберите предметы.'
         inventory = dungeon_main.Inventory(member=dynamic_dicts.lobby_list[lobby_id][self.user_id]['dict'])
         message += '\n Экипировка: ' + inventory.get_equipment_string(self.lang)
         message += '\n Инвентарь: ' + inventory.get_inventory_string(self.lang)
-        buttons = self.create_choice_equipment(lobby_id, self.chat.get_free_equipment(['item']), 'item')
+        buttons = self.create_choice_equipment(lobby_id, get_chat(chat_id).get_free_equipment(['item']), 'item')
         buttons.append(keyboards.Button('Готово', '_'.join(['lobby',
                                                                 lobby_id,
                                                                 'item',

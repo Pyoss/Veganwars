@@ -62,15 +62,15 @@ class Lobby:
             self.started = True
         if 'weapon' in self[user_id]['equipment_choice']:
             user = pyossession.get_user(user_id=user_id)
-            user.send_weapon_choice(self.id, message_id=message_id)
+            user.send_weapon_choice(self.id, self.chat_id, message_id=message_id)
 
         elif 'armor' in self[user_id]['equipment_choice']:
             user = pyossession.get_user(user_id=user_id)
-            user.send_armor_choice(self.id, message_id=message_id)
+            user.send_armor_choice(self.id, self.chat_id, message_id=message_id)
 
         elif 'items' in self[user_id]['equipment_choice']:
             user = pyossession.get_user(user_id=user_id)
-            user.send_item_choice(self.id, message_id=message_id)
+            user.send_item_choice(self.id, self.chat_id, message_id=message_id)
 
         else:
             self.run()
@@ -438,14 +438,16 @@ class LobbyHandler:
             lobby = dynamic_dicts.lobby_list[call_data[1]]
         except:
             return False
+
         if action == 'startlobby':
             dynamic_dicts.lobby_list[call_data[1]].start()
+
         elif action == 'weapon':
             user_id = call.from_user.id
             weapon_name = call_data[-1]
             unit_dict = lobby[user_id]['dict']
             user = get_user(call.from_user.id)
-            chat = user.chat
+            chat = get_chat(lobby.chat_id)
             if weapon_name != 'None':
                 free_armory = chat.get_free_armory()
                 if weapon_name not in free_armory:
@@ -457,12 +459,13 @@ class LobbyHandler:
                     unit_dict['weapon'] = standart_actions.object_dict[weapon_name]().to_dict()
             lobby[user_id]['equipment_choice'].remove('weapon')
             lobby.next_step(user_id, message_id=call.message.message_id)
+
         elif action == 'armor':
             user_id = call.from_user.id
             armor_action = call_data[-1]
             unit_dict = lobby[user_id]['dict']
             user = get_user(call.from_user.id)
-            chat = user.chat
+            chat = get_chat(lobby.chat_id)
             if armor_action == 'reset':
                 for armor in unit_dict['armor']:
                     chat.delete_used_item(armor['name'])
@@ -496,7 +499,7 @@ class LobbyHandler:
             item_name = call_data[-1]
             unit_dict = lobby[user_id]['dict']
             user = get_user(call.from_user.id)
-            chat = user.chat
+            chat = get_chat(lobby.chat_id)
             if item_name == 'reset':
                 for item in unit_dict['inventory'].values():
                     chat.delete_used_item(item[0]['name'], value=item[1])
@@ -531,4 +534,4 @@ class LobbyHandler:
                             unit_dict['inventory'][engine.rand_id()] = [item.to_dict(), 1]
 
             user = get_user(call.from_user.id)
-            user.send_item_choice(call_data[1], message_id=call.message.message_id)
+            user.send_item_choice(call_data[1], chat.chat_id, message_id=call.message.message_id)

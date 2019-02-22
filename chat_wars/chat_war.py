@@ -16,6 +16,7 @@ class GlobalWar:
         self.id = str(engine.rand_id())
         self.attacked_dict = {}
         self.attacked_chat = {}
+        self.attacking_lobby = {}
 
     def add_user_to_attacked(self, user_id):
         self.attacked_dict[user_id] = 1
@@ -47,6 +48,7 @@ class GlobalWar:
             self.get_results()
             send_message(chat_id, 'Текущий этап войны - мир.')
 
+
     def get_results(self):
         from chat_wars.chat_main import Chat, User
         pyossession = Pyossession(Chat, User)
@@ -62,6 +64,24 @@ class GlobalWar:
                     send_message(chat.chat_id, 'Чат {} отнимает у вас {} ресурсов'.format(won_chat.name, prize_amount))
                     send_message(won_chat.chat_id, 'Вы отнимаете {} ресурсов у чата {}'.format(prize_amount, chat.name))
             chat.set_current_war_data({"attacked_by_chats": [], "attacks_left": 1, "chats_besieged": []})
+
+    def add_attack_lobby(self, attacker_id, target_id):
+        if attacker_id in self.attacking_lobby:
+            self.attacking_lobby[attacker_id].append(target_id)
+        else:
+            self.attacking_lobby[attacker_id] = [target_id]
+
+    def lobby_exists(self, attacker_id, target_id):
+        if attacker_id in self.attacking_lobby:
+            if target_id in self.attacking_lobby[attacker_id]:
+                return True
+        return False
+
+    def release_attack_lobby(self, attacker_id, target_id):
+        self.attacking_lobby[attacker_id].remove(target_id)
+        if not self.attacking_lobby[attacker_id]:
+            del self.attacking_lobby[attacker_id]
+
 
     def refresh_users(self):
         self.attacked_dict = {}
@@ -118,7 +138,7 @@ class AttackAction:
     def process_results(self, fight_results):
         if fight_results['won_team'] == 'attacker':
             if self.mode == 'siege':
-                button = keyboards.Button('Осадить', callback_data='_'.join(['mngt', 'besiege',
+                button = keyboards.Button('Осадить', callback_data='_'.join(['mngt', str(self.attacker_lobby.chat_id), 'besiege',
                                                                              str(self.defender_lobby.chat_id),
                                                                              current_war.id]))
                 keyboard = keyboards.form_keyboard(
@@ -128,7 +148,7 @@ class AttackAction:
                              'Битва выиграна! Вы можете осадить чат {}'.format(self.defender_lobby.name),
                              reply_markup=keyboard)
             elif self.mode == 'attack':
-                button = keyboards.Button('Грабить!', callback_data='_'.join(['mngt', 'marauder',
+                button = keyboards.Button('Грабить!', callback_data='_'.join(['mngt', str(self.attacker_lobby.chat_id), 'marauder',
                                                                              str(self.defender_lobby.chat_id),
                                                                              current_war.id]))
                 keyboard = keyboards.form_keyboard(

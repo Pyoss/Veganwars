@@ -14,12 +14,18 @@ class UserAction(MenuAction):
         self.user = user
         self.button_type = UserButton
 
+    def button_to_page(self, name=None):
+        return self.button_type(self.get_name() if name is None else name, 'rus', self.name, named=True)
+
 
 class UserPage(MenuPage):
     def __init__(self, user, user_id, call=None):
         MenuAction.__init__(self, user, user_id, call=call)
         self.user = user
         self.button_type = UserButton
+
+    def button_to_page(self, name=None):
+        return self.button_type(self.get_name() if name is None else name, 'rus', self.name, named=True)
 
 
 class UserMainMenu(UserPage):
@@ -28,8 +34,7 @@ class UserMainMenu(UserPage):
 
     def get_menu_string(self):
         return 'Управление персонажем\n' \
-               'Текущий опыт: {}/{}\n' \
-               'Ваш чат: {}'.format(self.user.experience, self.user.get_experience_to_lvl(), self.user.chat.name)
+               'Текущий опыт: {}/{}\n'.format(self.user.experience, self.user.get_experience_to_lvl())
 
     def form_actions(self):
         self.children_actions = [

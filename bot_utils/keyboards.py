@@ -35,7 +35,7 @@ class FightButton(Button):
 
 
 class ChatButton(Button):
-    def __init__(self, text, lang, *args, special='', named=False, emoji=None):
+    def __init__(self, chat, text, lang, *args, special='', named=False, emoji=None):
         if not isinstance(text, str):
             text = text.translate(lang)
         else:
@@ -43,7 +43,7 @@ class ChatButton(Button):
                              text).translate(lang) if not named else text
         if emoji is not None:
             text = emoji + ' ' + text
-        callback = '_'.join(('mngt', *args))
+        callback = '_'.join(('mngt', str(chat.chat_id), *args))
         Button.__init__(self, text, callback)
 
     def available(self):

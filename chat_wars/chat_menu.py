@@ -85,6 +85,9 @@ class MenuPage(MenuAction):
         else:
             edit_message(self.user_id, self.call.message.message_id, text, reply_markup=self.get_menu_keyboard())
 
+    def button_to_page(self, name=None):
+        return self.button_type(self.chat, self.get_name() if name is None else name, 'rus', self.name, named=True)
+
 
 class CloseMenu(MenuAction):
     name = 'close'
@@ -187,7 +190,7 @@ class ReceiptMenu(ChatMenuPage):
         return self.get_name() + ' ' + str(self.get_item_object().price)
 
     def button_to_page(self, name=None):
-        return ChatButton(self.get_name() if name is None else name, 'rus', self.name, self.item_name, named=True)
+        return ChatButton(self.chat, self.get_name() if name is None else name, 'rus', self.name, self.item_name, named=True)
 
 
 class CraftItemAction(ChatAction):
@@ -204,9 +207,6 @@ class CraftItemAction(ChatAction):
     def get_item_object(self):
         return object_dict[self.item_name]
 
-    def get_name(self):
-        return get_name(self.get_item_object().name, 'rus')
-
     def act(self):
         self.chat.create_item(self.item_name, self.get_item_object().price)
 
@@ -218,7 +218,8 @@ class CraftItemAction(ChatAction):
         return True, 'Предмет "{}" успешно добавлен в арсенал чата.'.format(self.get_name())
 
     def button_to_page(self, name=None):
-        return ChatButton('Создать', 'rus', self.name, self.item_name, named=True)
+        emote = emote_dict['locked_em'] + ' ' if not self.available()[0] else ''
+        return ChatButton(self.chat, emote + self.get_name().translate('rus'), 'rus', self.name, self.item_name, named=True)
 
 
 # -------------------------------------- ВЕТКА НАПАДЕНИЯ
@@ -277,7 +278,7 @@ class TargetMenu(ChatMenuPage):
                                                  self.target_chat.get_prize())
 
     def button_to_page(self, name=None):
-        return ChatButton(self.target_chat.name, 'rus', self.name, self.target_chat.chat_id, named=True)
+        return ChatButton(self.chat, self.target_chat.name, 'rus', self.name, self.target_chat.chat_id, named=True)
 
 
 class AttackTargetAction(ChatAction):
@@ -296,6 +297,8 @@ class AttackTargetAction(ChatAction):
     def available(self):
         if self.current_war.stage != 'siege' and self.current_war.stage != 'attack':
             return False, 'В данный момент нападение на другой чат недоступно.'
+        elif self.current_war.lobby_exists(self.chat.chat_id, self.target_chat.chat_id):
+            return False, 'Вы уже набираете отряд для атаки на этот чат!'
         elif self.current_war.stage == 'siege' and self.current_war.attacked_chat.get(self.chat.chat_id, False) and\
                         self.current_war.attacked_chat[self.chat.chat_id][1] >= self.chat.get_maximum_attacks():
             return False, 'Ваш чат не может больше атаковать сегодня.'
@@ -311,9 +314,10 @@ class AttackTargetAction(ChatAction):
         return True, True
 
     def button_to_page(self, name=None):
-        return ChatButton('Напасть', 'rus', self.name, self.target_chat.chat_id, named=True)
+        return ChatButton(self.chat, 'Напасть', 'rus', self.name, self.target_chat.chat_id, named=True)
 
     def act(self):
+        self.current_war.add_attack_lobby(self.chat.chat_id, self.target_chat.chat_id)
         if self.current_war.stage == 'siege':
             self.chat.add_resources(-self.chat.get_attack_price(self.target_chat))
             answer_callback_query(self.call,
@@ -341,6 +345,7 @@ class SiegeTargetAction(ChatAction):
             self.refuse('Ошибка! Вы уже осадили этот чат!')
             delete_message(call=self.call)
         else:
+            self.current_war.release_attack_lobby(self.chat.chat_id, self.target_chat.chat_id)
             self.chat.win_siege(self.target_chat.chat_id)
             delete_message(call=self.call)
 
@@ -409,7 +414,7 @@ class BuildingMenu(ChatMenuPage):
     def button_to_page(self, name=None):
         lvl = self.chat_buildings[self.building.name] + 1 if self.building.name in self.chat_buildings else None
         lvl = str(' ({})'.format(lvl)) if lvl is not None else ''
-        return ChatButton(self.building.get_string('name').translate('rus') + lvl, 'rus', self.name, self.building.name, named=True)
+        return ChatButton(self.chat, self.building.get_string('name').translate('rus') + lvl, 'rus', self.name, self.building.name, named=True)
 
 
 class CreateBuildingAction(ChatAction):
@@ -437,7 +442,8 @@ class CreateBuildingAction(ChatAction):
         return True, 'Здание успешно построено'
 
     def button_to_page(self, name=None):
-        return ChatButton(self.get_name(), 'rus', self.name, self.building.name, named=True)
+        emote = emote_dict['locked_em'] + ' ' if not self.available()[0] else ''
+        return ChatButton(self.chat, emote + self.get_name().translate('rus'), 'rus', self.name, self.building.name, named=True)
 
 
 class ManageHandler:
@@ -450,9 +456,8 @@ class ManageHandler:
     def handle(call):
         call_data = call.data.split('_')
         user_id = call.from_user.id
-        user = get_user(user_id)
-        chat = user.chat
-        action = call_data[1]
+        chat = get_chat(call_data[1])
+        action = call_data[2]
         if not chat.is_admin(user_id):
             answer_callback_query(call, 'Вы не админ в этом чате!')
             return False

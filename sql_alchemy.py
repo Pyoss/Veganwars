@@ -32,7 +32,6 @@ chats_table = Table('chats', metadata,
 users_table = Table('users', metadata,
                     Column('id', Integer, primary_key=True),
                     Column('user_id', Integer, unique=True),
-                    Column('chat_id', String, ForeignKey('chats.chat_id')),
                     Column('attacked', Integer, default=0),
                     Column('experience', String),
                     Column('gameclass', String),
@@ -181,26 +180,22 @@ class SqlChat(object):
         session.commit()
 
     def __repr__(self):
-        return "<Chat('%s', '%s', '%s', '%s', '%s', '%s')>" % (self.chat_id, self.name, self.users, self.data,
+        return "<Chat('%s', '%s', '%s', '%s', '%s')>" % (self.chat_id, self.name, self.data,
                                                                self.receipts, self.armory)
 
 
 class SqlUser(object):
     pyosession = None
 
-    def __init__(self, user_id, chat_id, attacked=0, experience=0, gameclass='{}', abilities='[]'):
+    def __init__(self, user_id, attacked=0, experience=0, gameclass='{}', abilities='[]'):
         self.user_id = user_id
-        self.chat_id = chat_id
         self.attacked = attacked
         self.experience = experience
         self.gameclass = gameclass
         self.abilities = abilities
 
     def __repr__(self):
-        return "<User('%s', '%s')>" % (self.chat_id, self.user_id)
-
-    def get_armory(self):
-        return self.chat.armory
+        return "<User('%s')>" % (self.user_id)
 
     def refresh(self):
         self.attacked = 0
@@ -234,8 +229,8 @@ class Pyossession:
         user_class.pyossession = self
 
     def start_session(self):
-        mapper(self.chat_class, chats_table, properties={'users': relationship(self.user_class)}, non_primary=self.non_primary)
-        mapper(self.user_class, users_table, properties={'chat': relationship(self.chat_class)}, non_primary=self.non_primary)
+        mapper(self.chat_class, chats_table, non_primary=self.non_primary)
+        mapper(self.user_class, users_table, non_primary=self.non_primary)
 
     def create_chat(self, chat_id, name):
         session.add(self.chat_class(chat_id, name, '{}', '{}', '{}', '{}'))
