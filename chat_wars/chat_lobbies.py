@@ -5,7 +5,7 @@ from locales import localization
 from chat_wars.chat_main import pyossession, get_chat, get_user
 from chat_wars.chat_war import current_war
 from fight import fight_main, standart_actions
-from adventures import dungeon_main, map_engine
+from adventures import dungeon_main, map_engine, maps
 
 
 class Lobby:
@@ -186,7 +186,7 @@ class Dungeon(Lobby):
 
     def run(self):
         self.complexity = len(self.teams)
-        self.create_dungeon_map(map_engine.FirstDungeon(self))
+        self.create_dungeon_map(maps.FirstDungeon(self))
         dynamic_dicts.dungeons[self.id] = self
         self.add_party(player_list=self.team)
         for member in self.party.members:
@@ -452,7 +452,7 @@ class LobbyHandler:
                 free_armory = chat.get_free_armory()
                 if weapon_name not in free_armory:
                     bot_methods.answer_callback_query(call, 'Этого предмета уже нет на складе')
-                    user.send_weapon_choice(call_data[1], message_id=call.message.message_id)
+                    user.send_weapon_choice(call_data[1], chat.chat_id, message_id=call.message.message_id)
                     return False
                 else:
                     chat.use_item(weapon_name)
@@ -481,7 +481,7 @@ class LobbyHandler:
                 free_armory = chat.get_free_armory()
                 if armor_action not in free_armory:
                     bot_methods.answer_callback_query(call, 'Этого предмета уже нет на складе')
-                    user.send_armor_choice(call_data[1], message_id=call.message.message_id)
+                    user.send_armor_choice(call_data[1], chat.chat_id, message_id=call.message.message_id)
                     return False
                 else:
                     armor = standart_actions.object_dict[armor_action]()
@@ -492,7 +492,7 @@ class LobbyHandler:
                         unit_dict['armor'].append(armor.to_dict())
 
             user = get_user(call.from_user.id)
-            user.send_armor_choice(call_data[1], message_id=call.message.message_id)
+            user.send_armor_choice(call_data[1], chat.chat_id, message_id=call.message.message_id)
 
         elif action == 'item':
             user_id = call.from_user.id
@@ -517,7 +517,7 @@ class LobbyHandler:
                 free_armory = chat.get_free_armory()
                 if item_name not in free_armory:
                     bot_methods.answer_callback_query(call, 'Этого предмета уже нет на складе')
-                    user.send_item_choice(call_data[1], message_id=call.message.message_id)
+                    user.send_item_choice(call_data[1], chat.chat_id, message_id=call.message.message_id)
                     return False
                 else:
                     item = standart_actions.object_dict[item_name]()

@@ -105,6 +105,7 @@ emote_dict = {
     'bird_em': '\U0001f985',
     'bear_em': '\U0001f43b',
     'goblin_em': '\U0001f47a',
+    'bloodbug_em': '\U0001f99f',
 
     # Меню_мобов
     "arm_em": u'\U0001F4AA',

@@ -31,6 +31,8 @@ class DungeonMap:
     def __init__(self, length, dungeon, branch_length, branch_number, new=True, dungeon_dict=None):
         self.location_matrix = dict()
         self.length = length
+        self.width = 0
+        self.height = 0
         self.branch_length = branch_length
         self.branch_number = branch_number
         self.entrance = None
@@ -38,10 +40,21 @@ class DungeonMap:
         self.party = None
         self.dungeon = dungeon
         self.table_row = 'dungeons_' + self.name
+        self.core_location_dict = {}
+        self.branch_location_dict = {}
+        self.generate_location_dicts()
+
+    def generate_location_dicts(self):
+        self.core_location_dict = {'end': [locations.PlaceHolder],
+                                   'crossroad': [locations.PlaceHolder],
+                                   'default': [locations.MobLocation]}
+        self.branch_location_dict = {'end': [locations.PlaceHolder],
+                                     'crossroad': [locations.PlaceHolder],
+                                     'default': [locations.PlaceHolder]}
 
     def create_map(self):
         self.dungeon.map = self
-        map_tuples = Testing.generate_core(complexity=len(self.dungeon.team)*10, length=self.length)
+        map_tuples = Testing.generate_core(complexity=len(self.dungeon.team)*7, length=self.length)
         for i in range(self.branch_number):
             Testing.generate_branch(map_tuples, self.branch_length)
         self.width = max(map_tuple[0] for map_tuple in map_tuples) + 1
@@ -59,7 +72,31 @@ class DungeonMap:
         return self
 
     def generate_location(self, x, y, map_tuple):
-        pass
+        if x == 0 and y == 0:
+            return locations.Entrance(0, 0, self.dungeon, map_tuple)
+        elif 'core' in map_tuple.types:
+            return self.generate_core_locations(x, y, map_tuple)
+        elif  'branch' in map_tuple.types:
+            return self.generate_branch_location(x, y, map_tuple)
+
+    def generate_core_locations(self, x, y, map_tuple):
+            if 'end' in map_tuple.types:
+                return self.create_location(self.core_location_dict['end'], x, y, map_tuple)
+            elif 'crossroad' in map_tuple.types:
+                return self.create_location(self.core_location_dict['crossroad'], x, y, map_tuple)
+            else:
+                return self.create_location(self.core_location_dict['default'], x, y, map_tuple)
+
+    def generate_branch_location(self, x, y, map_tuple):
+            if 'end' in map_tuple.types:
+                return self.create_location(self.branch_location_dict['end'], x, y, map_tuple)
+            elif 'crossroad' in map_tuple.types:
+                return self.create_location(self.branch_location_dict['crossroad'], x, y, map_tuple)
+            else:
+                return self.create_location(self.branch_location_dict['default'], x, y, map_tuple)
+
+    def create_location(self, location_class_list, x, y, map_tuple):
+        return random.choice(location_class_list)(x, y, self.dungeon, map_tuple)
 
     def generate_wall(self, x, y):
         return Location(x, y, self.dungeon, map_tuple=None)
@@ -67,21 +104,6 @@ class DungeonMap:
     def start(self):
         #self.greetings_message()
         self.dungeon.party.move(self.dungeon.map.get_location(0, 0))
-
-    def fill_end(self):
-        pass
-
-    def fill_entrance(self):
-        pass
-
-    def fill_crossroads(self, *args):
-        pass
-
-    def fill_dead_ends(self, *args):
-        pass
-
-    def fill_placeholders(self, *args):
-        pass
 
     # Возвращает локацию от координат матрицы
     def get_location(self, x, y):
@@ -141,8 +163,8 @@ class Location:
         self.dungeon = dungeon
         self.special = '0'
         self.mobs = None
+        self.mob_team = None
         self.receipts = engine.ChatContainer()
-        self.receipts.put('bandages')
         if map_tuple is not None:
             self.complexity = map_tuple.complexity
 
@@ -167,8 +189,14 @@ class Location:
         else:
             return emote_dict['question_em']
 
+    def get_image(self):
+        return self.image
+
     # Перемещение группы
     def enter_location(self, party):
+        if self.mobs:
+            self.mob_team = self.mobs.generate_team()
+        self.image = self.get_image()
         self.current = True
         party.current_location = self
         if not self.visited:
@@ -194,10 +222,9 @@ class Location:
 
     # Функция, запускающаяся при входе в комнату. Именно сюда планируется пихать события.
     def on_enter(self):
-        self.collect_reward()
         self.dungeon.update_map()
 
-    def collect_reward(self):
+    def collect_receipts(self):
         if self.receipts:
             self.dungeon.party.send_message('Вы находите следующие рецепты: {}'.format(self.receipts.to_string('rus')))
             self.dungeon.party.collected_receipts += self.receipts
@@ -282,7 +309,7 @@ class Location:
         return self.name + '_' + self.special + '_' + visited
 
     def location_fight(self):
-            results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mobs.join_fight())
+            results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mob_team)
             self.process_results(results)
 
     def process_results(self, results):
@@ -294,43 +321,13 @@ class MobPack:
         self.mob_units = args
         self.complexity = complexity
 
-    def join_fight(self):
+    def generate_team(self):
         team_dict = {}
         i = 0
         for unit in self.mob_units:
             team_dict[(units.units_dict[unit], i)] = units.units_dict[unit](complexity=self.complexity).to_dict()
             i += 1
         return team_dict
-
-
-class FirstDungeon(DungeonMap):
-    name = 'NecromancerPit'
-    wall_location = None
-
-    def __init__(self, dungeon, new=True, dungeon_dict=None):
-        DungeonMap.__init__(self, 6, dungeon,  2, 2,  new=True, dungeon_dict=None)
-        self.low_loot = ['bandages', 'chitin', 'stimulator', 'helmet', 'breastplate', 'bandages', 'knife', 'adrenalin']
-        self.enemy_dict = {'rat': (15, 238), 'skeleton': (15, 238), 'skeleton+zombie': (7, 238), 'worm+goblin': (7, 238)}
-
-    def generate_location(self, x, y, map_tuple):
-        if x == 0 and y == 0:
-            return locations.Entrance(0, 0, self.dungeon, map_tuple)
-        elif 'core' in map_tuple.types:
-            if 'end' in map_tuple.types:
-                end_loc = locations.MobLocation(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple, mobs=['lich'])
-                end_loc.finish = True
-                return end_loc
-            elif 'crossroad' in map_tuple.types:
-                return locations.CrossRoad(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
-            else:
-                return locations.MobLocation(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
-        elif 'branch' in map_tuple.types:
-            if 'dead_end' in map_tuple.types:
-                return locations.DeadEnd(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
-            elif 'crossroad' in map_tuple.types:
-                return locations.CrossRoad(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
-            else:
-                return locations.PlaceHolder2(x=x, y=y, dungeon=self.dungeon, map_tuple=map_tuple)
 
 
 # --------------------------------------------------------------------------------------------------

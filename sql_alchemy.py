@@ -8,7 +8,7 @@ import engine
 import threading
 
 # Создание объекта соединения с нашей базой данных
-engn = sqlalchemy.create_engine('sqlite:///chat_data.db', echo=True)
+engn = sqlalchemy.create_engine('sqlite:///chat_data.db', echo=False)
 
 session_factory = sessionmaker(bind=engn)
 Session = scoped_session(session_factory)

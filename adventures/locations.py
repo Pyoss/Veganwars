@@ -2,6 +2,7 @@ from adventures import map_engine
 from locales import emoji_utils
 from fight import fight_main, ai, items, units, armors, standart_actions
 import locales.localization
+from image_generator import create_dungeon_image
 from bot_utils import bot_methods, keyboards
 import random
 import inspect
@@ -130,6 +131,7 @@ class FireBlocked(OpenLocation):
 class MobLocation(OpenLocation):
     name = 'mobs'
     emote = '!!!'
+    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\\default.jpg'
 
     def __init__(self, x, y, dungeon, map_tuple, mobs=None, loot=list()):
         map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
@@ -140,7 +142,16 @@ class MobLocation(OpenLocation):
             main_mob = units.units_dict[max(mobs, key=lambda mob: units.units_dict[mob].danger)]
             self.emote = main_mob.emote
             self.greet_msg = main_mob.greet_msg
-            self.image = main_mob.image
+
+    def get_image(self):
+        if not self.visited:
+            image_list = []
+            for mob in self.mob_team:
+                unit = mob[0](None, unit_dict=self.mob_team[mob])
+                image_list.append(unit.get_image())
+            return create_dungeon_image(self.image, image_list)
+        else:
+            return None
 
     def on_enter(self):
         if not self.visited and self.dungeon.map.entrance != self:
@@ -167,6 +178,7 @@ class MobLocation(OpenLocation):
             self.dungeon.party.experience += experience
             print('Раздача добычи:{}'.format(loot))
             self.dungeon.party.distribute_loot(loot)
+            self.collect_receipts()
             self.dungeon.update_map()
 
 

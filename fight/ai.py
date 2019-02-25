@@ -302,6 +302,17 @@ class GoblinAi(StandartMeleeAi):
             self.attack(self.unit.energy if self.unit.target is not None else 0)
 
 
+class BloodBugAi(StandartMeleeAi):
+    ai_name = 'bloodbug'
+
+    def move_forward(self, chance):
+        self.add_action(self.unit.fly_action, chance)
+
+    def form_actions(self):
+        StandartMeleeAi.form_actions(self)
+        self.make_action(self.unit.get_blood_action)
+
+
 class RatAi(StandartMeleeAi):
     ai_name = 'rat'
 

@@ -21,6 +21,7 @@ class Unit:
     standart_additional = ['move', 'move_back', 'skip']
     experience = 10
     danger = 10
+    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\default.png'
 
     # Список предметов, выпадающих из юнита при убийстве. Имеет вид [name: (quantity, chance)]
     loot = []
@@ -83,6 +84,9 @@ class Unit:
         actions = [(1, WeaponButton(self, self.weapon)), (1, MoveForward(self)), (1, self.weapon.reload_button()),
                    (3, AdditionalKeyboard(self))]
         return actions
+
+    def get_image(self):
+        return self.image
 
     def additional_actions(self):
         actions = [(1, MoveForward(self)),
@@ -742,9 +746,9 @@ class Skeleton(Unit):
     control_class = ai.SkeletonAi
     emote = emote_dict['skeleton_em']
     types = ['undead']
+    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\skeleton.png'
     broken_dict = {'head': 'skill_1', 'legs': 'skill_3', 'arms': 'skill_2'}
     greet_msg = 'текст-скелетов'
-    image = 'AgADAgADBaoxG5L9kUuqFj563vC1uiiXOQ8ABMxTxezbQ5wjrfAAAgI'
     danger = 12
     loot = [('old_bone', (1, 100))]
 
@@ -770,6 +774,12 @@ class Skeleton(Unit):
         self.toughness = 5
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
+
+    def get_image(self):
+        if self.weapon.name == 'bow':
+            return 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\skeleton_archer.png'
+        else:
+            return self.image
 
     def to_dict(self):
         unit_dict = {
@@ -913,7 +923,6 @@ class Lich(Skeleton):
     types = ['undead', 'boss']
     blood_spell_img = 'AgADAgADeaoxG8zb0EsDfcIlLz_K6IyROQ8ABDkUYT5md9D4O2MBAAEC'
     greet_msg = 'текст-лича'
-    image = 'AgADAgADaaoxG8zb0Eus0hQfCdFJd0eXOQ8ABF-FiJZxVRuJTV0BAAEC'
 
     def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         complexity = 30 if complexity is None else complexity
@@ -1000,7 +1009,6 @@ class Zombie(Unit):
     emote = emote_dict['zombie_em']
     control_class = ai.ZombieAi
     greet_msg = 'текст-зомби'
-    image = 'AgADAgADqqoxG8_E6Uu_il72AlGXdRuiOQ8ABHWprqpYxXCGvpYBAAEC'
     danger = 10
     loot = [('zombie_tooth', (1, 100))]
 
@@ -1306,11 +1314,11 @@ class Basilisk(Unit):
 
 class Goblin(StandartCreature):
     greet_msg = 'текст-гоблина'
-    image = 'AgADAgADlaoxGxEHGEo_Gw7ItWUpQMpcOQ8ABCvLKflp5m3e6sQBAAEC'
     unit_name = 'goblin'
     control_class = ai.GoblinAi
     emote = emote_dict['goblin_em']
     loot = [('goblin_ear', (1, 100)), ('goblin_ear', (1, 50))]
+    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\sword_goblin.png'
 
     danger = 7
 
@@ -1321,16 +1329,86 @@ class Goblin(StandartCreature):
         self.toughness = 3
         self.hp = 3
         self.abilities = [abilities.WeaponSnatcher(self), abilities.Dodge(self)]
-        self.weapon = random.choice([weapons.Harpoon(self)])
+        self.weapon = engine.get_random_with_chances(
+            ((weapons.Knife, 2), (weapons.Fist, 3), (weapons.Harpoon, 1))
+        )(self)
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
         self.energy = int(self.max_energy / 2 + 1)
         self.loot_chances['weapon'] = 100
 
+    def get_image(self):
+        if self.weapon.name == 'knife':
+            return random.choice(('D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\knife_goblin.png',
+                                  'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\sword_goblin.png'))
+        elif self.weapon.name == 'harpoon':
+            return 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\harpoon_goblin.png'
+        else:
+            return 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\\fist_goblin.png'
+
+
+class BloodBug(StandartCreature):
+    greet_msg = 'комарик'
+    unit_name = 'bloodbug'
+    control_class = ai.BloodBugAi
+    emote = emote_dict['bloodbug_em']
+    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\Bloodbug.png'
+
+    danger = 9
+
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
+        StandartCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
+        self.max_hp = 4
+        self.toughness = 2
+        self.hp = 4
+        self.max_energy = 4
+        self.energy = 4
+        self.weapon = weapons.Sting(self)
+        self.get_blood_action = self.create_action('get_blood', self.get_blood, None, order=20)
+        self.fly_action = self.create_action('bird_fly', self.fly, 'button_1', order=10)
+        self.blood_filled = False
+
+    @staticmethod
+    def get_blood(action):
+        unit = action.unit
+        triggered = False
+        if unit.blood_filled:
+            return False
+        for target in unit.targets():
+            if any(actn.name == 'bleeding' for actn in target.actions()) and 'bleeding' in target.statuses:
+                if target.statuses['bleeding'].strength >= 9:
+                    triggered = True
+                    break
+                elif target.statuses['bleeding'].strength > 6 and 'idle' not in target.action:
+                    triggered = True
+                    break
+        if triggered:
+            unit.blood_filled = True
+            unit.string('skill_2', format_dict={'actor': unit.name})
+            unit.start_regenerating()
+
+    @staticmethod
+    def fly(action):
+        unit = action.unit
+        unit.move_forward()
+        unit.string('skill_1', format_dict={'actor': unit.name})
+
+    def start_regenerating(self):
+        statuses.Buff(self, 'damage', 1, 2)
+        statuses.CustomStatus(self, 21, 1, self.regenerate)
+        statuses.CustomStatus(self, 21, 2, self.regenerate)
+        statuses.CustomStatus(self, 22, 2, self.reset_blood)
+
+    def regenerate(self):
+        if self.hp < self.max_hp:
+            self.change_hp(1)
+
+    def reset_blood(self):
+        self.blood_filled = False
+
 
 class Rat(StandartCreature):
     greet_msg = 'текст-крысы'
-    image = 'AgADAgAD4akxG-pMcUpRxwHDSLJLh-tYOQ8ABLh95nCjmWxtkAoCAAEC'
     control_class = ai.RatAi
     emote = emote_dict['rat_em']
     unit_name = 'rat'
@@ -1352,13 +1430,13 @@ class Rat(StandartCreature):
 
 class Worm(Unit):
     greet_msg = 'текст-червей'
-    image = 'AgADAgADCaoxG5L9kUuNAAHxLjBBsf8cQ_MOAAR12ygrBhqdi80aAwABAg'
     unit_name = 'worm'
     types = ['brainless', 'alive']
     emote = emote_dict['worm_em']
     control_class = ai.WormAi
     danger = 7
     loot = [('worm_skin', (1, 100))]
+    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\worm.png'
 
     def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
@@ -1688,4 +1766,5 @@ units_dict = {Human.unit_name: Human,
               BirdRukh.unit_name: BirdRukh,
               SperMonster.unit_name: SperMonster,
               Pasyuk.unit_name: Pasyuk,
-              Rat.unit_name: Rat}
+              Rat.unit_name: Rat,
+              BloodBug.unit_name: BloodBug}

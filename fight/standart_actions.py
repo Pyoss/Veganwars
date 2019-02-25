@@ -77,8 +77,9 @@ class Action:
 class UnitAction:
     name = 'blank'
 
-    def __init__(self, name, func, action_type=list(), types=list(),
+    def __init__(self, name, func, button_name, action_type=list(), types=list(),
                  full=True, order=5):
+        self.button_name = button_name
         self.name = name
         self.full = full
         self.order = order
@@ -87,6 +88,7 @@ class UnitAction:
 
         class NewAction(Action):
             name = self.name
+            self.button_name = button_name
             action_type = self.action_type
             order = self.order
             full = self.full

@@ -770,6 +770,15 @@ class Fangs(Knife):
     natural = True
 
 
+class Sting(Knife):
+    name = 'sting'
+    types = ['unique', 'natural']
+    natural = True
+    bleed_chance = 80
+    accuracy = 5
+    dice_num = 1
+
+
 class Teeth(Knife):
     name = 'teeth'
     types = ['unique', 'natural']

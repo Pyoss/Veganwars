@@ -5,7 +5,7 @@ import random
 import uuid
 import json
 from fight import standart_actions
-dict
+
 
 class Container:
     def __init__(self, base_dict=None, base_list=None):
@@ -147,7 +147,6 @@ class Container:
                     inv_list.append(self.get_item_object(key, unit=unit))
         return inv_list
 
-
 class ChatContainer(Container):
 
     def put(self, item, value=1):
@@ -231,6 +230,21 @@ def rand_id():
     return uuid.uuid4().int >> 112
 
 
+def get_random_with_chances(chance_tuples):
+    weights_sum = sum((chance_tuple[1] for chance_tuple in chance_tuples))
+    item_result_dict_counter = 1
+    item_result_dict = {}
+    for tpl in chance_tuples:
+        item_result_dict[(item_result_dict_counter, item_result_dict_counter + tpl[1])] = tpl[0]
+        item_result_dict_counter += tpl[1]
+    random_chance = random.randint(1, weights_sum)
+    print(random_chance)
+    for key in item_result_dict:
+        if random_chance in range(key[0], key[1]):
+            print(key)
+            return item_result_dict[key]
+
+
 def list_to_marked_string(my_list):
         next_arrow = '┞'
         end_arrow = '┕'
@@ -240,4 +254,3 @@ def list_to_marked_string(my_list):
                 string += '\n ' + next_arrow + ' ' + item
             string += '\n ' + end_arrow + ' ' + my_list[-1]
         return string
-
