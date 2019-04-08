@@ -233,7 +233,7 @@ class Buff:
 
 class Bleeding(Status):
     name = 'bleeding'
-    order = 21
+    order = 22
 
     def __init__(self, unit, strength=4):
         if 'alive' in unit.types:
@@ -244,6 +244,8 @@ class Bleeding(Status):
         parent.strength += self.strength
 
     def activate(self, action=None):
+        if self.name not in self.unit.statuses:
+            return False
         if 'idle' in self.unit.action:
             self.strength -= 3
         else:

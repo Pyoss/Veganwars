@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import telebot
 from bot_utils import config, bot_methods
-from fight import standart_actions, build, fight_main
+from fight import standart_actions, fight_main
 import dynamic_dicts
 from locales import localization
 from adventures import dungeon_main
@@ -19,7 +19,6 @@ def game_exists_error(chat_id):
 class CallbackHandler:
     def __init__(self):
         self.type_dicts = {'fgt': standart_actions.ActionHandler(self),
-                           'build': build.BuildHandler(self),
                            'map': dungeon_main.MapHandler(self),
                            'chat': chat_main.ChatHandler(self),
                            'lobby': chat_lobbies.LobbyHandler(self),
@@ -52,5 +51,8 @@ class CallbackHandler:
     def finish(self, call, action, text=None):
         if action.full:
             bot.delete_message(call.message.chat.id, call.message.message_id)
+
+    def error(self, error_text, call):
+        bot.answer_callback_query(callback_query_id=call.id, show_alert=False, text=error_text)
 
 

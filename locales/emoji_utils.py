@@ -45,7 +45,7 @@ emote_dict = {
     # Оружие
     "hammer_em": u'\U0001F528',
     'boomerang_em':  u'\U000021A9',
-    'chain_em': u'\U000026D3',
+    'chain_em': u'\u27bf',
     'whip_em': u'\U0001F4AB',
     'katana_em': u'\U00003299',
     'mace_em': u'\U0001F4A2',
@@ -78,6 +78,8 @@ emote_dict = {
     'houndmaster_em': u'\U0001F436',
     'revenge_em': u'\U00002757',
     'chains_em': '\u26d3',
+    'bag_search_em': '\U0001f9f3',
+    'restrict_em': '\U0001f6ab',
 
     # Магия
     "ignite_em": u'\U0001f525',

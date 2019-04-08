@@ -36,6 +36,15 @@ class Ability(standart_actions.GameObject):
         user_abilities.append(self.to_dict())
         user.set_abilities(user_abilities)
 
+    def error_text(self):
+        if not self.ready():
+            return 'Способность еще не готова'
+
+    def available(self):
+        if not self.ready():
+            return False
+        return True
+
 
 class InstantAbility(standart_actions.InstantObject, Ability):
     core_types = ['ability']
@@ -98,11 +107,24 @@ class Dodge(InstantAbility):
     name = 'dodge'
     types = ['dodge']
     order = 1
-    cd = 3
+    cd = 2
 
     def activate(self, action):
         self.string('use', format_dict={'actor': self.unit.name})
         statuses.Buff(self.unit, 'evasion', 6, 1)
+
+    def available(self):
+        if not self.ready():
+            return False
+        if 'running' in self.unit.statuses:
+            return False
+        return True
+
+    def error_text(self):
+        if not self.ready():
+            return 'Способность еще не готова'
+        if 'running' in self.unit.statuses:
+            return 'Вы не можете уворачиваться после движения'
 
 
 class SpellCaster(OptionAbility):
@@ -893,6 +915,7 @@ class WeaponSnatcher(TargetAbility):
             action.target.weapon = weapons.weapon_dict[action.target.default_weapon](action.target)
             self.unit.weapon.unit = self.unit
             self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
+            self.unit.stole = True
         else:
             self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target.name})
 

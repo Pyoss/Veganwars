@@ -6,25 +6,67 @@ from locales import emoji_utils, localization
 import engine
 import inspect
 import sys
+import math
+
+
+class OneHanded:
+    core_types = ['weapon', 'one-handed']
+    image_pose = 'one-handed'
+    handle = (0, 0)
+    weight = 1
+    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\target.png'
+
+    def get_image_dict(self):
+        return {
+         'handle': self.handle,
+         'placement': 'right_hand',
+         'file': self.file,
+         'covered': 'hand_one_handed',
+         'layer': 1
+        }
+
+
+class TwoHanded:
+    core_types = ['weapon', 'two-handed']
+    dice_num = 5
+    accuracy = 1
+    weight = 3
+    damage_cap = 10
+    energy_cost = 3
+    image_pose = 'two-handed'
+    handle = (0, 0)
+    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\target.png'
+
+    def get_image_dict(self):
+        return {
+         'handle': self.handle,
+         'placement': 'right_hand',
+         'file': self.file,
+         'covered': 'hand_two_handed',
+         'layer': 1
+        }
+
+# -------------------------------------
 
 
 class Weapon(standart_actions.GameObject):
     name = None
-    core_types = ['weapon']
     natural = False
-    accuracy = 2
+    accuracy = 3
     dice_num = 3
-    energy = 2
-    waste = 2
+    energy_cost = 2
+    special_energy_cost = 2
     melee = True
     range_option = False
     damage = 0
+    damage_cap = 5
     price = 100
     emote = emoji_utils.emote_dict['weapon_em']
     db_string = 'weapon'
     order = 5
     # Типы особого действия (если есть)
     special_types = []
+    image_pose = 'two-handed'
 
     def __init__(self, unit=None, obj_dict=None):
         self.improved = 0
@@ -51,11 +93,13 @@ class Weapon(standart_actions.GameObject):
 
     def get_damage(self, target):
         accuracy = self.unit.melee_accuracy if self.melee else self.unit.range_accuracy
-        energy = self.unit.energy if self.unit.energy < 7 else 6
+        energy = self.unit.energy if self.unit.energy < 6 else 5
         modifier = accuracy + self.accuracy - target.evasion + energy
         damage = engine.damage_roll(self.dice_num, modifier)
         if damage:
             damage += self.damage
+        if damage > self.damage_cap:
+            return self.damage_cap
         return damage
 
     def reload_button(self):
@@ -65,6 +109,9 @@ class Weapon(standart_actions.GameObject):
             return keyboards.RangeReloadButton(self.unit)
 
     def before_hit(self, action):
+        pass
+
+    def modify_attack(self, action):
         pass
 
     def on_hit(self, action):
@@ -95,9 +142,13 @@ class Weapon(standart_actions.GameObject):
         keyboard.add(keyboards.MenuButton(self.unit, 'back'))
         self.unit.controller.edit_message(self.get_menu_string(), reply_markup=keyboard)
 
-    def get_menu_string(self, sp_string=None):
-        return localization.LangTuple(self.table_row, 'weapon_menu_1' if sp_string is None else sp_string,
-                                      format_dict={'chance': self.get_hit_chance()})
+    def get_menu_string(self, short_menu=False, target=None):
+        if not short_menu:
+            return localization.LangTuple(self.table_row, 'weapon_menu_1' ,
+                                          format_dict={'chance': self.get_hit_chance()})
+        else:
+            return localization.LangTuple(self.table_row, 'short_menu',
+                                          format_dict={'chance': self.get_hit_chance(), 'target': target})
 
     def attack_buttons(self):
         return [keyboards.AttackButton(self.unit, target) for target in self.targets()]
@@ -108,8 +159,10 @@ class Weapon(standart_actions.GameObject):
                 keyboards.FightButton('special_button', self.unit,
                                       'special', str(target), special=self.table_row)
         else:
+            ready = self.special_available(target=None)
+            cd = self.ready_turn - self.unit.fight.turn if self.cd is not 0 else None
             return keyboards.FightButton('special_button', self.unit,
-                                         'special', special=self.table_row)
+                                         'special', special=self.table_row, ready=ready, cd=cd)
 
     def activate_special_action(self, target):
         pass
@@ -130,7 +183,7 @@ class Weapon(standart_actions.GameObject):
             'name': localization.LangTuple(self.table_row, 'name'),
             'min_dmg': self.damage + 1,
             'max_dmg': self.dice_num + self.damage,
-            'energy': self.energy,
+            'energy': self.energy_cost,
             'accuracy': self.accuracy,
             'info': localization.LangTuple(self.table_row, 'info', format_dict=self.info_dict()),
         }
@@ -162,18 +215,27 @@ class Weapon(standart_actions.GameObject):
         return [main_key, keyboards.DungeonButton('equip', self.unit, 'inventory'),
                 ]
 
+    def get_image_dict(self):
+        return None
+
+    def error_text(self):
+        if not self.ready():
+            return 'Оружие еще не готово'
+
 
 class SpecialActionWeapon(Weapon):
     special_types = ['special']
 
     def get_action(self):
         keyboard = keyboards.form_keyboard(*self.attack_buttons())
-        if self.special_available(target=None):
-            keyboard.add(self.special_button(target=None))
+        keyboard.add(self.special_button(target=None))
         self.create_menu(keyboard)
 
     def start_special_action(self, info):
         standart_actions.Custom(self.activate_special_action, order=self.order, unit=self.unit)
+
+    def special_available(self, target):
+        return self.ready()
 
 
 class SpecialOptionWeapon(Weapon):
@@ -230,41 +292,6 @@ class SpecialOptionWeapon(Weapon):
         return False
 
 
-class Sword(SpecialOptionWeapon):
-    name = 'sword'
-    order = 0
-    cd = 2
-
-    def activate_special_action(self, option):
-        self.unit.waste_energy(1)
-        self.on_cd()
-        self.string('special_hit', format_dict={'actor': self.unit.name, 'option': option})
-        statuses.CustomPassive(self.unit, types=['receive_hit'], func=self.parry, option=option)
-
-    def parry(self, action, option):
-        if action.dmg_done == int(option):
-            self.string('special_hit_self', format_dict={'actor':self.unit.name, 'target': action.unit.name})
-            action.dmg_done = 0
-            action.stringed = False
-            x = standart_actions.Attack(self.unit, self.unit.fight, order=6)
-            x.activate(target=action.unit, waste=1)
-        elif action.dmg_done == int(option) - 1:
-            action.dmg_done = 0
-            action.stringed = False
-            self.string('special_miss', format_dict={'actor': self.unit.name, 'target': action.unit.name})
-
-    def get_menu_string(self, sp_string=None):
-        return localization.LangTuple(self.table_row, 'weapon_menu_1',
-                                      format_dict={'chance': self.get_hit_chance()})
-
-    def options(self):
-        return [(str(n+1), str(n+1)) for n in range(3)]
-
-    def target_keyboard(self):
-        return keyboards.form_keyboard(*self.options_keyboard(),
-                                       keyboards.MenuButton(self.unit, 'back'), row_width=3)
-
-
 class SpecialTargetWeapon(Weapon):
     special_types = ['attack']
 
@@ -289,7 +316,7 @@ class SpecialAttackWeapon(SpecialTargetWeapon):
         self.unit.target = self.unit.fight[info[-1]]
         if self.special_available(target=self.unit.target):
             self.unit.fight.edit_queue(standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
-                                                                      info=info, order=self.order, waste=self.waste))
+                                                                      info=info, order=self.order, energy_cost=self.special_energy_cost))
         else:
             self.unit.fight.edit_queue(standart_actions.Attack(unit=self.unit, fight=self.unit.fight,
                                                                info=info))
@@ -298,45 +325,103 @@ class SpecialAttackWeapon(SpecialTargetWeapon):
         pass
 
 
+# -------------------------------------
+
+
+class Sword(SpecialOptionWeapon):
+    name = 'sword'
+    order = 0
+    cd = 2
+
+    def activate_special_action(self, option):
+        self.unit.waste_energy(1)
+        self.on_cd()
+        self.string('special_hit', format_dict={'actor': self.unit.name, 'option': option})
+        statuses.CustomPassive(self.unit, types=['receive_hit'], func=self.parry, option=option)
+
+    def parry(self, action, option):
+        if action.dmg_done == int(option):
+            self.string('special_hit_self', format_dict={'actor':self.unit.name, 'target': action.unit.name})
+            action.dmg_done = 0
+            action.stringed = False
+            x = standart_actions.Attack(self.unit, self.unit.fight, order=6)
+            x.activate(target=action.unit, waste=1)
+        elif action.dmg_done == int(option) - 1:
+            action.dmg_done = 0
+            action.stringed = False
+            self.string('special_miss', format_dict={'actor': self.unit.name, 'target': action.unit.name})
+
+    def options(self):
+        return [(str(n+1), str(n+1)) for n in range(3)]
+
+    def target_keyboard(self):
+        return keyboards.form_keyboard(*self.options_keyboard(),
+                                       keyboards.MenuButton(self.unit, 'back'), row_width=3)
+
+
 # Оружие, проверенное на работоспособность с системой данжей
-class Knife(Weapon):
+class Knife(OneHanded, Weapon):
     name = 'knife'
-    bleed_chance = 30
+    bleed_chance_modifier = 5
+    handle = (15, 10)
+    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\knife.png'
+
+    def __init__(self, unit=None, obj_dict=None):
+        OneHanded.__init__(self)
+        Weapon.__init__(self, unit=unit, obj_dict=obj_dict)
+        self.bleed_applied_turn = 0
 
     def on_hit(self, attack_action):
         if attack_action.dmg_done and engine.roll_chance(
-                self.bleed_chance) and 'alive' in attack_action.target.types:
+                self.get_bleed_chance()) and 'alive' in attack_action.target.types:
             statuses.Bleeding(attack_action.unit.target)
             attack_action.to_emotes(emoji_utils.emote_dict['bleeding_em'])
+            self.bleed_applied_turn = self.unit.fight.turn
 
     def info_dict(self):
-        return {'bleed_chance': self.bleed_chance}
+        return {'bleed_chance': self.bleed_chance_modifier}
+
+    def get_menu_string(self, short_menu=False, target=None):
+        if not short_menu:
+            return localization.LangTuple(self.table_row, 'weapon_menu_1' ,
+                                          format_dict={'chance': self.get_hit_chance(), 'bleed_chance': self.get_bleed_chance()})
+        else:
+            return localization.LangTuple(self.table_row, 'short_menu',
+                                          format_dict={'chance': self.get_hit_chance(), 'target': target, 'bleed_chance': self.get_bleed_chance()})
+
+    def get_bleed_chance(self):
+        chance = (self.unit.fight.turn - self.bleed_applied_turn)\
+               * (self.bleed_chance_modifier + self.unit.get_speed())
+        return chance if chance < 100 else 100
 
 
-class Spear(SpecialActionWeapon):
+class Spear(OneHanded, SpecialActionWeapon):
     name = 'spear'
     order = 0
+    handle = (73, 121)
+    special_energy_cost = 1
+    cd = 1
+    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\spear.png'
 
     def activate_special_action(self, target=None):
-        standart_actions.AddString(localization.LangTuple(self.table_row,
-                                                          'special_hit', format_dict={'actor': self.unit.name}),
-                                   order=0, unit=self.unit)
+        self.on_cd()
         targets = [target for target in self.targets()
                    if any('attack' in action.action_type for action in target.actions())
                    and target.target == self.unit]
         if targets:
             standart_actions.Custom(self.counterattack, targets[0], order=10, unit=self.unit)
-        self.unit.waste_energy(1)
+        else:
+            standart_actions.AddString(localization.LangTuple(self.table_row,
+                                                              'special_1_miss', format_dict={'actor': self.unit.name}),
+                                       order=0, unit=self.unit)
+            self.unit.waste_energy(self.special_energy_cost)
 
     def counterattack(self, target):
         self.unit.melee_accuracy += 2
-        x = standart_actions.Attack(self.unit, self.unit.fight, order=6)
-        x.activate(target=target, waste=0)
+        self.unit.target = target
+        x = standart_actions.SpecialAttack(self.unit, self.unit.fight, order=6, info=None, energy_cost=None)
+        x.activate()
         self.unit.melee_accuracy -= 2
-
-    def get_menu_string(self):
-        return localization.LangTuple(self.table_row, 'weapon_menu_1',
-                                      format_dict={'chance': self.get_hit_chance()})
 
 
 class Fist(Weapon):
@@ -345,29 +430,83 @@ class Fist(Weapon):
     natural = True
     accuracy = 2
     dice_num = 2
-    energy = 2
+    energy_cost = 2
 
 
-class Hatchet(Weapon):
+class Cleaver(TwoHanded, Weapon):
+    name = 'cleaver'
+    weight = 6
+    energy_cost = 4
+    damage = 4
+    dice_num = 6
+    accuracy = -3
+    damage_cap = 100
+
+    # -------------------------
+    handle = (50, 270)
+    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\cleaver.png'
+
+
+class Hatchet(OneHanded, Weapon):
     name = 'hatchet'
-    cripple_chance = 60
+    cripple_chance_modifier = 5
 
-    def on_hit(self, action):
-        if action.dmg_done and engine.roll_chance(self.cripple_chance):
-            statuses.Crippled(action.target)
-            action.to_emotes(emoji_utils.emote_dict['crippled_em'])
+    # -------------------------
+    handle = (40, 30)
+    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\hatchet.png'
+
+    def __init__(self, unit=None, obj_dict=None):
+        OneHanded.__init__(self)
+        Weapon.__init__(self, unit=unit, obj_dict=obj_dict)
+
+    def on_hit(self, attack_action):
+        if attack_action.dmg_done and engine.roll_chance(
+                self.get_cripple_chance()) and 'alive' in attack_action.target.types:
+            statuses.Crippled(attack_action.unit.target)
+            attack_action.to_emotes(emoji_utils.emote_dict['crippled_em'])
 
     def info_dict(self):
-        return {'cripple_chance': self.cripple_chance}
+        return {'bleed_chance': self.cripple_chance_modifier}
+
+    def get_menu_string(self, short_menu=False, target=None):
+        if not short_menu:
+            return localization.LangTuple(self.table_row, 'weapon_menu_1' ,
+                                          format_dict={'chance': self.get_hit_chance(), 'cripple_chance': self.get_cripple_chance()})
+        else:
+            return localization.LangTuple(self.table_row, 'short_menu',
+                                          format_dict={'chance': self.get_hit_chance(), 'target': target, 'cripple_chance': self.get_cripple_chance()})
+
+    def get_cripple_chance(self):
+        chance = (self.cripple_chance_modifier + self.unit.get_speed())*3
+        return chance if chance < 100 else 100
 
 
-class Bow(SpecialActionWeapon):
+class Axe(TwoHanded, Hatchet):
+    name = 'axe'
+    cripple_chance_modifier = 10
+
+    # -------------------------
+    handle = (40, 270)
+    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\axe.png'
+
+
+class Halberd(TwoHanded, Spear):
+    name = 'halberd'
+
+    # -------------------------
+    handle = (40, 270)
+    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\halberd.png'
+
+
+class Bow(OneHanded, SpecialActionWeapon):
     name = 'bow'
     order = 5
     melee = False
-    energy = 3
+    energy_cost = 3
     draw_damage = 2
     draw_accuracy = 1
+    handle = (137, 315)
+    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\great_bow.png'
 
     def __init__(self, unit=None, obj_dict=None):
         SpecialActionWeapon.__init__(self, unit=unit, obj_dict=obj_dict)
@@ -397,7 +536,8 @@ class Bow(SpecialActionWeapon):
                                           format_dict={'chance': self.get_hit_chance()})
 
     def special_available(self, target=None):
-        return False if self.drown > 2 else True
+        print('Натяжение лука:{}'.format(self.drown))
+        return False if self.drown > 1 else True
 
     def activate_special_action(self, target=None):
         if self.draw_turn + 1 == self.unit.fight.turn:
@@ -412,6 +552,44 @@ class Bow(SpecialActionWeapon):
 
     def reload_button(self):
         return keyboards.MeleeReloadButton(self.unit)
+
+    def error_text(self):
+        return 'Вы не можете натянуть Лук сильнее.'
+
+
+class Chain(OneHanded, SpecialActionWeapon):
+    name = 'chain'
+    order = 5
+    swing_accuracy = 2
+    range_option = True
+    # -------------------------------------
+    handle = (40, 30)
+    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\chain.png'
+
+    def __init__(self, unit=None, obj_dict=None):
+        SpecialActionWeapon.__init__(self, unit=unit, obj_dict=obj_dict)
+        self.swinging = False
+
+    def before_hit(self, action):
+        if self.swinging:
+            self.accuracy += self.swing_accuracy
+            action.to_emotes(emoji_utils.emote_dict['chain_em'])
+
+    def on_hit(self, action):
+        if self.swinging:
+            self.accuracy -= self.swing_accuracy
+            self.swinging = False
+            self.unit.waste_energy(-self.energy_cost)
+
+    def special_available(self, target=None):
+        return False if self.swinging else True
+
+    def activate_special_action(self, target=None):
+        self.swinging = True
+        self.string('special_hit', format_dict={'actor': self.unit.name})
+
+    def error_text(self):
+        return 'Вы уже крутите Цепь.'
 
 
 class Crossbow(SpecialActionWeapon):
@@ -458,7 +636,7 @@ class Crossbow(SpecialActionWeapon):
 class SledgeHammer(SpecialAttackWeapon):
     name = 'sledgehammer'
     order = 9
-    waste_energy = 4
+    special_energy_cost = 4
 
     def modify_attack(self, action):
         if action.dmg_done:
@@ -468,21 +646,21 @@ class SledgeHammer(SpecialAttackWeapon):
         self.unit.target = self.unit.fight[info[-1]]
         if self.special_available(target=self.unit.target):
             self.unit.fight.edit_queue(standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
-                                                                      info=info, order=self.order, waste=1))
-            self.unit.fight.edit_queue(standart_actions.Custom(self.unit.waste_energy, self.waste_energy,
+                                                                      info=info, order=self.order, energy_cost=self.special_energy_cost))
+            self.unit.fight.edit_queue(standart_actions.Custom(self.unit.waste_energy, self.special_energy_cost,
                                                                unit=self.unit))
         else:
             self.unit.fight.edit_queue(standart_actions.Attack(unit=self.unit, fight=self.unit.fight,
                                                                info=info))
 
     def special_available(self, target):
-        return True if self.unit.energy > self.waste_energy else False
+        return True if self.unit.energy > self.special_energy_cost else False
 
 
 class Harpoon(SpecialOptionWeapon, Knife):
     name = 'harpoon'
     order = 9
-    waste_energy = 4
+    special_energy_cost = 4
     bleed_chance = 100
     range_option = True
 
@@ -498,7 +676,7 @@ class Harpoon(SpecialOptionWeapon, Knife):
 
     def activate_special_action(self, info):
         attack = standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
-                                       info=None, order=self.order, waste=self.waste_energy)
+                                       info=None, order=self.order, energy_cost=self.special_energy_cost)
         attack.activate()
         self.unit.lose_weapon()
 
@@ -541,7 +719,7 @@ class Flamethrower(Weapon):
     name = 'flamethrower'
     accuracy = 3
     dice_num = 1
-    energy = 3
+    energy_cost = 3
     melee = False
 
     def on_hit(self, attack_action):
@@ -633,21 +811,6 @@ class Cock(Weapon):
     name = 'cock'
     types = ['natural']
     natural = True
-
-
-class Chain(SpecialAttackWeapon):
-    name = 'chain'
-    order = 9
-
-    def modify_attack(self, action):
-        if action.dmg_done:
-            if 'reload' in action.target.action or engine.roll_chance(20):
-                if 'natural' not in action.target.weapon.types:
-                    action.target.lose_weapon()
-        self.unit.waste_energy(2)
-
-    def special_available(self, target):
-        return True if self.unit.energy > 2 else False
 
 
 class SniperRifle(SpecialTargetWeapon):
@@ -747,10 +910,12 @@ class Whip(SpecialTargetWeapon):
         return [*self.unit.melee_targets, *[actor for actor in self.unit.team.actors if actor != self.unit]]
 
 
-class Katana(SpecialAttackWeapon, Knife):
+class Katana(TwoHanded, SpecialAttackWeapon, Knife):
     name = 'katana'
     order = 9
     bleed_chance = 15
+    handle = (33, 171)
+    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\katana.png'
 
     def modify_attack(self, action):
         if action.dmg_done:
@@ -774,9 +939,8 @@ class Sting(Knife):
     name = 'sting'
     types = ['unique', 'natural']
     natural = True
-    bleed_chance = 80
-    accuracy = 5
-    dice_num = 1
+    bleed_chance_modifier = 10
+    damage_cap = 1
 
 
 class Teeth(Knife):
@@ -785,6 +949,7 @@ class Teeth(Knife):
     natural = True
     accuracy = 2
     dice_num = 2
+    bleed_chance_modifier = 0
 
 
 class Claws(Knife):
@@ -1030,8 +1195,51 @@ class ChainSword(Knife):
     bleed_chance = 100
 
 
+class Target(Fist):
+    image_pose = 'two-handed'
+
+    def get_image_dict(self):
+        return {
+         'handle': (0, 0),
+         'placement': 'right_hand',
+         'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\target.png',
+         'covered': True
+        }
+
+
 weapon_dict = {value.name: value for key, value
-               in dict(inspect.getmembers(sys.modules[__name__], inspect.isclass)).items() if value.name is not None}
+               in dict(inspect.getmembers(sys.modules[__name__], inspect.isclass)).items() if hasattr(value, 'name')
+               and value.name is not None}
 weapon_list = [value for k, value in weapon_dict.items()]
 for k, v in weapon_dict.items():
     standart_actions.object_dict[k] = v
+
+
+def get_weapon_statistic(weapon_class):
+    class UnitPlaceholder:
+        energy = 5
+        melee_accuracy = 0
+        range_accuracy = 0
+        evasion = 0
+
+    unit = UnitPlaceholder()
+    weapon = weapon_class(unit=unit)
+
+    result_dict = {}
+    for i in range(0, 10000):
+        damage = weapon.get_damage(target=unit)
+        if damage in result_dict:
+            result_dict[damage] += 1
+        else:
+            result_dict[damage] = 1
+    items = result_dict.items()
+    x = list(items)
+    x.sort(key=lambda y: y[0])
+    weapon_value = sum([z[0]*z[1] for z in x])
+    print('Вероятность попасть с {} энергии. Оружие - {}.'.format(unit.energy, weapon.name))
+    for key in x:
+        print(str(key[0]) + ' : ' + str(int(key[1]/100)) + '%')
+    print('Weapon value: {}'.format(int(round(weapon_value/1000, 0))))
+
+if __name__ == '__main__':
+    get_weapon_statistic(Cleaver)

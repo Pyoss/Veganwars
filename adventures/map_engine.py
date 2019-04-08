@@ -1,12 +1,12 @@
+import random
+
+import engine
+from adventures import locations, map_generator
 from bot_utils import bot_methods
-from bot_utils  .keyboards import Button, form_keyboard
+from bot_utils.keyboards import Button
+from fight import units
 from locales.emoji_utils import emote_dict
 from locales.localization import LangTuple
-from fight import units, items, weapons, armors
-from adventures import locations
-import Testing
-import engine
-import random
 
 
 class PartyMovement:
@@ -40,63 +40,95 @@ class DungeonMap:
         self.party = None
         self.dungeon = dungeon
         self.table_row = 'dungeons_' + self.name
-        self.core_location_dict = {}
-        self.branch_location_dict = {}
-        self.generate_location_dicts()
+        self.location_dict = {}
+        self.generate_location_dict()
+        self.map_tuples = None
+        self.negative_modifier = None
+        self.positive_modifier = None
 
-    def generate_location_dicts(self):
-        self.core_location_dict = {'end': [locations.PlaceHolder],
-                                   'crossroad': [locations.PlaceHolder],
-                                   'default': [locations.MobLocation]}
-        self.branch_location_dict = {'end': [locations.PlaceHolder],
-                                     'crossroad': [locations.PlaceHolder],
-                                     'default': [locations.PlaceHolder]}
+        self.balance_integer = 0
+        self.generation_seed = 65
+        self.neutral_chance = 0
+        self.neutral_probability = 20
+        self.neutral_scarceness = 100
+        self.impact_integer_range = (-5, 5)
+
+        self.statistics = {'positive': 0,
+                           'negative': 0,
+                           'neutral': 0}
+
+    def generate_location_dict(self):
+        pass
 
     def create_map(self):
         self.dungeon.map = self
-        map_tuples = Testing.generate_core(complexity=len(self.dungeon.team)*7, length=self.length)
+        self.positive_modifier = -self.generation_seed / 100
+        self.negative_modifier = self.positive_modifier + 1
+        self.create_map_tuples()
+        self.create_grid()
+        self.fill_locations()
+
+    def create_map_tuples(self):
+        self.map_tuples = map_generator.generate_core(complexity=len(self.dungeon.team) * 10, length=self.length)
         for i in range(self.branch_number):
-            Testing.generate_branch(map_tuples, self.branch_length)
-        self.width = max(map_tuple[0] for map_tuple in map_tuples) + 1
+            map_generator.generate_branch(self.map_tuples, self.branch_length)
+        for key in self.map_tuples:
+            if len(self.map_tuples[key].types) == 1:
+                self.map_tuples[key].types.append('default')
+            self.map_tuples[key].types = tuple(self.map_tuples[key].types)
+
+    def create_grid(self):
+        self.width = max(map_tuple[0] for map_tuple in self.map_tuples) + 1
         if self.width < 3:
             self.width = 3
-        self.height = max(map_tuple[1] for map_tuple in map_tuples) + 1
+        self.height = max(map_tuple[1] for map_tuple in self.map_tuples) + 1
         if self.height < 3:
             self.height = 3
+
+    def fill_locations(self):
         for x in range(0, self.width):
             for y in range(0, self.height):
-                if (x, y) in map_tuples:
-                    self.location_matrix[(x, y)] = self.generate_location(x, y, map_tuples[(x, y)])
+                if (x, y) in self.map_tuples:
+                    self.location_matrix[(x, y)] = self.generate_location(x, y)
                 else:
                     self.location_matrix[(x, y)] = self.generate_wall(x, y)
-        return self
 
-    def generate_location(self, x, y, map_tuple):
+    def generate_location(self, x, y):
+        map_tuple = self.map_tuples[(x, y)]
+        del self.map_tuples[(x, y)]
         if x == 0 and y == 0:
             return locations.Entrance(0, 0, self.dungeon, map_tuple)
-        elif 'core' in map_tuple.types:
-            return self.generate_core_locations(x, y, map_tuple)
-        elif  'branch' in map_tuple.types:
-            return self.generate_branch_location(x, y, map_tuple)
 
-    def generate_core_locations(self, x, y, map_tuple):
-            if 'end' in map_tuple.types:
-                return self.create_location(self.core_location_dict['end'], x, y, map_tuple)
-            elif 'crossroad' in map_tuple.types:
-                return self.create_location(self.core_location_dict['crossroad'], x, y, map_tuple)
+        if engine.roll_chance(self.neutral_chance):
+            self.neutral_chance -= self.neutral_scarceness
+            self.neutral_chance = 0 if self.neutral_chance < 0 else self.neutral_chance
+            impact = 'neutral'
+            current_modifier = 0
+        else:
+            self.neutral_chance += self.neutral_probability
+            impact_integer = random.randint(*self.impact_integer_range) + self.balance_integer
+            if impact_integer < 0:
+                impact = 'negative'
+                current_modifier = self.negative_modifier
             else:
-                return self.create_location(self.core_location_dict['default'], x, y, map_tuple)
+                impact = 'positive'
+                current_modifier = self.positive_modifier
 
-    def generate_branch_location(self, x, y, map_tuple):
-            if 'end' in map_tuple.types:
-                return self.create_location(self.branch_location_dict['end'], x, y, map_tuple)
-            elif 'crossroad' in map_tuple.types:
-                return self.create_location(self.branch_location_dict['crossroad'], x, y, map_tuple)
-            else:
-                return self.create_location(self.branch_location_dict['default'], x, y, map_tuple)
+        self.statistics[impact] += 1
+        print(self.statistics)
 
-    def create_location(self, location_class_list, x, y, map_tuple):
-        return random.choice(location_class_list)(x, y, self.dungeon, map_tuple)
+        locations_pool = [location_weight for location_weight in self.location_dict[map_tuple.types]
+                          if location_weight[0].impact == impact
+                          and location_weight[0].available_for_pool(self.map_tuples)]
+        if not locations_pool:
+            locations_pool = [location_weight for location_weight in self.location_dict[map_tuple.types]
+                              if location_weight[0].available_for_pool(self.map_tuples)]
+        return self.create_location(x, y, map_tuple, current_modifier, locations_pool)
+
+    def create_location(self, x, y, map_tuple, current_modifier, locations_pool):
+        location = engine.get_random_with_chances(locations_pool)(x, y, self.dungeon, map_tuple)
+        location.to_location_pool(map_tuple, current_modifier)
+        return location
 
     def generate_wall(self, x, y):
         return Location(x, y, self.dungeon, map_tuple=None)
@@ -115,12 +147,12 @@ class DungeonMap:
             bot_methods.send_message(member.chat_id, message)
 
 
-def get_enemy(complexity, enemy_dict):
-    enemy_pool = (key for key in enemy_dict if enemy_dict[key][0] < complexity < enemy_dict[key][1])
-    enemy = random.choice(list(enemy_pool))
+def get_enemy(complexity, total_enemy_list, map_tuple):
+    enemy_pool = (enemy_key for enemy_key in total_enemy_list if enemy_key.min_complexity < complexity < enemy_key.max_complexity)
+    enemy = engine.get_random_with_chances([(enemy_key.name, enemy_key.probability) for enemy_key in list(enemy_pool)])
     enemy_types = [name for name in enemy.split('+')]
     danger_dict = {enemy: units.units_dict[enemy].danger for enemy in enemy_types}
-    enemy_list = []
+    fighting_enemy_list = []
     strongest_added = False
     while complexity >= min(list(danger_dict.values())):
         strongest_enemies = [key for key in danger_dict.keys()
@@ -128,19 +160,19 @@ def get_enemy(complexity, enemy_dict):
         if strongest_enemies != enemy_types:
             if not strongest_added:
                 chosen_enemy = strongest_enemies[0]
-                enemy_list.append(chosen_enemy)
+                fighting_enemy_list.append(chosen_enemy)
                 strongest_added = True
             else:
                 for enemy in enemy_types:
                     if complexity < danger_dict[enemy]:
                         enemy_types.remove(enemy)
                 chosen_enemy = random.choice(enemy_types)
-                enemy_list.append(chosen_enemy)
+                fighting_enemy_list.append(chosen_enemy)
         else:
             chosen_enemy = random.choice(enemy_types)
-            enemy_list.append(chosen_enemy)
+            fighting_enemy_list.append(chosen_enemy)
         complexity -= danger_dict[chosen_enemy]
-    return enemy_list
+    return fighting_enemy_list
 
 
 # --------------------------------------------------------------------------------------------------
@@ -152,6 +184,8 @@ class Location:
     finish = False
     emote = emote_dict['wall_em']
     visited_emote = emote_dict['visited_map_em']
+    impact = 'neutral'
+    impact_integer = 0
 
     def __init__(self, x, y, dungeon, map_tuple):
         self.visited = False
@@ -167,6 +201,14 @@ class Location:
         self.receipts = engine.ChatContainer()
         if map_tuple is not None:
             self.complexity = map_tuple.complexity
+
+    @classmethod
+    def available_for_pool(cls, map_tuples):
+        return True
+
+    def to_location_pool(self, map_tuple, current_modifier):
+        dngn_map = self.dungeon.map
+        dngn_map.balance_integer += self.impact_integer*current_modifier
 
     # Возвращает кнопку для клавиатуры карты
     def return_button(self):
@@ -329,6 +371,13 @@ class MobPack:
             i += 1
         return team_dict
 
+
+class EnemyKey:
+    def __init__(self, name, min_complexity, max_complexity, probability):
+        self.name = name
+        self.min_complexity = min_complexity
+        self.max_complexity = max_complexity
+        self.probability = probability
 
 # --------------------------------------------------------------------------------------------------
 # Объект группы в подземелье

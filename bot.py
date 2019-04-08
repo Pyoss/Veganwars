@@ -5,10 +5,12 @@ import telebot
 from bot_utils import config, bot_handlers, bot_methods
 import dynamic_dicts
 from fight import fight_main, units
-import time, requests, threading, asyncio
-from chat_wars import chat_main, chat_lobbies, chat_management, chat_menu, user_menu
+import time
+from chat_wars import chat_main, chat_lobbies, chat_menu, user_menu
 
-WEBHOOK_HOST = '167.99.131.174'
+units.fill_unit_dict()
+
+WEBHOOK_HOST = '157.230.19.240:80'
 WEBHOOK_PORT = 443  # 443, 80, 88 или 8443 (порт должен быть открыт!)
 WEBHOOK_LISTEN = '0.0.0.0'  # На некоторых серверах придется указывать такой же IP, что и выше
 
@@ -20,7 +22,7 @@ WEBHOOK_URL_PATH = "/%s/" % (config.token)
 
 bot = telebot.TeleBot(config.token, threaded=False)
 
-proxy = 'http://54.93.215.155:8081'
+proxy = '207.180.253.113:3128'
 telebot.apihelper.proxy = {
   'http': proxy,
   'https': proxy
@@ -42,9 +44,10 @@ def game(message):
         data = message.text.split(' ')[1].split('_')
         import dynamic_dicts
         if data[1] in dynamic_dicts.lobby_list:
+            chat_main.add_user(message.from_user.id)
             user = chat_menu.get_user(message.from_user.id)
             unit_dict = user.get_unit_dict(name=message.from_user.first_name)
-            dynamic_dicts.lobby_list[data[1]].join_lobby(message.from_user.id, unit_dict=unit_dict)
+            dynamic_dicts.lobby_list[data[1]].player_join(message.from_user.id, unit_dict=unit_dict)
 
 
 @bot.message_handler(commands=["dicts"])
@@ -67,6 +70,14 @@ def start(message):
     dung.send_lobby()
 
 
+@bot.message_handler(commands=['pvp'])
+def start(message):
+    chat = chat_main.pyossession.get_chat(message.chat.id)
+    chat.clear_used_items()
+    dung = chat_lobbies.Lobby1x1(message.chat.id)
+    dung.send_lobby()
+
+
 @bot.message_handler(commands=['join_chat'])
 def start(message):
     chat = chat_main.pyossession.get_chat(message.chat.id)
@@ -83,23 +94,6 @@ def start(message):
 def start(message):
     user = chat_main.get_user(message.from_user.id)
     user_menu.user_action_dict['main'](user, message.from_user.id).func()
-
-
-@bot.message_handler(commands=['ffa'])
-def start(message):
-    chat = chat_main.pyossession.get_chat(message.chat.id)
-    chat.clear_used_items()
-    dung = chat_lobbies.FFA(message.chat.id)
-    dung.send_lobby()
-
-
-@bot.message_handler(commands=['test_fight'])
-def start(message):
-    # [team={chat_id:(name, unit_dict)} or team={(ai_class, n):(ai_class.name, unit_dict)}].
-    name = message.from_user.first_name
-    mob_class = fight_main.units.Pasyuk
-    fight_main.thread_fight(None, {message.from_user.id: (name, units.Human(name).to_dict())},
-                                   {(mob_class, 1): (None, mob_class().to_dict())}, chat_id=message.chat.id)
 
 
 @bot.message_handler(commands=['test'])

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import telebot
-from locales import localization
+from locales import localization, emoji_utils
 
 types = telebot.types
 LangTuple = localization.LangTuple
@@ -18,12 +18,17 @@ class Button(types.InlineKeyboardButton):
 
 
 class FightButton(Button):
-    def __init__(self, text, unit, *args, special='', named=False):
+    def __init__(self, text, unit, *args, special='', named=False, ready=True, cd=None):
         if not isinstance(text, str):
             text = text.translate(unit.controller.lang)
         else:
             text = LangTuple('buttons' if not len(special) else special,
                              text).translate(unit.controller.lang) if not named else text
+        if not ready:
+            text = emoji_utils.emote_dict['restrict_em'] + ' ' + text
+            if cd is not None:
+                cd = str(cd)
+                text = text + ' (' + cd + ')'
         callback = '_'.join(('fgt', str(unit), str(unit.fight), *args))
         Button.__init__(self, text, callback)
 
@@ -241,8 +246,15 @@ class OptionObject(FightButton):
 class ObjectButton(FightButton):
     def __init__(self, game_object):
         self.unit = game_object.unit
+        cd = None
+        ready = True
+        if not game_object.ready():
+            cd = str(game_object.ready_turn - game_object.unit.fight.turn)
+        if not game_object.available():
+            ready = False
         FightButton.__init__(self, 'button', self.unit, game_object.types[0],
-                             game_object.name, special='_'.join([game_object.db_string, game_object.name]))
+                             game_object.name, special='_'.join([game_object.db_string, game_object.name]),
+                             ready=ready, cd=cd)
 
 
 class ListAbilities(FightButton):
@@ -305,7 +317,7 @@ def get_item_buttons(unit):
 
 
 def form_second_row(unit):
-    ability_list = [ability for ability in unit.abilities if ability.available()]
+    ability_list = [ability for ability in unit.abilities]
     if len(get_item_buttons(unit)) + len(ability_list) < 3:
         button_list = [*get_item_buttons(unit), *[ability.button() for ability in ability_list]]
     else:

@@ -61,10 +61,17 @@ class Resource(standart_actions.GameObject):
 
 class OldBone(Resource):
     name = 'old_bone'
+    resources = 8
+
+
+class SnailMucus(Resource):
+    name = 'snail_mucus'
+    resources = 8
 
 
 class GoblinEar(Resource):
     name = 'goblin_ear'
+    resources = 2
 
 
 class ZombieTooth(Resource):
@@ -80,7 +87,7 @@ class Bomb(__InstantItem):
     types = ['explosive', 'aoe']
 
     def activate(self, action):
-        self.unit.wasted_energy += 2
+        self.unit.waste_energy(2)
         targets = [target for target in self.unit.targets() if 'dodge' not in target.action]
         damage = random.randint(2, 3)
         if not targets:
@@ -227,7 +234,7 @@ class Chitin(TargetItem):
         else:
             self.string('special', format_dict={'actor': self.unit.name, 'target': action.target.name})
         self.unit = action.target
-        statuses.PermaStatus(unit=action.target, delay=2, func=self.protect, order=39, name='chitin_protect')
+        statuses.PermaStatus(unit=action.target, delay=2, func=self.protect, order=39, name='chitin_protect', acting=True)
         statuses.CustomStatus(unit=action.target, delay=2, func=self.wear_off, order=41, name='chitin_delay')
 
     def wear_off(self):
@@ -328,20 +335,20 @@ class Mine(__OptionItem):
 
     def activate(self, action):
         delay = int(action.info[-1])
-        statuses.CustomStatus(self.actor, 5, delay, self.blow_up, permanent=True)
-        self.string('special', format_dict={'actor': self.actor.name})
+        statuses.CustomStatus(self.unit, 5, delay, self.blow_up, permanent=True)
+        self.string('special', format_dict={'actor': self.unit.name})
 
     def blow_up(self):
-        targets = [target for target in self.actor.targets()]
+        targets = [target for target in self.unit.targets()]
         damage = 3
         if len(targets) == 1:
-            self.string('fail', format_dict={'actor': self.actor.name, 'target': targets[0].name, 'damage': damage})
+            self.string('fail', format_dict={'actor': self.unit.name, 'target': targets[0].name, 'damage': damage})
             targets[0].receive_damage(damage)
         else:
             targets = random.sample(set(targets), 2)
             for target in targets:
                 target.receive_damage(damage)
-            self.string('use', format_dict={'actor': self.actor.name, 'target_0': targets[0].name,
+            self.string('use', format_dict={'actor': self.unit.name, 'target_0': targets[0].name,
                                             'target_1': targets[1].name, 'damage': damage})
 
     def options(self):

@@ -4,7 +4,52 @@
 import random
 import uuid
 import json
+import image_generator
 from fight import standart_actions
+
+
+class ListedDict(dict):
+
+    def __init__(self, base_dict=None):
+        base_dict = {} if base_dict is None else base_dict
+        dict.__init__(self)
+        for key in base_dict:
+            self.__dict__[key] = base_dict[key]
+
+    def __getitem__(self, item):
+        return self.__dict__[item]
+
+    def __setitem__(self, key, value):
+        if key not in self.__dict__:
+            self.__dict__[key] = [value]
+        else:
+            self.__dict__[key].append(value)
+
+    def __len__(self):
+        return sum([len(list(self[key] for key in self))])
+
+
+class NumberDict(dict):
+
+    def __init__(self, base_dict=None):
+        base_dict = {} if base_dict is None else base_dict
+        dict.__init__(self)
+        for key in base_dict:
+            self.__dict__[key] = base_dict[key]
+
+    def __getitem__(self, item):
+        return self.__dict__[item]
+
+    def __setitem__(self, key, value):
+        if key not in self.__dict__:
+            self.__dict__[key] = 1
+        else:
+            self.__dict__[key] += 1
+        if self.__dict__[key] == 0:
+            del self.__dict__[key]
+
+    def __len__(self):
+        return sum([len(list(self[key] for key in self))])
 
 
 class Container:
@@ -147,6 +192,7 @@ class Container:
                     inv_list.append(self.get_item_object(key, unit=unit))
         return inv_list
 
+
 class ChatContainer(Container):
 
     def put(self, item, value=1):
@@ -184,7 +230,7 @@ class ChatContainer(Container):
             return 'Пусто.'
 
     def get_string(self, item, lang, emoted=False):
-        item_obj =  standart_actions.object_dict[item]()
+        item_obj = standart_actions.object_dict[item]()
         string = item_obj.name_lang_tuple().translate(lang)
         if self.base_dict[item]> 1:
             string += ' (' + str(self.base_dict[item]) + ')'
@@ -232,17 +278,16 @@ def rand_id():
 
 def get_random_with_chances(chance_tuples):
     weights_sum = sum((chance_tuple[1] for chance_tuple in chance_tuples))
-    item_result_dict_counter = 1
+    item_result_dict_counter = 0
     item_result_dict = {}
     for tpl in chance_tuples:
         item_result_dict[(item_result_dict_counter, item_result_dict_counter + tpl[1])] = tpl[0]
         item_result_dict_counter += tpl[1]
-    random_chance = random.randint(1, weights_sum)
-    print(random_chance)
+    random_chance = random.randint(0, weights_sum-1)
     for key in item_result_dict:
         if random_chance in range(key[0], key[1]):
-            print(key)
             return item_result_dict[key]
+    raise Exception('При выборе что-то сломалось')
 
 
 def list_to_marked_string(my_list):
@@ -254,3 +299,5 @@ def list_to_marked_string(my_list):
                 string += '\n ' + next_arrow + ' ' + item
             string += '\n ' + end_arrow + ' ' + my_list[-1]
         return string
+
+

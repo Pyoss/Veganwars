@@ -22,7 +22,7 @@ def edit_message(chat_id, message_id, message_text, reply_markup=None, parse_mod
                                  text=message_text, reply_markup=reply_markup, parse_mode=parse_mode)
 
 
-def send_image(image, chat_id, message, reply_markup=None, parse_mode='markdown', to_admin=False):
+def send_image(image, chat_id, message=None, reply_markup=None, parse_mode='markdown', to_admin=False):
     if admin_mode and chat_id != config.admin_id:
         bot.send_photo(config.admin_id, caption=message, photo=image)
     return bot.send_photo(chat_id=chat_id, caption=message, photo=image, reply_markup=reply_markup)

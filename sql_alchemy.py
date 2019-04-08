@@ -187,7 +187,7 @@ class SqlChat(object):
 class SqlUser(object):
     pyosession = None
 
-    def __init__(self, user_id, attacked=0, experience=0, gameclass='{}', abilities='[]'):
+    def __init__(self, user_id, attacked=0, experience=0, gameclass='{"unit":"human"}', abilities='[]'):
         self.user_id = user_id
         self.attacked = attacked
         self.experience = experience
@@ -234,6 +234,15 @@ class Pyossession:
 
     def create_chat(self, chat_id, name):
         session.add(self.chat_class(chat_id, name, '{}', '{}', '{}', '{}'))
+        try:
+            session.commit()
+        except Exception as e:
+            print(e)
+            session.rollback()
+            pass
+
+    def create_user(self, chat_id):
+        session.add(self.user_class(chat_id))
         try:
             session.commit()
         except Exception as e:

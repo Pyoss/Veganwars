@@ -46,7 +46,7 @@ class Party:
         self.current_location = None
         self.id = chat_id
         # Чат, куда будет посылаться информация по игре
-        self.members = [Member(key, value['dict'], dungeon=dynamic_dicts.dungeons[dungeon_id]) for key, value in player_dict.items()]
+        self.members = [Member(key, value['unit_dict'], dungeon=dynamic_dicts.dungeons[dungeon_id]) for key, value in player_dict.items()]
         self.leader = self.members[0]
         self.member_dict = {member.chat_id: member for member in self.members}
         self.experience = 0
@@ -119,16 +119,15 @@ class Party:
             loot_list = dict(zip(loot_receivers, player_containers))
             for member in loot_receivers:
                 message = LangTuple('dungeon', 'loot').translate(member.lang)
-                for key in loot_list:
-                    if not loot_list[key].empty():
-                        item_list = loot_list[key].to_string(member.lang)
-                        message += '\n' + LangTuple('dungeon',
-                                                    'found', format_dict={'name': key.name,
-                                                                          'item': item_list}). \
-                            translate(member.lang) if loot_list[key] else \
-                            '\n' + LangTuple('dungeon', 'full-inv', format_dict={'name': key}). \
-                                translate(member.lang)
-                        self.member_dict[key.chat_id].inventory += loot_list[key]
+                if not loot_list[member].empty():
+                    item_list = loot_list[member].to_string(member.lang)
+                    message += '\n' + LangTuple('dungeon',
+                                                'found', format_dict={'name': member.name,
+                                                                      'item': item_list}). \
+                        translate(member.lang) if loot_list[member] else \
+                        '\n' + LangTuple('dungeon', 'full-inv', format_dict={'name': member}). \
+                            translate(member.lang)
+                    self.member_dict[member.chat_id].inventory += loot_list[member]
                 bot_methods.send_message(member.chat_id, message)
 
     def distribute_experience(self, user_list):

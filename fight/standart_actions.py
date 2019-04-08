@@ -25,8 +25,13 @@ class ActionHandler:
         except KeyError:
             return self.handler.game_error(call)
         if unit.controller.message_id == call.message.message_id and unit.active:
-            unit.active = False
             action = action_dict[call_data[3]](unit, fight, info=call_data, call=call)
+            availability = action.available()
+            if not availability:
+                error_text = action.error_text()
+                self.handler.error(error_text, call)
+                return False
+            unit.active = False
             action.act()
         else:
             print('Ошибка обработки запроса к ActionHandler. Controller_id={}, message_id={}, unit_active={}'.
@@ -148,7 +153,7 @@ class BaseAttack(Action):
         # Вычисление нанесенного урона и трата энергии
         self.dmg_done = self.weapon.get_damage(self.target)
         if waste is None:
-            self.unit.waste_energy(self.weapon.energy)
+            self.unit.waste_energy(self.weapon.energy_cost)
         else:
             self.unit.waste_energy(waste)
         # Применение способностей и особых свойств оружия
@@ -191,26 +196,26 @@ class BaseAttack(Action):
 
 
 class SpecialAttack(BaseAttack):
-    def __init__(self, unit, fight, info, order, waste=0):
+    def __init__(self, unit, fight, info, order, energy_cost=0):
         BaseAttack.__init__(self, fight=fight, unit=unit, info=info, order=order)
-        self.waste = waste
+        self.energy_cost = energy_cost
 
     def activate(self, target=None, weapon=None):
         # Определение цели
         self.target = self.unit.target
-        self.attack(waste=self.waste)
+        self.attack(energy_cost=self.energy_cost)
         self.on_attack()
         # Добавление описания в строку отчета
         self.string('special')
 
-    def attack(self, waste=None):
+    def attack(self, energy_cost=None):
         self.weapon.before_hit(self)
         # Вычисление нанесенного урона и трата энергии
         self.dmg_done = self.weapon.get_damage(self.target)
-        if waste is None:
-            self.unit.waste_energy(self.weapon.energy)
+        if energy_cost is None:
+            self.unit.waste_energy(self.weapon.energy_cost)
         else:
-            self.unit.waste_energy(waste)
+            self.unit.waste_energy(energy_cost)
         # Применение способностей и особых свойств оружия
         self.dmg_done += self.unit.damage if self.dmg_done else 0
         self.unit.on_hit(self)
@@ -291,7 +296,7 @@ class PutOutFire(Action):
 
 class MoveForward(Action):
     name = 'move'
-    action_type = ['move']
+    action_type = ['move', 'forward']
     order = 10
 
     def activate(self):
@@ -314,32 +319,35 @@ class Reload(Action):
     order = 3
 
     def activate(self):
-        self.unit.recovery()
+        return self.unit.recovery()
 
 
 class MeleeReload(Reload):
     name = 'melee-reload'
 
     def activate(self):
-        energy = self.unit.max_energy if not self.unit.recovery_energy else self.unit.recovery_energy
+        energy = Reload.activate(self)
         self.fight.string_tuple += localization.LangTuple('fight',
                                                           'melee_reload', {'actor': self.unit.name, 'energy': energy})
-        Reload.activate(self)
 
 
 class RangedReload(Reload):
     name = 'ranged-reload'
 
     def activate(self):
-        energy = self.unit.max_energy if not self.unit.recovery_energy else self.unit.recovery_energy
+        energy = Reload.activate(self)
         self.fight.string_tuple += localization.LangTuple('fight',
                                                           'ranged_reload', {'actor': self.unit.name, 'energy': energy})
-        Reload.activate(self)
 
 
 class WeaponActions(MenuAction):
     name = 'weapon'
     types = ['keyboard']
+
+    def act(self):
+        if self.unit.weapon.special_types or len(self.unit.weapon.targets()) != 1:
+            self.unit.active = True
+        self.activate()
 
     def activate(self):
         weapon = self.unit.weapon
@@ -351,12 +359,19 @@ class SpecialWeaponAction(Action):
 
     def __init__(self, unit, fight, info, call=None):
         Action.__init__(self, unit, fight, info, call=call)
+        self.target = fight[info[-1]] if len(info) > 4 else None
         self.types = self.unit.weapon.special_types
         self.order = self.unit.weapon.order
 
     def activate(self):
         weapon = self.unit.weapon
         weapon.start_special_action(self.info)
+
+    def available(self):
+        return self.unit.weapon.special_available(target=self.target)
+
+    def error_text(self):
+        return self.unit.weapon.error_text()
 
 
 class SpecialWeaponOption(MenuAction):
@@ -402,6 +417,12 @@ class Ability(Action):
 
     def activate(self):
         self.ability.activate(self)
+
+    def available(self):
+        return self.ability.available()
+
+    def error_text(self):
+        return self.ability.error_text()
 
 
 class ListItems(MenuAction):
@@ -532,6 +553,7 @@ class GameObject:
     name = None
     order = 5
     cd = 0
+    weight = 0
     active = True
     full = True
     core_types = []
@@ -583,14 +605,10 @@ class GameObject:
         return localization.LangTuple(self.table_row, string_row)
 
     def available(self):
-        if not self.active:
-            return False
-        if self.cd:
-            if self.unit.fight.turn >= self.ready_turn:
-                return True
-            else:
-                return False
         return True
+
+    def error_text(self):
+        return ''
 
     def string(self, string_code, format_dict=None, order=0):
         format_dict = {} if None else format_dict
@@ -624,7 +642,15 @@ class GameObject:
             return True
 
     def on_cd(self):
-        self.ready_turn = self.unit.fight.turn + 1 + self.cd
+        self.ready_turn = self.unit.fight.turn + self.unit.speed_penalty() + self.cd
+
+    def ready(self):
+        if self.cd:
+            if self.unit.fight.turn >= self.ready_turn:
+                return True
+            else:
+                return False
+        return True
 
     def ask_start_option(self):
         pass
@@ -639,6 +665,8 @@ class GameObject:
         pass
 
     def try_placement(self, unit_dict):
+        if 'item' in self.core_types and len(unit_dict['inventory']) > 2:
+            return False
         return True
 
 
@@ -648,6 +676,37 @@ def get_name(name, lang):
 
 def get_class(name):
     return object_dict[name]
+
+
+class AbilityFactory:
+    name = 'ability_factory'
+
+    def __init__(self, name, func, button_name, action_type=list(), types=list(),
+                 full=True, order=5):
+        self.button_name = button_name
+        self.name = name
+        self.full = full
+        self.types = types
+        self.action_type = action_type
+
+        class NewAbility(GameObject):
+            name = self.name
+
+
+        class NewAction(Action):
+            name = self.name
+            self.button_name = button_name
+            action_type = self.action_type
+            order = self.order
+            full = self.full
+            types = self.types
+
+            def activate(new_action):
+                func(new_action)
+
+
+
+        action_dict[name] = NewAction
 
 
 class InstantObject(GameObject):

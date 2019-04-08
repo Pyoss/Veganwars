@@ -27,6 +27,24 @@ class PlaceHolder(OpenLocation):
         self.emote = str(self.complexity)
 
 
+class PlaceHolderPos(OpenLocation):
+    impact = 'positive'
+    impact_integer = 10
+
+    def __init__(self, x, y, dungeon, map_tuple):
+        map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
+        self.emote = '+' + str(self.complexity)
+
+
+class PlaceHolderNeg(OpenLocation):
+    impact = 'negative'
+    impact_integer = 10
+
+    def __init__(self, x, y, dungeon, map_tuple):
+        map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
+        self.emote = '-' + str(self.complexity)
+
+
 class PlaceHolder2(OpenLocation):
     def __init__(self, x, y, dungeon, map_tuple):
         map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
@@ -132,10 +150,12 @@ class MobLocation(OpenLocation):
     name = 'mobs'
     emote = '!!!'
     image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\\default.jpg'
+    impact = 'negative'
+    impact_integer = 10
 
     def __init__(self, x, y, dungeon, map_tuple, mobs=None, loot=list()):
         map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
-        mobs = map_engine.get_enemy(self.complexity, dungeon.map.enemy_dict) if mobs is None else mobs
+        mobs = map_engine.get_enemy(self.complexity, dungeon.map.enemy_list, map_tuple) if mobs is None else mobs
         self.mobs = map_engine.MobPack(*mobs, complexity=self.complexity)
         self.loot = engine.ChatContainer()
         if self.mobs is not None:

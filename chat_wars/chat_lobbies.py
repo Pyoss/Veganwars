@@ -3,8 +3,9 @@ from telebot import types
 from bot_utils import bot_methods, keyboards
 from locales import localization
 from chat_wars.chat_main import pyossession, get_chat, get_user
+import image_generator
 from chat_wars.chat_war import current_war
-from fight import fight_main, standart_actions
+from fight import fight_main, standart_actions, units
 from adventures import dungeon_main, map_engine, maps
 
 
@@ -33,8 +34,8 @@ class Lobby:
             team_items = list(team.items())
             if len(team) > 0:
                 for actor in team_items[:-1]:
-                    message.row(next_arrow, actor[1]['dict']['name'])
-                message.row(end_arrow, team_items[-1][1]['dict']['name'])
+                    message.row(next_arrow, actor[1]['unit_dict']['name'])
+                message.row(end_arrow, team_items[-1][1]['unit_dict']['name'])
             message.row()
         i += 1
         message.construct()
@@ -54,26 +55,25 @@ class Lobby:
         self.start_checker.start()
         for team in self.teams:
             for chat_id in team:
-                self.next_step(user_id=chat_id, message_id=None)
+                self.run_next_step(user_id=chat_id, message_id=None)
 
-    def next_step(self, user_id, message_id=None):
-        print(self[user_id])
-        if not self.started:
-            self.started = True
-        if 'weapon' in self[user_id]['equipment_choice']:
-            user = pyossession.get_user(user_id=user_id)
-            user.send_weapon_choice(self.id, self.chat_id, message_id=message_id)
+    def run_next_step(self, user_id, message_id=None):
+        user = pyossession.get_user(user_id=user_id)
 
-        elif 'armor' in self[user_id]['equipment_choice']:
-            user = pyossession.get_user(user_id=user_id)
-            user.send_armor_choice(self.id, self.chat_id, message_id=message_id)
-
-        elif 'items' in self[user_id]['equipment_choice']:
-            user = pyossession.get_user(user_id=user_id)
-            user.send_item_choice(self.id, self.chat_id, message_id=message_id)
-
+        if self[user_id]['equipment_choice']:
+            next_step = self[user_id]['equipment_choice'][-1]
+            user.send_equipment_choice(self.id, self.chat_id, next_step, message_id=message_id)
         else:
-            self.run()
+            self.get_ready(user_id, message_id=message_id)
+
+    def get_ready(self, user_id, message_id):
+        bot_methods.edit_message(user_id, message_id, 'Вы готовы.')
+
+    def get_image(self, user_id):
+        unit_dict = self[user_id]['unit_dict']
+        unit_class = units.units_dict[unit_dict['unit_name']]
+        unit = unit_class(unit_dict=unit_dict)
+        return unit.get_image()
 
     def run(self):
         pass
@@ -90,16 +90,43 @@ class Lobby:
         message = bot_methods.send_message(self.chat_id, self.create_lobby(), reply_markup=self.keyboard())
         self.message_id = message.message_id
 
-    def join_lobby(self, user_id, unit_dict):
+    def get_vacant_team(self):
+        return min(self.teams, key=lambda k: len(k))
+
+    def player_join(self, user_id, unit_dict):
+        team = self.get_vacant_team()
+        self.join_lobby(user_id, unit_dict, team)
+
+    def join_lobby(self, user_id, unit_dict, team):
+        if self.join_forbidden(user_id):
+            return False
+        unit_data = {
+            'unit_dict': unit_dict,
+            'equipment_choice':
+                [
+                    'items',
+                    'armor',
+                    'weapon'
+                ] if not self.skip_armory else [],
+            'ready': False
+        }
+        team[user_id] = unit_data
+        self.update_lobby()
+
+    def join_forbidden(self, user_id):
         if self.started:
-            return False
-        user = get_user(user_id)
-        if user_id not in dynamic_dicts.occupied_list:
+            return True
+
+        if user_id in dynamic_dicts.occupied_list:
             dynamic_dicts.occupied_list.append(user_id)
-            return user
-        else:
             bot_methods.send_message(user_id, 'Вы не можете сейчас присоединиться.')
-            return False
+            return True
+
+        if any(user_id in team for team in self.teams):
+            self.error('player_exists')
+            return True
+
+        return False
 
     def update_lobby(self, keyboard=True):
         message = self.create_lobby()
@@ -112,7 +139,7 @@ class Lobby:
                                  translate(self.lang))
 
     def team_ready(self):
-        if all(all(team[key]['ready'] for key in team.keys()) for team in self.teams):
+        if all(all(not team[key]['equipment_choice'] for key in team.keys()) for team in self.teams):
             return True
         return False
 
@@ -126,10 +153,28 @@ class Lobby:
 
     def end(self):
         del dynamic_dicts.lobby_list[self.id]
-        if not self.started:
-            for team in self.teams:
-                for key in team:
-                    dynamic_dicts.occupied_list.remove(key)
+
+
+class Lobby1x1(Lobby):
+    def __init__(self, chat_id, skip_armory=False):
+        Lobby.__init__(self, chat_id, skip_armory=skip_armory)
+        self.teams = [{}, {}]
+
+    def run(self):
+        player_1 = list(self.teams[0].items())[0]
+        player_2 = list(self.teams[1].items())[0]
+        bot_methods.send_image(image_generator.create_duel_image((self.get_image(player_1[0]),
+                                                                  self.get_image(player_2[0]))),
+                               self.chat_id, message=player_1[1]['unit_dict']['name'] + '                 \              ' + player_2[1]['unit_dict']['name'])
+        result = self.run_fight(*[{chat_id: team[chat_id]['unit_dict'] for chat_id in team} for team in self.teams])
+
+    def join_forbidden(self, user_id):
+        if Lobby.join_forbidden(self, user_id):
+            return True
+
+        elif len(self.teams[0]) + len(self.teams[1]) > 1:
+            return True
+        return False
 
 
 class StartChecker:
@@ -159,32 +204,13 @@ class Dungeon(Lobby):
         self.fight = None
         self.complexity = None
 
-    def join_lobby(self, user_id, unit_dict):
-        if self.started:
-            return False
-        if not any(user_id in team for team in self.teams):
-            unit_data = {
-                'dict': unit_dict,
-                'equipment_choice':
-                    [
-                        'weapon',
-                        'armor',
-                        'items'
-                    ] if not self.skip_armory else [],
-                'ready': False
-            }
-            self.team[user_id] = unit_data
-            self.update_lobby()
-            chat = get_chat(self.chat_id)
-            chat.add_user(user_id)
-            bot_methods.send_message(user_id, 'Вы успешно присоединились')
-        else:
-            self.error('player_exists')
-
     def __str__(self):
         return str(self.id)
 
     def run(self):
+        bot_methods.send_image(image_generator.create_dungeon_image('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\\default.jpg',
+                                                                    (self.get_image(key) for key in self.team)),
+                               self.chat_id)
         self.complexity = len(self.teams)
         self.create_dungeon_map(maps.FirstDungeon(self))
         dynamic_dicts.dungeons[self.id] = self
@@ -210,7 +236,13 @@ class Dungeon(Lobby):
         print('Поход группы {} окончен. Количество заработанных ресурсов - {}. Выгрузка результата в бд...'.format
             (self.party.leader.name, farmed_resources))
         self.delete_map()
-        del dynamic_dicts.dungeons[self.id]
+        try:
+            if not defeat:
+                for team in self.teams:
+                    for key in team:
+                        dynamic_dicts.occupied_list.remove(key)
+        except:
+            pass
         for member in self.party.members:
             del dynamic_dicts.dungeons[member.chat_id]
 
@@ -236,7 +268,7 @@ class Dungeon(Lobby):
         print('Удаление объекта данжа {}...'.format(self.id))
 
     def create_dungeon_map(self, map_type):
-        self.map = map_type.create_map()
+        map_type.create_map()
 
     def add_party(self, player_list):
         self.party = dungeon_main.Party(player_list, self.chat_id, self.id)
@@ -272,7 +304,7 @@ class Dungeon(Lobby):
 
 class AttackLobby(Lobby):
     def __init__(self, chat, attack_action, target_chat):
-        Lobby.__init__(self, chat.chat_id, skip_armory=True)
+        Lobby.__init__(self, chat.chat_id, skip_armory=False)
         self.team = self.teams[0]
         self.attack_action = attack_action
         attack_action.attacker_lobby = self
@@ -283,53 +315,11 @@ class AttackLobby(Lobby):
         self.chat = chat
         self.text = 'Нападение на чат {}'.format(self.target_chat_name)
 
-    def join_lobby(self, user_id, unit_dict):
-        user = Lobby.join_lobby(self, user_id, unit_dict)
-        if not user:
-            return False
-        elif user_id in current_war.attacked_dict:
-            bot_methods.send_message(user_id, 'Вы уже принимали участие в атаке!')
-            return False
-        if self.started:
-            return False
-        if not any(user_id in team for team in self.teams):
-            unit_data = {
-                'dict': unit_dict,
-                'equipment_choice':
-                    [
-                        'weapon',
-                        'armor',
-                        'items'
-                    ] if not self.skip_armory else [],
-                'ready': False
-            }
-            self.team[user_id] = unit_data
-            self.update_lobby()
-            chat = get_chat(self.chat_id)
-            chat.add_user(user_id)
-            bot_methods.send_message(user_id, 'Вы успешно присоединились')
-        else:
-            self.error('player_exists')
-
-    def next_step(self, user_id, message_id=None):
-        print(self[user_id])
+    def run_next_step(self, user_id, message_id=None):
         if not self.defence_send:
             DefenceLobby(self.attack_action, self).send_lobby()
             self.defence_send = True
-        if 'weapon' in self[user_id]['equipment_choice']:
-            user = pyossession.get_user(user_id=user_id)
-            user.send_weapon_choice(self.id, message_id=message_id)
-
-        elif 'armor' in self[user_id]['equipment_choice']:
-            user = pyossession.get_user(user_id=user_id)
-            user.send_armor_choice(self.id, message_id=message_id)
-
-        elif 'items' in self[user_id]['equipment_choice']:
-            user = pyossession.get_user(user_id=user_id)
-            user.send_item_choice(self.id, message_id=message_id)
-
-        else:
-            self.run()
+        Lobby.run_next_step(self, user_id, message_id=message_id)
 
     def run(self):
         self.attack_action.attack_ready = True
@@ -338,14 +328,14 @@ class AttackLobby(Lobby):
             self.attack_action.start()
 
     def to_team(self):
-        team_dict = {chat_id: self.team[chat_id]['dict'] for chat_id in self.team}
+        team_dict = {chat_id: self.team[chat_id]['unit_dict'] for chat_id in self.team}
         team_dict['marker'] = 'attacker'
         return team_dict
 
 
 class DefenceLobby(Lobby):
     def __init__(self, attack_action, attack_lobby):
-        Lobby.__init__(self, attack_lobby.target_chat.chat_id, skip_armory=True)
+        Lobby.__init__(self, attack_lobby.target_chat.chat_id, skip_armory=False)
         self.chat = attack_lobby.target_chat
         self.team = self.teams[0]
         self.attack_action = attack_action
@@ -354,29 +344,6 @@ class DefenceLobby(Lobby):
         self.name = attack_lobby.target_chat.name
         self.text = 'Защита от чата {}'.format(attack_lobby.chat.name)
 
-    def join_lobby(self, user_id, unit_dict):
-        user = Lobby.join_lobby(self, user_id, unit_dict)
-        if not user:
-            return False
-        if not any(user_id in team for team in self.teams):
-            unit_data = {
-                'dict': unit_dict,
-                'equipment_choice':
-                    [
-                        'weapon',
-                        'armor',
-                        'items'
-                    ] if not self.skip_armory else [],
-                'ready': False
-            }
-            self.team[user_id] = unit_data
-            self.update_lobby()
-            chat = get_chat(self.chat_id)
-            chat.add_user(user_id)
-            bot_methods.send_message(user_id, 'Вы успешно присоединились')
-        else:
-            self.error('player_exists')
-
     def run(self):
         self.attack_action.attack_ready = True
         if self.attack_action.attack_ready:
@@ -384,44 +351,9 @@ class DefenceLobby(Lobby):
             self.attack_action.start()
 
     def to_team(self):
-        team_dict = {chat_id: self.team[chat_id]['dict'] for chat_id in self.team}
+        team_dict = {chat_id: self.team[chat_id]['unit_dict'] for chat_id in self.team}
         team_dict['marker'] = 'defender'
         return team_dict
-
-
-class FFA(Lobby):
-
-    def run(self):
-        args = []
-        for team in self.teams:
-            args.append({chat_id: team[chat_id]['dict'] for chat_id in team})
-        fight_main.thread_fight(None, *args, chat_id=self.chat_id)
-        self.end()
-
-    def join_lobby(self, user_id, unit_dict):
-        if self.started:
-            return False
-        if not any(user_id in team for team in self.teams):
-            unit_data = {
-                'dict': unit_dict,
-                'equipment_choice':
-                    [
-                        'weapon',
-                        'armor',
-                        'items'
-                    ] if not self.skip_armory else [],
-                'ready': False
-            }
-            if not self.teams[0]:
-                self.teams[0][user_id] =  unit_data
-            else:
-                self.teams.append({user_id: unit_data})
-            self.update_lobby()
-            chat = get_chat(self.chat_id)
-            chat.add_user(user_id)
-            bot_methods.send_message(user_id, 'Вы успешно присоединились')
-        else:
-            self.error('player_exists')
 
 
 class LobbyHandler:
@@ -442,96 +374,48 @@ class LobbyHandler:
         if action == 'startlobby':
             dynamic_dicts.lobby_list[call_data[1]].start()
 
-        elif action == 'weapon':
+        elif action == 'equipment':
             user_id = call.from_user.id
-            weapon_name = call_data[-1]
-            unit_dict = lobby[user_id]['dict']
+            unit_dict = lobby[user_id]['unit_dict']
             user = get_user(call.from_user.id)
             chat = get_chat(lobby.chat_id)
-            if weapon_name != 'None':
-                free_armory = chat.get_free_armory()
-                if weapon_name not in free_armory:
-                    bot_methods.answer_callback_query(call, 'Этого предмета уже нет на складе')
-                    user.send_weapon_choice(call_data[1], chat.chat_id, message_id=call.message.message_id)
-                    return False
-                else:
-                    chat.use_item(weapon_name)
-                    unit_dict['weapon'] = standart_actions.object_dict[weapon_name]().to_dict()
-            lobby[user_id]['equipment_choice'].remove('weapon')
-            lobby.next_step(user_id, message_id=call.message.message_id)
-
-        elif action == 'armor':
-            user_id = call.from_user.id
-            armor_action = call_data[-1]
-            unit_dict = lobby[user_id]['dict']
-            user = get_user(call.from_user.id)
-            chat = get_chat(lobby.chat_id)
-            if armor_action == 'reset':
-                for armor in unit_dict['armor']:
-                    chat.delete_used_item(armor['name'])
-                unit_dict['armor'] = []
-            elif armor_action == 'ready':
-                try:
-                    lobby[user_id]['equipment_choice'].remove('armor')
-                except:
-                    return False
-                lobby.next_step(user_id, message_id=call.message.message_id)
-                return True
-            else:
-                free_armory = chat.get_free_armory()
-                if armor_action not in free_armory:
-                    bot_methods.answer_callback_query(call, 'Этого предмета уже нет на складе')
-                    user.send_armor_choice(call_data[1], chat.chat_id, message_id=call.message.message_id)
-                    return False
-                else:
-                    armor = standart_actions.object_dict[armor_action]()
-                    if not armor.try_placement(unit_dict):
-                        bot_methods.answer_callback_query(call, 'Вы не можете это экипировать.')
-                    else:
-                        chat.use_item(armor_action)
-                        unit_dict['armor'].append(armor.to_dict())
-
-            user = get_user(call.from_user.id)
-            user.send_armor_choice(call_data[1], chat.chat_id, message_id=call.message.message_id)
-
-        elif action == 'item':
-            user_id = call.from_user.id
+            item_type = call_data[3]
             item_name = call_data[-1]
-            unit_dict = lobby[user_id]['dict']
-            user = get_user(call.from_user.id)
-            chat = get_chat(lobby.chat_id)
+            item = standart_actions.object_dict[item_name]() if item_name not in ['reset', 'ready'] else None
             if item_name == 'reset':
-                for item in unit_dict['inventory'].values():
-                    chat.delete_used_item(item[0]['name'], value=item[1])
-                unit_dict['inventory'] = {}
-
+                if item_type == 'armor':
+                    for armor in unit_dict['armor']:
+                        chat.delete_used_item(armor['name'])
+                    unit_dict['armor'] = []
+                elif item_type == 'item':
+                    for item_unit in unit_dict['inventory'].values():
+                        chat.delete_used_item(item_unit[0]['name'], value=item_unit[1])
+                    unit_dict['inventory'] = {}
+                user.send_equipment_choice(call_data[1], chat.chat_id, item_type, message_id=call.message.message_id)
             elif item_name == 'ready':
-                try:
-                    lobby[user_id]['equipment_choice'].remove('items')
-                except:
-                    return False
-                bot_methods.delete_message(chat_id=user_id, message_id=call.message.message_id)
-                lobby[user_id]['ready'] = True
-                return True
-            else:
-                free_armory = chat.get_free_armory()
-                if item_name not in free_armory:
-                    bot_methods.answer_callback_query(call, 'Этого предмета уже нет на складе')
-                    user.send_item_choice(call_data[1], chat.chat_id, message_id=call.message.message_id)
-                    return False
-                else:
-                    item = standart_actions.object_dict[item_name]()
-                    if sum(v[1] for k, v in unit_dict['inventory'].items()) > 2:
-                        bot_methods.answer_callback_query(call, 'Вы набрали максимальное количество предметов.')
-                    elif not item.try_placement(unit_dict):
-                        bot_methods.answer_callback_query(call, 'Вы не можете это экипировать.')
-                    else:
-                        chat.use_item(item_name)
-                        test = list(k for k, v in unit_dict['inventory'].items() if v[0]['name'] == item.name)
-                        if test:
-                            unit_dict['inventory'][test[0]][1] += 1
-                        else:
-                            unit_dict['inventory'][engine.rand_id()] = [item.to_dict(), 1]
+                lobby[user_id]['equipment_choice'].pop()
+                lobby.run_next_step(user_id, message_id=call.message.message_id)
 
-            user = get_user(call.from_user.id)
-            user.send_item_choice(call_data[1], chat.chat_id, message_id=call.message.message_id)
+            elif item_name not in chat.get_free_armory():
+                bot_methods.answer_callback_query(call, 'Этого предмета уже нет на складе')
+                user.send_equipment_choice(call_data[1], chat.chat_id, item_type, message_id=call.message.message_id)
+            elif not item.try_placement(unit_dict):
+                bot_methods.answer_callback_query(call, 'Вы не можете это экипировать.')
+
+            elif item_type == 'weapon':
+                chat.use_item(item_name)
+                unit_dict['weapon'] = item.to_dict()
+                lobby[user_id]['equipment_choice'].pop()
+                lobby.run_next_step(user_id, message_id=call.message.message_id)
+            elif item_type == 'armor':
+                chat.use_item(item_name)
+                unit_dict['armor'].append(item.to_dict())
+                user.send_equipment_choice(call_data[1], chat.chat_id, item_type, message_id=call.message.message_id)
+            elif item_type == 'item':
+                chat.use_item(item_name)
+                test = list(k for k, v in unit_dict['inventory'].items() if v[0]['name'] == item['name'])
+                if test:
+                    unit_dict['inventory'][test[0]][1] += 1
+                else:
+                    unit_dict['inventory'][engine.rand_id()] = [item.to_dict(), 1]
+                user.send_equipment_choice(call_data[1], chat.chat_id, item_type, message_id=call.message.message_id)

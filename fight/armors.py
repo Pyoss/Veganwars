@@ -14,6 +14,8 @@ class Armor(standart_actions.GameObject):
     placement = 'body'
     max_armor = 0
     coverage = 0
+    weight = 1
+    covering = True
     rating = 0
     destructable = True
     real = True
@@ -65,10 +67,20 @@ class Breastplate(Armor):
     name = 'breastplate'
     placement = 'body'
     max_armor = 5
+    weight = 2
     rating = 2
     coverage = 30
     destructable = True
     real = True
+
+    def get_image_dict(self):
+        return {
+         'handle': (55, 90),
+         'placement': 'body_armor',
+         'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\breastplate.png',
+         'covered': 'scarf',
+         'layer': 3
+        }
 
 
 class Helmet(Armor):
@@ -80,6 +92,35 @@ class Helmet(Armor):
     destructable = True
     real = True
 
+    def get_image_dict(self):
+        return {
+         'handle': (26, 30),
+         'placement': 'head',
+         'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\helmet.png',
+         'covered': False,
+         'layer': 0
+        }
+
+
+class Mask(Armor):
+    name = 'mask'
+    placement = 'head'
+    max_armor = 1
+    rating = 0
+    coverage = 0
+    destructable = True
+    real = True
+    weight = 0
+
+    def get_image_dict(self):
+        return {
+         'handle': (49, 70),
+         'placement': 'head',
+         'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\mask.png',
+         'covered': False,
+         'layer': 0
+        }
+
 
 class Shield(Armor):
     name = 'shield'
@@ -90,7 +131,17 @@ class Shield(Armor):
     coverage = 10
     order = 19
     destructable = True
+    weight = 2
     real = True
+
+    def get_image_dict(self):
+        return {
+         'handle': (66, 160),
+         'placement': 'left_hand',
+         'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\shield_2.png',
+         'covered': False,
+         'layer': 2
+        }
 
     def activate(self, action):
         unit = action.unit
@@ -129,7 +180,8 @@ class Shield(Armor):
 
     def try_placement(self, unit_dict):
         if unit_dict['weapon'] is not None:
-            if not standart_actions.object_dict[unit_dict['weapon']['name']].melee:
+            weapon = standart_actions.object_dict[unit_dict['weapon']['name']]
+            if not weapon.melee or 'two-handed' in weapon.core_types:
                 return False
         return Armor.try_placement(self, unit_dict)
 

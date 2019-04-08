@@ -81,11 +81,20 @@ class Player:
         self.fight.action_queue.append(standart_actions.Skip(self.unit, self.fight))
 
     def send_message(self, lang_tuple, reply_markup=None):
-        return bot_methods.send_message(self.chat_id, lang_tuple.translate(self.lang), reply_markup=reply_markup)
+        if isinstance(lang_tuple, str):
+            return bot_methods.send_message(self.chat_id,
+                                            lang_tuple, reply_markup=reply_markup)
+        else:
+            return bot_methods.send_message(self.chat_id,
+                                            lang_tuple.translate(self.lang), reply_markup=reply_markup)
 
     def edit_message(self, lang_tuple, reply_markup=None):
-        return bot_methods.edit_message(self.chat_id, self.message_id,
-                                        lang_tuple.translate(self.lang), reply_markup=reply_markup)
+        if isinstance(lang_tuple, str):
+            return bot_methods.edit_message(self.chat_id, self.message_id,
+                                            lang_tuple, reply_markup=reply_markup)
+        else:
+            return bot_methods.edit_message(self.chat_id, self.message_id,
+                                            lang_tuple.translate(self.lang), reply_markup=reply_markup)
 
     def delete_message(self):
         bot_methods.delete_message(self.chat_id, self.message_id)
@@ -127,7 +136,7 @@ class Fight:
         self.lang = self.langs[0]
         self.dead = {}
         self.teams = []
-        self.public = False
+        self.public = True
         self.listeners = list()
         self.action_queue = ActionQueue()
         self.string_tuple = FightString(self)
@@ -161,7 +170,7 @@ class Fight:
     def add_player(self, chat_id, name, unit_dict=None):
         # Добавление бота в словарь игроков и список игроков конкретного боя
         controller = Player(chat_id, 'rus', self)
-        unit_class = units.units_dict[unit_dict['unit_name']] if unit_dict is not None else units.Zombie
+        unit_class = units.units_dict[unit_dict['unit_name']]
         unit = unit_class(name, controller=controller, fight=self, unit_dict=unit_dict)
         self.units_dict[unit.id] = unit
         dynamic_dicts.unit_talk[unit.controller.chat_id] = (unit.id, self)
