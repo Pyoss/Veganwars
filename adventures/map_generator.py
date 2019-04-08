@@ -77,7 +77,6 @@ def generate_core(complexity, length):
 
         # Случайным образом выбираются одни из доступных координат
         chosen_tuple = random.choice(available_tuples)
-        print(chosen_tuple)
         return chosen_tuple
 
     # Добавляется новая занятая локация в соответствии с подобранными координатами
@@ -103,13 +102,12 @@ def generate_branch(map_tuples, length):
                 if len(get_connected(mp_tuple, map_tuples)) == 1 and mp_tuple not in map_tuples:
                     new_starts[mp_tuple] = map_tuple
             possible_starts = {**possible_starts, **new_starts}
-    print(possible_starts)
     branch_start = random.choice(list(possible_starts))
     # Изменение сложности ветки
-    print(branch_start)
     map_tuples.complexity = int(map_tuples[possible_starts[branch_start]].complexity) + random.randint(1, 5)
-    map_tuples.new_tuple(branch_start[0], branch_start[1], 'branch')
-    map_tuples[possible_starts[branch_start]].types.append('crossroad')
+    map_tuples.new_tuple(branch_start[0], branch_start[1], 'branch', 'entrance')
+    if len(map_tuples[possible_starts[branch_start]].types) < 2:
+        map_tuples[possible_starts[branch_start]].types.append('crossroad')
     prolong_branch(map_tuples, branch_start, length)
 
 
@@ -127,7 +125,7 @@ def prolong_branch(map_tuples, branch_start, length):
         current_end = new_tuple
         i += 1
         if i == length:
-            map_tuples[new_tuple].types.append('dead_end')
+            map_tuples[new_tuple].types.append('end')
 
 
 # Визуализация карты
@@ -146,7 +144,6 @@ def visualise(map_tuples):
         for x in range(map_length):
             map_string += ' ' + map_dict[(x, y)].__str__() + ' '
         map_string += '\n'
-    print(map_string)
 
 if __name__ == '__main__':
     while True:
