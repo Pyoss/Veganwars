@@ -35,7 +35,7 @@ types = telebot.types
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 bot.remove_webhook()
 
-bot.send_message(config.admin_id, 'Инициация бота...')
+bot.send_message(config.main_chat_id, 'Инициация бота...')
 
 #) # Thanks @Jim Dennis for suggesting the []
 #
@@ -50,6 +50,7 @@ def start(message):
   
     if message.from_user.id == config.admin_id:
         bot.stop_polling()
+        bot.send_message(config.main_chat_id, 'Обновление git...')
         subprocess.Popen(['bash', './update.sh'])
 
 @bot.message_handler(commands=['error'])
