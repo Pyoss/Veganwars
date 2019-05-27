@@ -41,25 +41,34 @@ bot.send_message(admin_id, 'Инициация бота...')
 
 @bot.message_handler(commands=['restart'])
 def start(message):
-  os.execl(sys.executable, 'python',  __file__, *sys.argv[1:])
+    if message.chat.id == config.admin_id:
+        os.execl(sys.executable, 'python',  __file__, *sys.argv[1:])
   
 @bot.message_handler(commands=['update'])
 def start(message):
-  bot.stop_polling()
-  subprocess.Popen(['bash', './update.sh'])
+  
+    if message.chat.id == config.admin_id:
+        bot.stop_polling()
+        subprocess.Popen(['bash', './update.sh'])
 
 @bot.message_handler(commands=['error'])
 def start(message):
-    print(message.for_error)
+  
+    if message.chat.id == config.admin_id:
+        print(message.for_error)
 
 @bot.message_handler(commands=['stop'])
 def start(message):
-    bot.stop_polling()
+  
+    if message.chat.id == config.admin_id:
+        bot.stop_polling()
 
 
 @bot.message_handler(commands=['echo'])
 def start(message):
-   bot.send_message(admin_id, message.text)
+  
+    if message.chat.id == config.admin_id:
+        bot.send_message(admin_id, message.text)
 
     
 @bot.message_handler(commands=["start"])
