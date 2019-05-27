@@ -7,6 +7,8 @@ import dynamic_dicts
 from fight import fight_main, units
 import time
 from chat_wars import chat_main, chat_lobbies, chat_menu, user_menu
+import sys
+import os
 
 units.fill_unit_dict()
 
@@ -22,11 +24,6 @@ WEBHOOK_URL_PATH = "/%s/" % (config.token)
 
 bot = telebot.TeleBot(config.token, threaded=False)
 
-proxy = '207.180.253.113:3128'
-telebot.apihelper.proxy = {
-  'http': proxy,
-  'https': proxy
-}
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
@@ -37,7 +34,34 @@ types = telebot.types
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 bot.remove_webhook()
 
+bot.send_message(admin_id, 'Инициация бота...')
 
+#) # Thanks @Jim Dennis for suggesting the []
+#
+
+@bot.message_handler(commands=['restart'])
+def start(message):
+  os.execl(sys.executable, 'python',  __file__, *sys.argv[1:])
+  
+@bot.message_handler(commands=['update'])
+def start(message):
+  bot.stop_polling()
+  subprocess.Popen(['bash', './update.sh'])
+
+@bot.message_handler(commands=['error'])
+def start(message):
+    print(message.for_error)
+
+@bot.message_handler(commands=['stop'])
+def start(message):
+    bot.stop_polling()
+
+
+@bot.message_handler(commands=['echo'])
+def start(message):
+   bot.send_message(admin_id, message.text)
+
+    
 @bot.message_handler(commands=["start"])
 def game(message):
     if len(message.text.split(' ')) > 1:
