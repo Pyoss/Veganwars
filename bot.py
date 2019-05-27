@@ -68,7 +68,7 @@ def start(message):
 def start(message):
   
     if message.from_user.id == config.admin_id:
-        bot.send_message(admin_id, message.text)
+        bot.send_message(config.admin_id, message.text)
 
     
 @bot.message_handler(commands=["start"])
