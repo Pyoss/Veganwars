@@ -34,7 +34,7 @@ types = telebot.types
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 bot.remove_webhook()
 
-bot.send_message(admin_id, 'Инициация бота...')
+bot.send_message(config.admin_id, 'Инициация бота...')
 
 #) # Thanks @Jim Dennis for suggesting the []
 #
