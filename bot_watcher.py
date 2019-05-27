@@ -1,7 +1,7 @@
 import sys
 import telebot
 import os
-import config
+from bot_utils import config
 
 bot = telebot.TeleBot(config.token, threaded=False)
 admin_id = 197216910
