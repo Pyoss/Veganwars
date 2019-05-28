@@ -77,7 +77,7 @@ class Breastplate(Armor):
         return {
          'handle': (55, 90),
          'placement': 'body_armor',
-         'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\breastplate.png',
+         'file': './files/images/breastplate.png',
          'covered': 'scarf',
          'layer': 3
         }
@@ -96,7 +96,7 @@ class Helmet(Armor):
         return {
          'handle': (26, 30),
          'placement': 'head',
-         'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\helmet.png',
+         'file': './files/images/helmet.png',
          'covered': False,
          'layer': 0
         }
@@ -116,7 +116,7 @@ class Mask(Armor):
         return {
          'handle': (49, 70),
          'placement': 'head',
-         'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\mask.png',
+         'file': './files/images/mask.png',
          'covered': False,
          'layer': 0
         }
@@ -138,7 +138,7 @@ class Shield(Armor):
         return {
          'handle': (66, 160),
          'placement': 'left_hand',
-         'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\shield_2.png',
+         'file': './files/images/shield_2.png',
          'covered': False,
          'layer': 2
         }

@@ -14,7 +14,7 @@ class OneHanded:
     image_pose = 'one-handed'
     handle = (0, 0)
     weight = 1
-    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\target.png'
+    file = './files/images/target.png'
 
     def get_image_dict(self):
         return {
@@ -35,7 +35,7 @@ class TwoHanded:
     energy_cost = 3
     image_pose = 'two-handed'
     handle = (0, 0)
-    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\target.png'
+    file = './files/images/target.png'
 
     def get_image_dict(self):
         return {
@@ -364,7 +364,7 @@ class Knife(OneHanded, Weapon):
     name = 'knife'
     bleed_chance_modifier = 5
     handle = (15, 10)
-    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\knife.png'
+    file = './files/images/knife.png'
 
     def __init__(self, unit=None, obj_dict=None):
         OneHanded.__init__(self)
@@ -401,7 +401,7 @@ class Spear(OneHanded, SpecialActionWeapon):
     handle = (73, 121)
     special_energy_cost = 1
     cd = 1
-    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\spear.png'
+    file = './files/images/spear.png'
 
     def activate_special_action(self, target=None):
         self.on_cd()
@@ -444,7 +444,7 @@ class Cleaver(TwoHanded, Weapon):
 
     # -------------------------
     handle = (50, 270)
-    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\cleaver.png'
+    file = './files/images/cleaver.png'
 
 
 class Hatchet(OneHanded, Weapon):
@@ -453,7 +453,7 @@ class Hatchet(OneHanded, Weapon):
 
     # -------------------------
     handle = (40, 30)
-    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\hatchet.png'
+    file = './files/images/hatchet.png'
 
     def __init__(self, unit=None, obj_dict=None):
         OneHanded.__init__(self)
@@ -487,7 +487,7 @@ class Axe(TwoHanded, Hatchet):
 
     # -------------------------
     handle = (40, 270)
-    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\axe.png'
+    file = './files/images/axe.png'
 
 
 class Halberd(TwoHanded, Spear):
@@ -495,7 +495,7 @@ class Halberd(TwoHanded, Spear):
 
     # -------------------------
     handle = (40, 270)
-    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\halberd.png'
+    file = './files/images/halberd.png'
 
 
 class Bow(OneHanded, SpecialActionWeapon):
@@ -506,7 +506,7 @@ class Bow(OneHanded, SpecialActionWeapon):
     draw_damage = 2
     draw_accuracy = 1
     handle = (137, 315)
-    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\great_bow.png'
+    file = './files/images/great_bow.png'
 
     def __init__(self, unit=None, obj_dict=None):
         SpecialActionWeapon.__init__(self, unit=unit, obj_dict=obj_dict)
@@ -564,7 +564,7 @@ class Chain(OneHanded, SpecialActionWeapon):
     range_option = True
     # -------------------------------------
     handle = (40, 30)
-    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\chain.png'
+    file = './files/images/chain.png'
 
     def __init__(self, unit=None, obj_dict=None):
         SpecialActionWeapon.__init__(self, unit=unit, obj_dict=obj_dict)
@@ -915,7 +915,7 @@ class Katana(TwoHanded, SpecialAttackWeapon, Knife):
     order = 9
     bleed_chance = 15
     handle = (33, 171)
-    file = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\katana.png'
+    file = './files/images/katana.png'
 
     def modify_attack(self, action):
         if action.dmg_done:
@@ -1202,7 +1202,7 @@ class Target(Fist):
         return {
          'handle': (0, 0),
          'placement': 'right_hand',
-         'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\target.png',
+         'file': './files/images/target.png',
          'covered': True
         }
 

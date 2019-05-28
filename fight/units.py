@@ -25,7 +25,7 @@ class Unit:
     standart_additional = ['move', 'move_back', 'skip']
     experience = 10
     danger = 10
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\default.png'
+    image = './files/images/units/default.png'
 
     # Список предметов, выпадающих из юнита при убийстве. Имеет вид [name: (quantity, chance)]
     default_loot = []
@@ -123,7 +123,7 @@ class Unit:
         return {
             'one-handed':
                 {
-                    'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\dummy.png',
+                    'file': './files/images/dummy.png',
                     'right_hand': (30, 320),
                     'left_hand': (220, 320),
                     'body_armor': (110, 200),
@@ -132,7 +132,7 @@ class Unit:
                 },
             'two-handed':
                 {
-                    'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\dummy_twohanded.png',
+                    'file': './files/images/dummy_twohanded.png',
                     'right_hand': (15, 160),
                     'left_hand': (307, 320),
                     'body_armor': (197, 200),
@@ -143,12 +143,12 @@ class Unit:
                 {
                     'hand_one_handed':
                         {
-                            'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\cover_arm.png',
+                            'file': './files/images/cover_arm.png',
                             'coordinates': (-3, 108)
                         },
                     'scarf':
                         {
-                            'file': 'D:\YandexDisk\Veganwars\Veganwars\\files\images\cover_scarf.png',
+                            'file': './files/images/cover_scarf.png',
                             'coordinates': (47 + 87 if self.weapon.image_pose == 'two-handed' else 47, 90)
                         },
                 }
@@ -184,6 +184,8 @@ class Unit:
             pil_image.paste(hairstyle_image, (head_coord_tuple_x - hairstyle_x + left_padding,
                                               head_coord_tuple_y - hairstyle_y + top_padding),
                             mask=hairstyle_image)
+            return pil_image
+        else:
             return pil_image
 
     def construct_image(self):
@@ -522,10 +524,10 @@ class Unit:
     def get_dungeon_format_dict(member, inventory, inventory_fill):
 
         return {'name': member.name,
-         'hp': member['hp'],
-         'max_hp': member['max_hp'] - member['hp'],
-         'equipment': member.inventory.get_equipment_string(member.lang),
-         'inventory': inventory, 'fill': inventory_fill}
+                'hp': member['hp'],
+                'max_hp': member['max_hp'] - member['hp'],
+                'equipment': member.inventory.get_equipment_string(member.lang),
+                'inventory': inventory, 'fill': inventory_fill}
 
     # Выдавание конечного списка лута при смерти.
     def generate_loot(self):

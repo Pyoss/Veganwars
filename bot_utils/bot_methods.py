@@ -17,6 +17,7 @@ def send_message(chat_id, message, reply_markup=None, parse_mode='markdown', to_
     return bot.send_message(chat_id, message, reply_markup=reply_markup, parse_mode=parse_mode)
 
 
+
 def edit_message(chat_id, message_id, message_text, reply_markup=None, parse_mode='markdown'):
     return bot.edit_message_text(chat_id=chat_id, message_id=message_id,
                                  text=message_text, reply_markup=reply_markup, parse_mode=parse_mode)

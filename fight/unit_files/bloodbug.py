@@ -22,7 +22,7 @@ class BloodBug(StandardCreature):
     control_class = BloodBugAi
     default_loot = [('chitin', (1, 20))]
     emote = emote_dict['bloodbug_em']
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\Bloodbug.png'
+    image = './files/images/units/Bloodbug.png'
 
     danger = 9
 

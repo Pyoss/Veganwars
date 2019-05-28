@@ -678,37 +678,6 @@ def get_class(name):
     return object_dict[name]
 
 
-class AbilityFactory:
-    name = 'ability_factory'
-
-    def __init__(self, name, func, button_name, action_type=list(), types=list(),
-                 full=True, order=5):
-        self.button_name = button_name
-        self.name = name
-        self.full = full
-        self.types = types
-        self.action_type = action_type
-
-        class NewAbility(GameObject):
-            name = self.name
-
-
-        class NewAction(Action):
-            name = self.name
-            self.button_name = button_name
-            action_type = self.action_type
-            order = self.order
-            full = self.full
-            types = self.types
-
-            def activate(new_action):
-                func(new_action)
-
-
-
-        action_dict[name] = NewAction
-
-
 class InstantObject(GameObject):
 
     def act(self, action):

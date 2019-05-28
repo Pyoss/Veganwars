@@ -47,7 +47,7 @@ def create_dungeon_image(background_image, image_tuple_list):
             background_image.paste(pasting_image, (int(current_padding-new_width/2) - image_width_padding,
                                                    height - current_height - int(image_top_padding*(current_height/(pasting_height-image_top_padding)))), mask=pasting_image)
 
-    return background_image #io_from_PIL(background_image)
+    return io_from_PIL(background_image)
 
 
 def create_duel_image(image_tuple_list):
@@ -64,8 +64,8 @@ def create_duel_image(image_tuple_list):
     image_width_padding, image_top_padding = image_tuple[2]
     current_height = size_height_dict[image_tuple[1]]
     new_width = int(pasting_width*(current_height/pasting_height))
-    pasting_image = pasting_image.resize((new_width,
-                                          current_height + int(image_top_padding*(current_height/pasting_height))))
+    new_height = current_height + int(image_top_padding*(current_height/pasting_height))
+    pasting_image = pasting_image.resize((new_width, new_height))
     background_image.paste(pasting_image,
                            (0, height - current_height - int(image_top_padding*(current_height/pasting_height))),
                            mask=pasting_image)
@@ -76,9 +76,9 @@ def create_duel_image(image_tuple_list):
 
     image_width_padding, image_top_padding = image_tuple[2]
     current_height = size_height_dict[image_tuple[1]]
-    new_width = int(pasting_width*(current_height/pasting_height-image_top_padding))
-    pasting_image = pasting_image.resize((new_width,
-                                          current_height + int(image_top_padding*(current_height/pasting_height))))
+    new_width = int(pasting_width*(current_height/pasting_height))
+    new_height = current_height + int(image_top_padding*(current_height/pasting_height))
+    pasting_image = pasting_image.resize((new_width, new_height))
     background_image.paste(pasting_image,
                            (width-new_width,
                             height - current_height - int(image_top_padding*(current_height/pasting_height))),

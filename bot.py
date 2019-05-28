@@ -36,8 +36,34 @@ types = telebot.types
 bot.remove_webhook()
 
 bot.send_message(config.main_chat_id, 'Инициация бота...')
+bot.locked = False
 
 #) # Thanks @Jim Dennis for suggesting the []
+#
+
+@bot.message_handler(func=lambda message: False if bot.locked and message.from_user.id != config.admin_id else True, content_types=['text'])
+def start(message):
+    pass
+#
+
+@bot.message_handler(commands=['lock'])
+def start(message):
+    if message.from_user.id == config.admin_id:
+        bot.reply_to(message, 'Бот заблокирован.')
+        bot.locked = True
+#
+
+@bot.message_handler(commands=['unlock'])
+def start(message):
+    if message.from_user.id == config.admin_id:
+        bot.reply_to(message, 'Бот разблокирован.')
+        bot.locked = False
+#
+
+@bot.message_handler(commands=['unlock'])
+def start(message):
+    if message.from_user.id == config.admin_id:
+        os.execl(sys.executable, 'python',  __file__, *sys.argv[1:])
 #
 
 @bot.message_handler(commands=['restart'])

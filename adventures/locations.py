@@ -149,7 +149,7 @@ class FireBlocked(OpenLocation):
 class MobLocation(OpenLocation):
     name = 'mobs'
     emote = '!!!'
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\\default.jpg'
+    image = './files/images/units/backgrounds/default.jpg'
     impact = 'negative'
     impact_integer = 10
 

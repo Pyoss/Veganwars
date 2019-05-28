@@ -82,7 +82,7 @@ class Passive(Ability):
     active = False
 
     def act(self, action=None):
-        self.actor.fight.action_queue.append(self)
+        self.unit.fight.action_queue.append(self)
 
 
 class OnHit(Ability):
@@ -217,6 +217,28 @@ class SpellCaster(OptionAbility):
         if self.unit.energy > 1:
             return True
         return False
+
+
+class Grab(TargetAbility):
+    name = 'grab'
+    cd = 1
+
+    def __init__(self):
+        TargetAbility.__init__()
+
+    def targets(self):
+        return self.targets()
+
+
+class ThrowGrabbed(TargetAbility):
+    name = 'throw-grabbed'
+
+    def targets(self):
+        return self.targets()
+
+    def available(self):
+        grab_ability = next(ability for ability in self.unit.abilities)
+
 
 
 ################################# НИЖЕ НИЧЕГО НЕ ПРОВЕРЕНО #######################################

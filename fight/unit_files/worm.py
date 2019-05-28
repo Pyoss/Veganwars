@@ -47,7 +47,7 @@ class Worm(Unit):
     control_class = WormAi
     danger = 8
     default_loot = [('worm_skin', (1, 100))]
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\worm.png'
+    image = './files/images/units/worm.png'
 
     def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)

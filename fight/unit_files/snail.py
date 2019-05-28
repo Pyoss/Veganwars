@@ -17,7 +17,7 @@ class Snail(StandardCreature):
     unit_name = 'snail'
     control_class = SnailAi
     emote = emote_dict['snail_em']
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\snail.png'
+    image = './files/images/units/snail.png'
     danger = 18
     greet_msg = 'Слизень'
     unit_size = 'high'

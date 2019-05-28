@@ -87,7 +87,7 @@ class Goblin(StandardCreature):
     control_class = GoblinAi
     emote = emote_dict['goblin_em']
     default_loot = [('goblin_ear', (1, 70)), ('goblin_ear', (1, 30)), ('bandages', (1, 5)), ('bandages', (1, 5))]
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\sword_goblin.png'
+    image = './files/images/units/sword_goblin.png'
 
     danger = 7
 
@@ -109,11 +109,11 @@ class Goblin(StandardCreature):
 
     def get_image(self):
         if self.weapon.name == 'knife':
-            image = random.choice(('D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\knife_goblin.png',))
+            image = random.choice(('./files/images/units/knife_goblin.png',))
         elif self.weapon.name == 'harpoon':
-            image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\harpoon_goblin.png'
+            image = './files/images/units/harpoon_goblin.png'
         else:
-            image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\\fist_goblin.png'
+            image = './files/images/units/fist_goblin.png'
         return Image.open(image), 'low', (0, 0)
 
     def generate_loot(self):

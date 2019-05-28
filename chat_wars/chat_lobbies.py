@@ -208,7 +208,7 @@ class Dungeon(Lobby):
         return str(self.id)
 
     def run(self):
-        bot_methods.send_image(image_generator.create_dungeon_image('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\\default.jpg',
+        bot_methods.send_image(image_generator.create_dungeon_image('./files/images/units/backgrounds/default.jpg',
                                                                     (self.get_image(key) for key in self.team)),
                                self.chat_id)
         self.complexity = len(self.teams)

@@ -51,7 +51,7 @@ class Rat(StandardCreature):
     control_class = RatAi
     emote = emote_dict['rat_em']
     unit_name = 'rat'
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\\rat.png'
+    image = './files/images/units/rat.png'
     unit_size = 'high'
 
     danger = 15

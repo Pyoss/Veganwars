@@ -56,7 +56,7 @@ class GoblinBomber(StandardCreature):
     control_class = GoblinBomberAi
     emote = emote_dict['goblin_em']
     default_loot = [('goblin_ear', (1, 70)), ('goblin_ear', (1, 30)), ('bandages', (1, 5)), ('bandages', (1, 5))]
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\goblin_bomber.png'
+    image = './files/images/units/goblin_bomber.png'
     danger = 7
 
     def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
