@@ -3,6 +3,7 @@ from fight.units import StandardCreature, units_dict
 from fight.ai import StandardMeleeAi, Ai, get_lowest_energy
 from fight.standart_actions import *
 from bot_utils.keyboards import *
+from PIL import Image
 from fight import abilities, weapons, items
 import random
 
@@ -101,7 +102,7 @@ class GoblinBomber(StandardCreature):
         unit.searching = False
 
     def get_image(self):
-        return self.image, 'low'
+        return Image.open(self.image), 'low', (0, 0)
 
     def generate_loot(self):
         loot_container = StandardCreature.generate_loot(self)

@@ -93,11 +93,9 @@ def io_from_PIL(image):
     return img_byte_arr
 
 if __name__ == '__main__':
-    from fight.unit_files import human
+    from fight.unit_files import goblin, goblin_bomber
     from fight import weapons, armors
-    unit = human.Human()
-    unit.weapon = weapons.Hatchet()
-    unit1 = human.Human()
-    unit1.weapon = weapons.Cleaver()
+    unit = goblin.Goblin()
+    unit1 = goblin_bomber.GoblinBomber()
     image = create_dungeon_image('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\default.jpg', (unit1.get_image(), unit.get_image()))
     image.save('test.png', 'PNG')
