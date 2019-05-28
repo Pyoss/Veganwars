@@ -8,11 +8,7 @@ import random
 import engine
 import image_generator
 from PIL import Image
-import PIL
-import uuid
-import json
-import inspect
-import sys
+import file_manager
 
 
 class Unit:
@@ -117,7 +113,8 @@ class Unit:
 
     def get_image(self):
         # сформированная картинка, размер юнита, отступ сверху из-за слишком большого оружия
-        return Image.open(self.image), self.unit_size, (0, 0)
+        image = file_manager.my_path + self.image.replace('.', '')
+        return Image.open(image), self.unit_size, (0, 0)
 
     def get_unit_image_dict(self):
         return {
