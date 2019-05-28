@@ -209,7 +209,7 @@ class Dungeon(Lobby):
         return str(self.id)
 
     def run(self):
-        path = file_manager.my_path + '/files/images/units/backgrounds/default.jpg'
+        path = file_manager.my_path + '/files/images/backgrounds/default.jpg'
         bot_methods.send_image(image_generator.create_dungeon_image(path,
                                                                     (self.get_image(key) for key in self.team)),
                                self.chat_id)
