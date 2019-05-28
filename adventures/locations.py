@@ -149,7 +149,7 @@ class FireBlocked(OpenLocation):
 class MobLocation(OpenLocation):
     name = 'mobs'
     emote = '!!!'
-    image = './files/images/units/backgrounds/default.jpg'
+    image = './files/images/backgrounds/default.jpg'
     impact = 'negative'
     impact_integer = 10
 
