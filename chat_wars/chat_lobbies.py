@@ -7,7 +7,7 @@ import image_generator
 from chat_wars.chat_war import current_war
 from fight import fight_main, standart_actions, units
 from adventures import dungeon_main, map_engine, maps
-import os.path
+import file_manager
 
 
 class Lobby:
@@ -209,8 +209,7 @@ class Dungeon(Lobby):
         return str(self.id)
 
     def run(self):
-        my_path = os.path.abspath(os.path.dirname(__file__))
-        path = os.path.join(my_path, '../files/images/units/backgrounds/default.jpg')
+        path = file_manager.my_path + '/files/images/units/backgrounds/default.jpg'
         bot_methods.send_image(image_generator.create_dungeon_image(path,
                                                                     (self.get_image(key) for key in self.team)),
                                self.chat_id)
