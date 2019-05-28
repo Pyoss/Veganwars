@@ -1,7 +1,7 @@
  
 #!/bin/bash
-until python -m bot; do
-    export ERROR_MSG="'vwars' crashed with exit code $?. Restarting..." &>1
+until python bot.py 2>error_text; do
+    export ERROR_MSG=$(cat error_text)
     python -m bot_watcher
-    sleep 1
+    sleep 5
 done
