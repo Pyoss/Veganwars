@@ -41,7 +41,7 @@ bot.locked = False
 #) # Thanks @Jim Dennis for suggesting the []
 #
 
-@bot.message_handler(func=lambda message: False if bot.locked and message.from_user.id != config.admin_id else True, content_types=['text'])
+@bot.message_handler(func=lambda message: True if bot.locked and message.from_user.id != config.admin_id else False, content_types=['text'])
 def start(message):
     pass
 #
