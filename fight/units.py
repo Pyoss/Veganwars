@@ -113,7 +113,7 @@ class Unit:
 
     def get_image(self):
         # сформированная картинка, размер юнита, отступ сверху из-за слишком большого оружия
-        image = file_manager.my_path + self.image.replace('.', '')
+        image = file_manager.my_path + self.image[1:]
         return Image.open(image), self.unit_size, (0, 0)
 
     def get_unit_image_dict(self):
