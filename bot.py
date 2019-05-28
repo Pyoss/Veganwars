@@ -38,39 +38,38 @@ bot.remove_webhook()
 bot.send_message(config.main_chat_id, 'Инициация бота...')
 bot.locked = False
 
-#) # Thanks @Jim Dennis for suggesting the []
-#
 
 @bot.message_handler(func=lambda message: True if bot.locked and message.from_user.id != config.admin_id else False, content_types=['text'])
 def start(message):
     pass
-#
+
 
 @bot.message_handler(commands=['lock'])
 def start(message):
     if message.from_user.id == config.admin_id:
         bot.reply_to(message, 'Бот заблокирован.')
         bot.locked = True
-#
+
 
 @bot.message_handler(commands=['unlock'])
 def start(message):
     if message.from_user.id == config.admin_id:
         bot.reply_to(message, 'Бот разблокирован.')
         bot.locked = False
-#
+
 
 @bot.message_handler(commands=['unlock'])
 def start(message):
     if message.from_user.id == config.admin_id:
         os.execl(sys.executable, 'python',  __file__, *sys.argv[1:])
-#
+
 
 @bot.message_handler(commands=['restart'])
 def start(message):
     if message.from_user.id == config.admin_id:
         os.execl(sys.executable, 'python',  __file__, *sys.argv[1:])
-  
+
+
 @bot.message_handler(commands=['update'])
 def start(message):
   
@@ -79,11 +78,13 @@ def start(message):
         bot.send_message(config.main_chat_id, 'Обновление git...')
         subprocess.Popen(['bash', './update.sh'])
 
+
 @bot.message_handler(commands=['error'])
 def start(message):
   
     if message.from_user.id == config.admin_id:
         print(message.for_error)
+
 
 @bot.message_handler(commands=['stop'])
 def start(message):
