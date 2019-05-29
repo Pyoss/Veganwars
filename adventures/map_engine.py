@@ -52,6 +52,7 @@ class DungeonMap:
         self.neutral_probability = 20
         self.neutral_scarceness = 100
         self.impact_integer_range = (-5, 5)
+        self.negative_modifier = 1
 
         self.statistics = {'positive': 0,
                            'negative': 0,
@@ -63,7 +64,6 @@ class DungeonMap:
     def create_map(self):
         self.dungeon.map = self
         self.positive_modifier = -self.generation_seed / 100
-        self.negative_modifier = self.positive_modifier + 1
         self.create_map_tuples()
         self.create_grid()
         self.fill_locations()
@@ -120,6 +120,7 @@ class DungeonMap:
         locations_pool = [location_weight for location_weight in self.location_dict[map_tuple.types]
                           if location_weight[0].impact == impact
                           and location_weight[0].available_for_pool(self.map_tuples)]
+
         if not locations_pool:
             locations_pool = [location_weight for location_weight in self.location_dict[map_tuple.types]
                               if location_weight[0].available_for_pool(self.map_tuples)]

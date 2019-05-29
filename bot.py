@@ -234,7 +234,6 @@ def start(message):
         chat_main.current_war.next_step(message.chat.id)
 
 
-
 @bot.message_handler(content_types=['photo'])
 def start(message):
     print(message.photo[0].file_id)
