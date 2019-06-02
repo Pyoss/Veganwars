@@ -180,7 +180,6 @@ def get_enemy(complexity, total_enemy_list, map_tuple):
 # Объект комнаты/локации карты
 class Location:
     name = 'location'
-    greet_msg = 'Тестовое приветствие локации'
     image = None
     finish = False
     emote = emote_dict['wall_em']
@@ -189,6 +188,7 @@ class Location:
     impact_integer = 0
 
     def __init__(self, x, y, dungeon, map_tuple):
+        self.table_row = 'locations_' + self.name
         self.visited = False
         self.current = False
         self.seen = False
@@ -202,6 +202,12 @@ class Location:
         self.receipts = engine.ChatContainer()
         if map_tuple is not None:
             self.complexity = map_tuple.complexity
+
+    def get_greet_tuple(self):
+        return LangTuple(self.table_row, 'greeting')
+
+    def get_lang_tuple(self, string):
+        return LangTuple(self.table_row, string)
 
     @classmethod
     def available_for_pool(cls, map_tuples):
@@ -250,9 +256,10 @@ class Location:
         self.visited = True
 
     def greet_party(self):
-        if self.greet_msg:
+        lang_tuple = self.get_greet_tuple()
+        if lang_tuple:
             self.dungeon.delete_map()
-            self.dungeon.party.send_message(self.greet_msg,
+            self.dungeon.party.send_message(lang_tuple,
                                             image=self.image)
 
     def available(self):

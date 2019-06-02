@@ -89,9 +89,9 @@ class Party:
         for member in self.members:
             func(member)
 
-    def send_message(self, text, reply_markup=None, image=None):
+    def send_message(self, lang_tuple, reply_markup=None, image=None):
         for member in self.members:
-            member.send_message(text, reply_markup=reply_markup, image=image)
+            member.send_message(lang_tuple.translate(member.lang), reply_markup=reply_markup, image=image)
 
     def edit_message(self, text, reply_markup=None):
         for member in self.members:

@@ -2,6 +2,7 @@ import engine, dynamic_dicts, threading, time
 from telebot import types
 from bot_utils import bot_methods, keyboards
 from locales import localization
+from locales.localization import LangTuple
 from chat_wars.chat_main import pyossession, get_chat, get_user
 import image_generator
 from chat_wars.chat_war import current_war
@@ -11,6 +12,8 @@ import file_manager
 
 
 class Lobby:
+    name = None
+
     def __init__(self, chat_id, skip_armory=False):
         self.id = str(engine.rand_id())
         self.chat_id = chat_id
@@ -24,6 +27,10 @@ class Lobby:
         dynamic_dicts.lobby_list[self.id] = self
         self.skip_armory = skip_armory
         self.start_checker = StartChecker(self)
+        self.table_row = 'maps_' + self.name
+
+    def get_lang_tuple(self, string):
+        return LangTuple(self.table_row, string)
 
     def create_lobby(self):
         message = localization.GameString(self)
@@ -197,13 +204,17 @@ class StartChecker:
 
 
 class Dungeon(Lobby):
-    def __init__(self, chat_id):
+    def __init__(self, chat_id, map_type):
         Lobby.__init__(self, chat_id, skip_armory=False)
         self.team = self.teams[0]
         self.map = None
         self.party = None
         self.fight = None
         self.complexity = None
+        self.map_type = map_type
+        self.table_row = 'dungeons_' + map_type.name
+        self.text = self.get_lang_tuple('recruit_text')
+        self.lang = 'rus'
 
     def __str__(self):
         return str(self.id)
@@ -269,8 +280,8 @@ class Dungeon(Lobby):
     def __del__(self):
         print('Удаление объекта данжа {}...'.format(self.id))
 
-    def create_dungeon_map(self, map_type):
-        map_type.create_map()
+    def create_dungeon_map(self):
+        self.map_type.create_map()
 
     def add_party(self, player_list):
         self.party = dungeon_main.Party(player_list, self.chat_id, self.id)
