@@ -24,10 +24,10 @@ class Lobby:
         self.lang = 'rus'
         self.langs = [self.lang]
         self.started = False
+        self.table_row = None
         dynamic_dicts.lobby_list[self.id] = self
         self.skip_armory = skip_armory
         self.start_checker = StartChecker(self)
-        self.table_row = 'maps_' + self.name
 
     def get_lang_tuple(self, string):
         return LangTuple(self.table_row, string)
@@ -206,13 +206,13 @@ class StartChecker:
 class Dungeon(Lobby):
     def __init__(self, chat_id, map_type):
         Lobby.__init__(self, chat_id, skip_armory=False)
+        self.table_row = 'dungeons_' + map_type.name
         self.team = self.teams[0]
         self.map = None
         self.party = None
         self.fight = None
         self.complexity = None
         self.map_type = map_type
-        self.table_row = 'dungeons_' + map_type.name
         self.text = self.get_lang_tuple('recruit_text')
         self.lang = 'rus'
 
