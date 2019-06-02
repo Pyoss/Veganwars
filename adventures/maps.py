@@ -11,7 +11,7 @@ import sys
 
 
 class FirstDungeon(DungeonMap):
-    name = 'NecromancerPit'
+    name = 'first'
 
     def __init__(self, dungeon, new=True, dungeon_dict=None):
         DungeonMap.__init__(self, 2, dungeon,  0, 0,  new=True, dungeon_dict=None)

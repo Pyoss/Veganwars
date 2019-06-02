@@ -129,7 +129,8 @@ def start(message):
 def start(message):
     chat = chat_main.pyossession.get_chat(message.chat.id)
     chat.clear_used_items()
-    dung = chat_lobbies.Dungeon(message.chat.id)
+    from adventures import maps
+    dung = chat_lobbies.Dungeon(message.chat.id, maps.FirstDungeon)
     dung.send_lobby()
 
 
