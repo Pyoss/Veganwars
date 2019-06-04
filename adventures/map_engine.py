@@ -227,7 +227,11 @@ class Location:
         return list()
 
     def handler(self, call):
-        pass
+        data = call.data.split('_')
+        action = data[3]
+        if action == 'map':
+            bot_methods.edit_message(call.message.message_id, call.message.chat.id, message_text=call.message.text)
+        self.dungeon.update_map(new=True)
 
     # Возвращает эмодзи карты
     def emoji(self):
@@ -285,8 +289,9 @@ class Location:
         self.dungeon.party.send_message(lang_tuple, image=self.image, reply_markup=actions_keyboard, leader_reply=True)
 
     def get_action_keyboard(self):
-        keyboard = form_keyboard(self.create_button('Назад', self.dungeon.party.leader, 'menu', 'main', named=True))
+        keyboard = form_keyboard(self.create_button('Назад', self.dungeon.party.leader, 'location', 'map', named=True))
         return keyboard
+
 
     def on_enter(self):
         self.dungeon.update_map()
