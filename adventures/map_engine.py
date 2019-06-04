@@ -3,7 +3,7 @@ import random
 import engine
 from adventures import locations, map_generator
 from bot_utils import bot_methods
-from bot_utils.keyboards import Button
+from bot_utils.keyboards import Button, DungeonButton, form_keyboard
 from fight import units
 from locales.emoji_utils import emote_dict
 from locales.localization import LangTuple
@@ -249,10 +249,12 @@ class Location:
         self.current = True
         party.current_location = self
         if not self.visited:
-            self.greet_party()
             for member in party.members:
                 member.message_id = None
-        self.on_enter()
+                member.occupied = True
+            self.first_enter()
+        else:
+            self.on_enter()
         self.visited = True
 
     def greet_party(self):
@@ -265,12 +267,25 @@ class Location:
     def available(self):
         return False
 
+    def create_button(self, name_or_lang_tuple, member, *args, named=False):
+        return DungeonButton(name_or_lang_tuple, member, *args, named=named)
+
     # Проверяет, можно ли производить перемещение с данной локации
     def move_permission(self, movement, call):
         bot_methods.answer_callback_query(call, 'Вы не можете здесь пройти.', alert=False)
         return self.available()
 
     # Функция, запускающаяся при входе в комнату. Именно сюда планируется пихать события.
+    def first_enter(self):
+        lang_tuple = self.get_greet_tuple()
+        self.dungeon.delete_map()
+        actions_keyboard = self.get_action_keyboard()
+        self.dungeon.party.send_message(lang_tuple, image=self.image, reply_markup=actions_keyboard, leader_reply=True)
+
+    def get_action_keyboard(self):
+        keyboard = form_keyboard(self.create_button('Назад', self.dungeon.party.leader, 'menu', 'main', named=True))
+        return keyboard
+
     def on_enter(self):
         self.dungeon.update_map()
 
