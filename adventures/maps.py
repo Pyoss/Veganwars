@@ -40,7 +40,7 @@ class FirstDungeon(DungeonMap):
                            EnemyKey('goblin+goblin-bomber', 12, 238, 10))
 
     def generate_location_dict(self):
-        base_list = [(locations.PlaceHolder, 1), (locations.PlaceHolderPos, 10), (locations.MobLocation, 10)]
+        base_list = [(locations.PlaceHolder, 1), (locations.PlaceHolderPos, 10), (locations.PlaceHolderNeg, 10)]
         self.location_dict = engine.ListedDict(base_dict={('core', 'end'): base_list,
                                                           ('core', 'crossroad'): [(locations.CrossRoad, 1)],
                                                           ('core', 'default'): base_list,
