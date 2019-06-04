@@ -255,6 +255,7 @@ class Location:
         self.current = True
         party.current_location = self
         if not self.visited:
+            self.dungeon.delete_map()
             for member in party.members:
                 member.message_id = None
                 member.occupied = True
@@ -284,14 +285,12 @@ class Location:
     # Функция, запускающаяся при входе в комнату. Именно сюда планируется пихать события.
     def first_enter(self):
         lang_tuple = self.get_greet_tuple()
-        self.dungeon.delete_map()
         actions_keyboard = self.get_action_keyboard()
         self.dungeon.party.send_message(lang_tuple, image=self.image, reply_markup=actions_keyboard, leader_reply=True)
 
     def get_action_keyboard(self):
         keyboard = form_keyboard(self.create_button('Назад', self.dungeon.party.leader, 'location', 'map', named=True))
         return keyboard
-
 
     def on_enter(self):
         self.dungeon.update_map()
