@@ -21,6 +21,7 @@ class MapHandler:
         self.handler = handler
 
     def handle(self, call):
+        bot_methods.err(call.data)
         call_data = call.data.split('_')
         action = call_data[2]
         try:
