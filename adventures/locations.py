@@ -22,12 +22,15 @@ class OpenLocation(map_engine.Location):
 
 
 class PlaceHolder(OpenLocation):
+    name = 'default_corridor'
+
     def __init__(self, x, y, dungeon, map_tuple):
         map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
         self.emote = str(self.complexity)
 
 
 class PlaceHolderPos(OpenLocation):
+    name = 'default_corridor_positive'
     impact = 'positive'
     impact_integer = 10
 
@@ -37,6 +40,7 @@ class PlaceHolderPos(OpenLocation):
 
 
 class PlaceHolderNeg(OpenLocation):
+    name = 'default_corridor_negative'
     impact = 'negative'
     impact_integer = 10
 
@@ -45,14 +49,8 @@ class PlaceHolderNeg(OpenLocation):
         self.emote = '-' + str(self.complexity)
 
 
-class PlaceHolder2(OpenLocation):
-    def __init__(self, x, y, dungeon, map_tuple):
-        map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
-        self.emote = '_'
-
-
 class End(OpenLocation):
-    name = 'end'
+    name = 'default_end'
     emote = '⚔'
 
     def __init__(self, x, y, dungeon, map_tuple, special='0'):
@@ -60,12 +58,15 @@ class End(OpenLocation):
 
 
 class DeadEnd(OpenLocation):
+    name = 'default_branch_end'
+
     def __init__(self, x, y, dungeon, map_tuple):
         map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
         self.emote = 'X'
 
 
 class CrossRoad(OpenLocation):
+    name = 'default_crossroad'
     emote = emoji_utils.emote_dict['crossroad_em']
 
     def __init__(self, x, y, dungeon, map_tuple):

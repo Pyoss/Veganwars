@@ -24,7 +24,7 @@ class FirstDungeon(DungeonMap):
         # self.enemy_list: [EnemyKey(минимальная сложность, максимальная сложность, вероятность появления)]
 
         self.balance_integer = 1
-        self.generation_seed = 75
+        self.generation_seed = 50
         self.neutral_chance = 0
         self.neutral_probability = 20
         self.neutral_scarceness = 100
