@@ -237,7 +237,7 @@ def start(message):
 
 @bot.message_handler(content_types=['photo'])
 def start(message):
-    print(message.photo[0].file_id)
+    bot_methods.err(message.photo[0].file_id)
 
 
 @bot.callback_query_handler(func=lambda call: call)
