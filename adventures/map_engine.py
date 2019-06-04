@@ -232,6 +232,8 @@ class Location:
         action = data[3]
         if action == 'map':
             bot_methods.edit_message(call.from_user.id, call.message.message_id, message_text=call.message.text)
+            for member in self.dungeon.party.members:
+                member.occupied = False
         self.dungeon.update_map(new=True)
 
     # Возвращает эмодзи карты
