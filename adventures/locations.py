@@ -52,6 +52,7 @@ class PlaceHolderNeg(OpenLocation):
 class End(OpenLocation):
     name = 'default_end'
     emote = '⚔'
+    image = 'AgADAgADvKoxG2wBsUvh5y6JbSyZmUNqXw8ABHPt9rOstNKjRZ8FAAEC'
 
     def __init__(self, x, y, dungeon, map_tuple, special='0'):
         map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
