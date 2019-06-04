@@ -16,15 +16,16 @@ class FirstDungeon(DungeonMap):
     def __init__(self, dungeon, new=True, dungeon_dict=None):
         DungeonMap.__init__(self, 2, dungeon,  0, 0,  new=True, dungeon_dict=None)
         # self.balance_integer: маятник локаций для определения положительной или отрицательной локации. Его\
-        # смещение редактируется параметров location.impact_integer
+        # смещение редактируется параметром location.impact_integer
         # self.generation_seed: % влияния на смещение маятника локаций в сторону положительной локации
         # self.neutral_chance: текущая вероятность появления нейтральной локации
         # self.neutral_probability: увеличение вероятности появления нейтральной локации
         # self.neutral_scarceness: уменьшение вероятности появления нейтральной локации после появления
         # self.enemy_list: [EnemyKey(минимальная сложность, максимальная сложность, вероятность появления)]
 
-        self.balance_integer = 0
+        self.balance_integer = 1
         self.generation_seed = 75
+        self.neutral_chance = 0
         self.neutral_probability = 20
         self.neutral_scarceness = 100
         self.impact_integer_range = (-5, 5)

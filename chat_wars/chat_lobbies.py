@@ -29,8 +29,8 @@ class Lobby:
         self.skip_armory = skip_armory
         self.start_checker = StartChecker(self)
 
-    def get_lang_tuple(self, string):
-        return LangTuple(self.table_row, string)
+    def get_lang_tuple(self, string, format_dict=None):
+        return LangTuple(self.table_row, string, format_dict=format_dict)
 
     def create_lobby(self):
         message = localization.GameString(self)
@@ -225,7 +225,7 @@ class Dungeon(Lobby):
                                                                     (self.get_image(key) for key in self.team)),
                                self.chat_id)
         self.complexity = len(self.teams)
-        self.create_dungeon_map(maps.FirstDungeon(self))
+        self.create_dungeon_map()
         dynamic_dicts.dungeons[self.id] = self
         self.add_party(player_list=self.team)
         for member in self.party.members:
@@ -281,7 +281,7 @@ class Dungeon(Lobby):
         print('Удаление объекта данжа {}...'.format(self.id))
 
     def create_dungeon_map(self):
-        self.map_type.create_map()
+        self.map_type(self).create_map()
 
     def add_party(self, player_list):
         self.party = dungeon_main.Party(player_list, self.chat_id, self.id)
