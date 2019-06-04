@@ -231,7 +231,7 @@ class Location:
         data = call.data.split('_')
         action = data[3]
         if action == 'map':
-            bot_methods.edit_message(call.message.message_id, call.from_user.id, message_text=call.message.text)
+            bot_methods.edit_message(call.from_user.id, call.message.message_id, message_text=call.message.text)
         self.dungeon.update_map(new=True)
 
     # Возвращает эмодзи карты
