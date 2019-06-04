@@ -231,7 +231,7 @@ class Location:
         data = call.data.split('_')
         action = data[3]
         if action == 'map':
-            bot_methods.edit_message(call.from_user.id, call.message.message_id, message_text=call.message.text)
+            bot_methods.bot.edit_message_reply_markup(chat_id=call.from_user.id, message_id=call.message.message_id)
             for member in self.dungeon.party.members:
                 member.occupied = False
         self.dungeon.update_map(new=True)
