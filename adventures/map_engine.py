@@ -227,6 +227,7 @@ class Location:
         return list()
 
     def handler(self, call):
+        bot_methods.err(call.data)
         data = call.data.split('_')
         action = data[3]
         if action == 'map':

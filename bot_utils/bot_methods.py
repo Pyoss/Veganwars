@@ -35,6 +35,10 @@ def delete_message(chat_id=None, message_id=None, call=None):
     return bot.delete_message(chat_id, message_id)
 
 
+def err(text):
+    send_message(config.admin_id, text)
+
+
 def get_chat_administrators(chat_id):
     return bot.get_chat_administrators(chat_id)
 
