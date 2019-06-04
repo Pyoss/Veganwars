@@ -136,7 +136,9 @@ class DungeonMap:
 
     def start(self):
         #self.greetings_message()
-        self.dungeon.party.move(self.dungeon.map.get_location(0, 0))
+        location = self.dungeon.map.get_location(0, 0)
+        location.visited = True
+        self.dungeon.party.move(location)
 
     # Возвращает локацию от координат матрицы
     def get_location(self, x, y):
