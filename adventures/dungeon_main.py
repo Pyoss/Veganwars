@@ -110,7 +110,7 @@ class Party:
     def occupied(self):
         if any([member.occupied for member in self.members]):
             for member in self.members:
-                print('Занятость {}: {}'.format(member.name, member.occupied))
+                bot_methods.err('Занятость {}: {}'.format(member.name, member.occupied))
             return True
         return False
 

@@ -242,7 +242,10 @@ def start(message):
 
 @bot.callback_query_handler(func=lambda call: call)
 def action(call):
-    call_handler.handle(call)
+    try:
+        call_handler.handle(call)
+    except Exception as e:
+        bot_methods.err(repr(e))
 
 bot.skip_pending = True
 
