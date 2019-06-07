@@ -7,6 +7,7 @@ import threading
 
 types = telebot.types
 bot = telebot.TeleBot(config.token)
+admin_bot = telebot.TeleBot('777849028:AAFKdy8OJcLn37H7A8bJVsSCTSB-5S37zf4')
 admin_mode = False
 
 
@@ -36,7 +37,7 @@ def delete_message(chat_id=None, message_id=None, call=None):
 
 
 def err(text):
-    send_message(config.admin_id, text, parse_mode=None)
+    admin_bot.send_message(config.admin_id, text, parse_mode=None)
 
 
 def get_chat_administrators(chat_id):
