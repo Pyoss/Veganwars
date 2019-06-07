@@ -30,7 +30,7 @@ class DungeonMap:
 
     def __init__(self, length, dungeon, branch_length, branch_number, new=True, dungeon_dict=None):
         self.location_matrix = dict()
-        self.length = length + 3
+        self.length = length
         self.width = 0
         self.height = 0
         self.branch_length = branch_length
