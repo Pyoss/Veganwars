@@ -23,7 +23,7 @@ class FirstDungeon(DungeonMap):
         # self.neutral_scarceness: уменьшение вероятности появления нейтральной локации после появления
         # self.enemy_list: [EnemyKey(минимальная сложность, максимальная сложность, вероятность появления)]
 
-        self.balance_integer = 1
+        self.balance_integer = 10
         self.generation_seed = 50
         self.neutral_chance = 0
         self.neutral_probability = 20
