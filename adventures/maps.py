@@ -14,7 +14,7 @@ class FirstDungeon(DungeonMap):
     name = 'first'
 
     def __init__(self, dungeon, new=True, dungeon_dict=None):
-        DungeonMap.__init__(self, 2, dungeon,  0, 0,  new=True, dungeon_dict=None)
+        DungeonMap.__init__(self, 1, dungeon,  0, 0,  new=True, dungeon_dict=None)
         # self.balance_integer: маятник локаций для определения положительной или отрицательной локации. Его\
         # смещение редактируется параметром location.impact_integer
         # self.generation_seed: % влияния на смещение маятника локаций в сторону положительной локации
