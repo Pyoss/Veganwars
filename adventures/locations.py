@@ -33,6 +33,7 @@ class PlaceHolderPos(OpenLocation):
     name = 'default_corridor_positive'
     impact = 'positive'
     impact_integer = 10
+    image = 'AgADAgAD7aoxG86k0UvHW9xX2r__8LxVUw8ABCxD1LsgKx-3bS4EAAEC'
 
     def __init__(self, x, y, dungeon, map_tuple):
         map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
