@@ -135,7 +135,7 @@ def visualise(map_tuples):
     map_dict = {}
     for x in range(map_length):
         for y in range(map_height):
-            map_dict[(x, y)] = "['null']"
+            map_dict[(x, y)] = "0"
 
     for map_tuple in map_tuples:
         map_dict[map_tuple] = map_tuples[map_tuple]
