@@ -72,7 +72,7 @@ class DungeonMap:
         map_string = ''
         for x in range(0, self.width):
             for y in range(0, self.height):
-                map_string += self.location_matrix[(x, y)].name + ' '
+                map_string += self.location_matrix[(x, y)].emote + ' '
             map_string += '\n'
         bot_methods.err(map_string)
 
