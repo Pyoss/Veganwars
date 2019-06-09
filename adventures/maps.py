@@ -14,7 +14,7 @@ class FirstDungeon(DungeonMap):
     name = 'first'
 
     def __init__(self, dungeon, new=True, dungeon_dict=None):
-        DungeonMap.__init__(self, 3, dungeon, 1, 1,  new=True, dungeon_dict=None)
+        DungeonMap.__init__(self, 3, dungeon, 0, 0,  new=True, dungeon_dict=None)
         # self.balance_integer: маятник локаций для определения положительной или отрицательной локации. Его\
         # смещение редактируется параметром location.impact_integer
         # self.generation_seed: % влияния на смещение маятника локаций в сторону положительной локации
@@ -43,7 +43,7 @@ class FirstDungeon(DungeonMap):
         base_list = [(locations.PlaceHolder, 1), (locations.PlaceHolderPos, 10), (locations.PlaceHolderNeg, 10)]
         self.location_dict = engine.ListedDict(base_dict={('core', 'end'): [(locations.End, 1)],
                                                           ('core', 'crossroad'): [(locations.CrossRoad, 1)],
-                                                          ('core', 'default'): base_list,
+                                                          ('core', 'default'): [(locations.CrossRoad, 1)],
                                                           ('branch', 'end'): [(locations.End, 1)],
                                                           ('branch', 'crossroad'): base_list,
                                                           ('branch', 'entrance'): base_list,

@@ -70,8 +70,9 @@ class DungeonMap:
 
     def create_map_tuples(self):
         self.map_tuples = map_generator.generate_core(complexity=len(self.dungeon.team) * 10, length=self.length)
-        for i in range(self.branch_number):
-            map_generator.generate_branch(self.map_tuples, self.branch_length)
+        if self.branch_number:
+            for i in range(self.branch_number):
+                map_generator.generate_branch(self.map_tuples, self.branch_length)
         for key in self.map_tuples:
             if len(self.map_tuples[key].types) == 1:
                 self.map_tuples[key].types.append('default')
