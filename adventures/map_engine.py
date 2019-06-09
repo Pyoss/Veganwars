@@ -74,7 +74,7 @@ class DungeonMap:
             for y in range(0, self.height):
                 map_string += self.location_matrix[(x, y)].name + ' '
             map_string += '\n'
-        print(map_string)
+        bot_methods.err(map_string)
 
     def create_map_tuples(self):
         self.map_tuples = map_generator.generate_core(complexity=len(self.dungeon.team) * 10, length=self.length)

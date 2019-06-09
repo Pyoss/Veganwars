@@ -54,7 +54,7 @@ class FirstDungeon(DungeonMap):
                                                           ('branch', 'default'): base_list})
 
 
-if __name__ == '__main__':
-    dungeon_map = FirstDungeon(Dungeon())
-    dungeon_map.create_map()
-    dungeon_map.visualize()
+
+dungeon_map = FirstDungeon(Dungeon())
+dungeon_map.create_map()
+dungeon_map.visualize()
