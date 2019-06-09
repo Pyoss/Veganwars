@@ -1,16 +1,12 @@
 import random
 
 import engine
-from adventures import locations, map_generator
+from adventures import map_generator
 from bot_utils import bot_methods
 from bot_utils.keyboards import Button, DungeonButton, form_keyboard
 from fight import units
 from locales.emoji_utils import emote_dict
 from locales.localization import LangTuple
-
-
-class Dungeon:
-    team = [1, 2]
 
 
 class PartyMovement:
@@ -63,14 +59,7 @@ class DungeonMap:
                            'neutral': 0}
 
     def generate_location_dict(self):
-        base_list = [(locations.PlaceHolder, 1), (locations.PlaceHolderPos, 10), (locations.PlaceHolderNeg, 10)]
-        self.location_dict = engine.ListedDict(base_dict={('core', 'end'): [(locations.End, 1)],
-                                                          ('core', 'crossroad'): [(locations.CrossRoad, 1)],
-                                                          ('core', 'default'): base_list,
-                                                          ('branch', 'end'): [(locations.End, 1)],
-                                                          ('branch', 'crossroad'): base_list,
-                                                          ('branch', 'entrance'): base_list,
-                                                          ('branch', 'default'): base_list})
+        pass
 
     def create_map(self):
         self.dungeon.map = self
@@ -118,6 +107,7 @@ class DungeonMap:
         map_tuple = self.map_tuples[(x, y)]
         del self.map_tuples[(x, y)]
         if x == 0 and y == 0:
+            from adventures import locations
             return locations.Entrance(0, 0, self.dungeon, map_tuple)
 
         if engine.roll_chance(self.neutral_chance):
@@ -434,7 +424,3 @@ class EnemyKey:
 
 # --------------------------------------------------------------------------------------------------
 # Объект группы в подземелье
-if __name__ == '__main__':
-    dungeon_map = DungeonMap(10, Dungeon(), 3, 1)
-    dungeon_map.create_map()
-    dungeon_map.visualize()

@@ -10,6 +10,10 @@ import inspect
 import sys
 
 
+class Dungeon:
+    team = [1, 2]
+
+
 class FirstDungeon(DungeonMap):
     name = 'first'
 
@@ -43,8 +47,14 @@ class FirstDungeon(DungeonMap):
         base_list = [(locations.PlaceHolder, 1), (locations.PlaceHolderPos, 10), (locations.PlaceHolderNeg, 10)]
         self.location_dict = engine.ListedDict(base_dict={('core', 'end'): [(locations.End, 1)],
                                                           ('core', 'crossroad'): [(locations.CrossRoad, 1)],
-                                                          ('core', 'default'): [(locations.CrossRoad, 1)],
+                                                          ('core', 'default'): base_list,
                                                           ('branch', 'end'): [(locations.End, 1)],
                                                           ('branch', 'crossroad'): base_list,
                                                           ('branch', 'entrance'): base_list,
                                                           ('branch', 'default'): base_list})
+
+
+if __name__ == '__main__':
+    dungeon_map = FirstDungeon(Dungeon())
+    dungeon_map.create_map()
+    dungeon_map.visualize()
