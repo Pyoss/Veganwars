@@ -12,7 +12,7 @@ class MapTuple:
         self.types = list(args)
 
     def __str__(self):
-        return 'X'
+        return str(self.types)
 
 
 class MapTuples(dict):
@@ -135,7 +135,7 @@ def visualise(map_tuples):
     map_dict = {}
     for x in range(map_length):
         for y in range(map_height):
-            map_dict[(x, y)] = '0'
+            map_dict[(x, y)] = "['null']"
 
     for map_tuple in map_tuples:
         map_dict[map_tuple] = map_tuples[map_tuple]
@@ -144,8 +144,9 @@ def visualise(map_tuples):
         for x in range(map_length):
             map_string += ' ' + map_dict[(x, y)].__str__() + ' '
         map_string += '\n'
+    print(map_string)
 
 if __name__ == '__main__':
-    while True:
         tuples = generate_core(10, 10)
+        generate_branch(tuples, 3)
         visualise(tuples)
