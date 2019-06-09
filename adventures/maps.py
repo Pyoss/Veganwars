@@ -44,7 +44,7 @@ class FirstDungeon(DungeonMap):
         self.location_dict = engine.ListedDict(base_dict={('core', 'end'): [(locations.End, 1)],
                                                           ('core', 'crossroad'): [(locations.CrossRoad, 1)],
                                                           ('core', 'default'): base_list,
-                                                          ('branch', 'end'): base_list,
+                                                          ('branch', 'end'): [(locations.End, 1)],
                                                           ('branch', 'crossroad'): base_list,
                                                           ('branch', 'entrance'): base_list,
                                                           ('branch', 'default'): base_list})
