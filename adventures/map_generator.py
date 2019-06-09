@@ -12,7 +12,7 @@ class MapTuple:
         self.types = list(args)
 
     def __str__(self):
-        return str(self.types)
+        return 'X'
 
 
 class MapTuples(dict):
