@@ -53,6 +53,3 @@ class FirstDungeon(DungeonMap):
                                                           ('branch', 'entrance'): base_list,
                                                           ('branch', 'default'): base_list})
 
-dungeon_map = FirstDungeon(Dungeon())
-dungeon_map.create_map()
-dungeon_map.visualize()

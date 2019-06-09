@@ -147,7 +147,6 @@ def visualise(map_tuples):
     from bot_utils import bot_methods
     bot_methods.err(map_string)
 
-if __name__ == '__main__':
-        tuples = generate_core(10, 10)
-        generate_branch(tuples, 3)
-        visualise(tuples)
+tuples = generate_core(10, 10)
+generate_branch(tuples, 3)
+visualise(tuples)
