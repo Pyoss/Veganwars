@@ -9,6 +9,10 @@ from locales.emoji_utils import emote_dict
 from locales.localization import LangTuple
 
 
+class Dungeon:
+    team = [1, 2]
+
+
 class PartyMovement:
 
     def __init__(self, party, start_location, end_location):
@@ -25,8 +29,8 @@ class PartyMovement:
 # --------------------------------------------- Карта Подземелья -----------------------------------------------------
 # Объект карты подземелья
 class DungeonMap:
-    name = None
-    wall_location = None
+    name = 'blank'
+    wall_location = 'W'
 
     def __init__(self, length, dungeon, branch_length, branch_number, new=True, dungeon_dict=None):
         self.location_matrix = dict()
@@ -59,7 +63,14 @@ class DungeonMap:
                            'neutral': 0}
 
     def generate_location_dict(self):
-        pass
+        base_list = [(locations.PlaceHolder, 1), (locations.PlaceHolderPos, 10), (locations.PlaceHolderNeg, 10)]
+        self.location_dict = engine.ListedDict(base_dict={('core', 'end'): [(locations.End, 1)],
+                                                          ('core', 'crossroad'): [(locations.CrossRoad, 1)],
+                                                          ('core', 'default'): base_list,
+                                                          ('branch', 'end'): [(locations.End, 1)],
+                                                          ('branch', 'crossroad'): base_list,
+                                                          ('branch', 'entrance'): base_list,
+                                                          ('branch', 'default'): base_list})
 
     def create_map(self):
         self.dungeon.map = self
@@ -67,6 +78,14 @@ class DungeonMap:
         self.create_map_tuples()
         self.create_grid()
         self.fill_locations()
+
+    def visualize(self):
+        map_string = ''
+        for x in range(0, self.width):
+            for y in range(0, self.height):
+                map_string += self.location_matrix[(x, y)].name + ' '
+            map_string += '\n'
+        print(map_string)
 
     def create_map_tuples(self):
         self.map_tuples = map_generator.generate_core(complexity=len(self.dungeon.team) * 10, length=self.length)
@@ -77,6 +96,7 @@ class DungeonMap:
             if len(self.map_tuples[key].types) == 1:
                 self.map_tuples[key].types.append('default')
             self.map_tuples[key].types = tuple(self.map_tuples[key].types)
+        map_generator.visualise(self.map_tuples)
 
     def create_grid(self):
         self.width = max(map_tuple[0] for map_tuple in self.map_tuples) + 1
@@ -414,3 +434,7 @@ class EnemyKey:
 
 # --------------------------------------------------------------------------------------------------
 # Объект группы в подземелье
+if __name__ == '__main__':
+    dungeon_map = DungeonMap(10, Dungeon(), 3, 1)
+    dungeon_map.create_map()
+    dungeon_map.visualize()
