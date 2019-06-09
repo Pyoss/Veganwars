@@ -49,11 +49,9 @@ class FirstDungeon(DungeonMap):
                                                           ('core', 'crossroad'): [(locations.CrossRoad, 1)],
                                                           ('core', 'default'): base_list,
                                                           ('branch', 'end'): [(locations.End, 1)],
-                                                          ('branch', 'crossroad'): base_list,
+                                                           ('branch', 'crossroad'): base_list,
                                                           ('branch', 'entrance'): base_list,
                                                           ('branch', 'default'): base_list})
-
-
 
 dungeon_map = FirstDungeon(Dungeon())
 dungeon_map.create_map()

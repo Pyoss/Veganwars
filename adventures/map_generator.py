@@ -144,7 +144,8 @@ def visualise(map_tuples):
         for x in range(map_length):
             map_string += ' ' + map_dict[(x, y)].__str__() + ' '
         map_string += '\n'
-    print(map_string)
+    from bot_utils import bot_methods
+    bot_methods.err(map_string)
 
 if __name__ == '__main__':
         tuples = generate_core(10, 10)
