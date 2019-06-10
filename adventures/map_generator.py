@@ -82,11 +82,8 @@ def generate_core(complexity, length):
         return chosen_tuple
 
     # Добавляется новая занятая локация в соответствии с подобранными координатами
-    from bot_utils import bot_methods
     for i in range(length):
         prev_tuple = map_tuples.prev_tuple
-        bot_methods.err(str(map_tuples.keys()))
-        bot_methods.err(str(prev_tuple))
         next_tpl = next_tuple(prev_tuple)
         if i == length - 1:
             map_tuples.new_tuple(*next_tpl, 'core', 'end')
@@ -152,7 +149,3 @@ def visualise(map_tuples):
         map_string += '\n'
     from bot_utils import bot_methods
     bot_methods.err(map_string)
-
-tuples = generate_core(10, 10)
-generate_branch(tuples, 3)
-visualise(tuples)
