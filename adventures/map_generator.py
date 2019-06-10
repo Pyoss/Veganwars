@@ -24,11 +24,13 @@ class MapTuples(dict):
         dict.__init__(self, iterable, **kwargs)
         self.complexity = complexity
         self.number = 0
+        self.prev_tuple = None
 
     def new_tuple(self, x, y, *args):
         self[(x, y)] = MapTuple(x, y, self.number, self.complexity, *args)
         self.complexity += 1
         self.number += 1
+        self.prev_tuple = (x, y)
 
     def get_tuple(self, x, y):
         return self[(x, y)]
@@ -82,9 +84,10 @@ def generate_core(complexity, length):
     # Добавляется новая занятая локация в соответствии с подобранными координатами
     from bot_utils import bot_methods
     for i in range(length):
+        prev_tuple = map_tuples.prev_tuple
         bot_methods.err(str(map_tuples.keys()))
-        bot_methods.err(str(list(map_tuples.keys())[-1]))
-        next_tpl = next_tuple(list(map_tuples.keys())[-1])
+        bot_methods.err(str(prev_tuple))
+        next_tpl = next_tuple(prev_tuple)
         if i == length - 1:
             map_tuples.new_tuple(*next_tpl, 'core', 'end')
         else:
