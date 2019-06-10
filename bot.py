@@ -31,7 +31,6 @@ call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
 
 types = telebot.types
-
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 bot.remove_webhook()
 

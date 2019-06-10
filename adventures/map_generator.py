@@ -82,8 +82,9 @@ def generate_core(complexity, length):
     # Добавляется новая занятая локация в соответствии с подобранными координатами
     from bot_utils import bot_methods
     for i in range(length):
+        bot_methods.err(str(map_tuples.keys()))
+        bot_methods.err(str(list(map_tuples.keys())[-1]))
         next_tpl = next_tuple(list(map_tuples.keys())[-1])
-        bot_methods.err(str(next_tpl))
         if i == length - 1:
             map_tuples.new_tuple(*next_tpl, 'core', 'end')
         else:

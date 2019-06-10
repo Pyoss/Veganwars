@@ -7,6 +7,9 @@ import threading
 
 types = telebot.types
 bot = telebot.TeleBot(config.token)
+telebot.apihelper.proxy = {
+  'https': 'http://157.230.8.180:8080'
+}
 admin_bot = telebot.TeleBot('777849028:AAFKdy8OJcLn37H7A8bJVsSCTSB-5S37zf4')
 admin_mode = False
 
