@@ -69,7 +69,7 @@ def generate_core(complexity, length):
             available_tuples.append(check_tuple)
 
         # Проверяется возможность выбора верхнего координата по оси Y (Проверяется, не является ли координат
-        # отрицательным, и не сущесвтует ли предыдущего координата по оси X с таким же значением Y
+        # отрицательным, и не существует ли предыдущего координата по оси X с таким же значением Y
         check_tuple = (prev_tuple[0], prev_tuple[1] - 1)
         if prev_tuple[1] > 1 and check_tuple not in map_tuples.keys() and\
                         (prev_tuple[0] - 1, prev_tuple[1] - 1) not in map_tuples.keys():
@@ -80,12 +80,14 @@ def generate_core(complexity, length):
         return chosen_tuple
 
     # Добавляется новая занятая локация в соответствии с подобранными координатами
+    from bot_utils import bot_methods
     for i in range(length):
+        next_tpl = next_tuple(list(map_tuples.keys())[-1])
+        bot_methods.err(str(next_tpl))
         if i == length - 1:
-            map_tuples.new_tuple(*next_tuple(list(map_tuples.keys())[-1]), 'core', 'end')
+            map_tuples.new_tuple(*next_tpl, 'core', 'end')
         else:
-            map_tuples.new_tuple(*next_tuple(list(map_tuples.keys())[-1]), 'core')
-
+            map_tuples.new_tuple(*next_tpl, 'core')
     return map_tuples
 
 
