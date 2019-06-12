@@ -244,6 +244,7 @@ class ForestPos(OpenLocation):
     name = 'forest_location_pos'
     impact = 'positive'
     impact_integer = 10
+    image = 'AgADAgAD_KoxG1CdAAFIm-eZ0wit0YWKalMPAATfxBW7BgpJ7CxdBAABAg'
 
     def get_emote(self):
         return '+' + str(self.complexity)
@@ -252,7 +253,8 @@ class ForestPos(OpenLocation):
 class ForestNeg(OpenLocation):
     name = 'forest_location_neg'
     impact = 'negative'
-    impact_integer = 10
+    impact_integer = 1
+    image = 'AgADAgADSaoxGxm_CUioZK0h2y0xQzlpXw8ABNGUQWMolIOL0_MFAAEC'
 
     def get_emote(self):
         return '-' + str(self.complexity)
@@ -260,6 +262,7 @@ class ForestNeg(OpenLocation):
 
 class ForestNeutral(OpenLocation):
     name = 'forest_location_1'
+    image = 'AgADAgADn6wxGytaCEhyBGic_6aBclpCXw8ABLniKliC04kevu8FAAEC'
 
     def get_emote(self):
         return str(self.complexity)
@@ -268,11 +271,13 @@ class ForestNeutral(OpenLocation):
 class ForestCrossroad(OpenLocation):
     name = 'forest_location_crossroad'
     default_emote = '+'
+    image = 'AgADAgAD-6oxG1CdAAFI2GZDbBzm44CLzlEPAARvoCdcvexbtehgBAABAg'
 
 
 class ForestEnd(OpenLocation):
     name = 'forest_location_end'
     default_emote = emoji_utils.emote_dict['weapon_em']
+    image = 'AgADAgADnqwxGytaCEhjZz7aMaAsSRZYXw8ABHsRj_W360BSrOsFAAEC'
 
 
 location_dict = {value.name: value for key, value
