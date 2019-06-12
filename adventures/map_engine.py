@@ -195,7 +195,7 @@ class Location:
     name = 'location'
     image = None
     finish = False
-    emote = emote_dict['wall_em']
+    default_emote = emote_dict['wall_em']
     visited_emote = emote_dict['visited_map_em']
     impact = 'neutral'
     impact_integer = 0
@@ -215,6 +215,10 @@ class Location:
         self.receipts = engine.ChatContainer()
         if map_tuple is not None:
             self.complexity = map_tuple.complexity
+        self.emote = self.get_emote()
+
+    def get_emote(self):
+        return self.dungeon.map.wall_emote
 
     def get_greet_tuple(self):
         return LangTuple(self.table_row, 'greeting')

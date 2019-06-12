@@ -301,7 +301,6 @@ class Dungeon(Lobby):
             member.message_id = bot_methods.send_message(member.chat_id, member.member_string(), reply_markup=keyboard).message_id
 
     def update_map(self, new=False):
-        text = self.party.leader.member_string()
         if self.party.leader.message_id is None:
             self.send_movement_map()
         else:

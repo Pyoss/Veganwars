@@ -20,13 +20,12 @@ class OpenLocation(map_engine.Location):
     def available(self):
         return True
 
+    def get_emote(self):
+        return self.default_emote
+
 
 class PlaceHolder(OpenLocation):
     name = 'default_corridor'
-
-    def __init__(self, x, y, dungeon, map_tuple):
-        map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
-        self.emote = str(self.complexity)
 
 
 class PlaceHolderPos(OpenLocation):
@@ -239,6 +238,41 @@ class LootRoom(OpenLocation):
             found_loot = [standart_actions.object_dict[item]().to_dict() for item in self.dungeon.map.low_loot]
             self.dungeon.party.distribute_loot(*random.choices(found_loot, k=2))
         self.dungeon.update_map()
+
+
+class ForestPos(OpenLocation):
+    name = 'forest_location_pos'
+    impact = 'positive'
+    impact_integer = 10
+
+    def get_emote(self):
+        return '+' + str(self.complexity)
+
+
+class ForestNeg(OpenLocation):
+    name = 'forest_location_neg'
+    impact = 'negative'
+    impact_integer = 10
+
+    def get_emote(self):
+        return '-' + str(self.complexity)
+
+
+class ForestNeutral(OpenLocation):
+    name = 'forest_location_1'
+
+    def get_emote(self):
+        return str(self.complexity)
+
+
+class ForestCrossroad(OpenLocation):
+    name = 'forest_location_crossroad'
+    default_emote = '+'
+
+
+class ForestEnd(OpenLocation):
+    name = 'forest_location_end'
+    default_emote = emoji_utils.emote_dict['weapon_em']
 
 
 location_dict = {value.name: value for key, value

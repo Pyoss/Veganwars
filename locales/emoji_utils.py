@@ -25,6 +25,7 @@ emote_dict = {
     "move_em": u'\U0001F463',
     "skip_em": emoji.emojize(':arrow_down:', use_aliases=True),
     'death_em': u'\U00002620',
+    'tree_em': '🌲',
 
     # Статусы
     "weapon_em": u'\U00002694',
