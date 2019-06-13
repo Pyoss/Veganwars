@@ -47,7 +47,7 @@ class Ability(standart_actions.GameObject):
 
 
 class InstantAbility(standart_actions.InstantObject, Ability):
-    core_types = ['ability']
+    core_types = ['ability', 'instant']
     db_string = 'abilities'
 
 
@@ -86,7 +86,7 @@ class Passive(Ability):
 
 
 class OnHit(Ability):
-    core_types = ['on_hit']
+    core_types = ['ability', 'on_hit']
     active = False
 
     def act(self, action):
@@ -94,7 +94,7 @@ class OnHit(Ability):
 
 
 class ReceiveHit(Ability):
-    core_types = ['receive_hit']
+    core_types = ['ability', 'receive_hit']
     active = False
 
     def act(self, action):
@@ -217,27 +217,6 @@ class SpellCaster(OptionAbility):
         if self.unit.energy > 1:
             return True
         return False
-
-
-class Grab(TargetAbility):
-    name = 'grab'
-    cd = 1
-
-    def __init__(self):
-        TargetAbility.__init__()
-
-    def targets(self):
-        return self.targets()
-
-
-class ThrowGrabbed(TargetAbility):
-    name = 'throw-grabbed'
-
-    def targets(self):
-        return self.targets()
-
-    def available(self):
-        grab_ability = next(ability for ability in self.unit.abilities)
 
 
 

@@ -108,6 +108,32 @@ class Unit:
                    (2, SkipButton(self)),
                     (3, PutOutButton(self))]
         return actions
+    # -----------------------  Создание новых способностей для мобов -------------------
+
+    def new_ability(self, ability_name, ability_type, ability_func, ability_available, targets, ability_order=5):
+        types_dict = {'instant': abilities.InstantAbility,
+                      'target': abilities.TargetAbility,
+                      'opinion': abilities.OptionAbility,
+                      'start': abilities.StartAbility,
+                      'passive': abilities.Passive,
+                      'on_hit': abilities.OnHit,
+                      'recieve_hit': abilities.ReceiveHit,
+                      }
+
+        class AbilityClass(types_dict[ability_type]):
+            name = ability_name
+            order = ability_available
+
+            def targets(self):
+                return targets(self)
+
+            def activate(self, action):
+                return ability_func(action)
+
+            def available(self):
+                return ability_available(self)
+
+        return AbilityClass
 
     # -----------------------  Функции создания картинки -------------------
 

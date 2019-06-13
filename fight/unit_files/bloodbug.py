@@ -9,7 +9,7 @@ class BloodBugAi(StandardMeleeAi):
     ai_name = 'bloodbug'
 
     def move_forward(self, chance):
-        self.add_action(self.unit.fly_action, chance)
+        self.action_ability('fly', 1)
 
     def form_actions(self):
         StandardMeleeAi.form_actions(self)
@@ -35,8 +35,12 @@ class BloodBug(StandardCreature):
         self.energy = 4
         self.weapon = weapons.Sting(self)
         self.get_blood_action = self.create_action('get_blood', self.get_blood, None, order=21)
-        self.fly_action = self.create_action('bird_fly', self.fly, 'button_1', order=10)
         self.blood_filled = False
+        fly_ability = self.new_ability(ability_name='fly', ability_func=self.fly,
+                                       ability_type='instant',
+                                       ability_available=self.available,
+                                       targets=None)
+        self.abilities.append(fly_ability(self))
 
     @staticmethod
     def get_blood(action):
@@ -62,6 +66,10 @@ class BloodBug(StandardCreature):
         unit = action.unit
         unit.move_forward()
         unit.string('skill_1', format_dict={'actor': unit.name})
+
+    def available(self):
+        return True
+
 
     def start_regenerating(self):
         statuses.Buff(self, 'damage', 2, 3)
