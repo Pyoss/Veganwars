@@ -9,7 +9,7 @@ class BloodBugAi(StandardMeleeAi):
     ai_name = 'bloodbug'
 
     def move_forward(self, chance):
-        self.action_ability('fly', 1)
+        self.action_ability('fly', chance)
 
     def form_actions(self):
         StandardMeleeAi.form_actions(self)
