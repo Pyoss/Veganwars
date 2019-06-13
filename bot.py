@@ -143,7 +143,7 @@ def start(message):
 
 @bot.message_handler(commands=['test_fight'])
 def start(message):
-    fight = fight_main.Fight(chat_id=message.chat_id)
+    fight = fight_main.Fight(chat_id=message.chat.id)
     from fight.unit_files import human, goblin
     fight.form_teams([{message.chat_id, human.Human().to_dict()}, {(goblin.Goblin, 1): goblin.Goblin().to_dict()}])
     results = fight.run()
