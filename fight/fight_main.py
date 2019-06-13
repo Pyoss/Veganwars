@@ -15,6 +15,7 @@ def thread_fight(game, *args, chat_id=None):
     # [team={chat_id:(name, unit_dict)} or team={ai_class:(ai_class.name, unit_dict)}].
     target = run_fight
     args = [game, *args]
+    bot_methods.err('test')
     kwargs = {'chat_id': chat_id}
     thread = threading.Thread(target=target, args=args, kwargs=kwargs)
     thread.daemon = True
