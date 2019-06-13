@@ -10,18 +10,7 @@ import threading
 import dynamic_dicts
 
 
-def thread_fight(game, *args, chat_id=None):
-    # В качестве аргумента должны быть переданы словари команд в виде
-    # [team={chat_id:(name, unit_dict)} or team={ai_class:(ai_class.name, unit_dict)}].
-    target = run_fight
-    args = [game, *args]
-    kwargs = {'chat_id': chat_id}
-    thread = threading.Thread(target=target, args=args, kwargs=kwargs)
-    bot_methods.err(repr(args))
-    thread.start()
-
-
-def run_fight(game, *args, chat_id=None):
+def run_fight(*args, chat_id=None):
     # В качестве аргумента должны быть переданы словари команд в виде
     # [team={chat_id:(name, unit_dict)} or team={ai_class:(ai_class.name, unit_dict)}].
     fight = Fight(chat_id=chat_id)
@@ -29,6 +18,16 @@ def run_fight(game, *args, chat_id=None):
     bot_methods.err('test')
     results = fight.run()
     return results
+
+
+def thread_fight(*args, chat_id=None):
+    # В качестве аргумента должны быть переданы словари команд в виде
+    # [team={chat_id:(name, unit_dict)} or team={ai_class:(ai_class.name, unit_dict)}].
+    target = run_fight
+    kwargs = {'chat_id': chat_id}
+    thread = threading.Thread(target=target, args=args, kwargs=kwargs)
+    bot_methods.err(repr(args))
+    thread.start()
 
 
 class Team:
