@@ -143,8 +143,8 @@ def start(message):
 
 @bot.message_handler(commands=['test_fight'])
 def start(message):
-    from fight.unit_files import human, goblin
-    enemy_class = goblin.Goblin
+    from fight.unit_files import human, bloodbug
+    enemy_class = bloodbug.BloodBug
     enemy = enemy_class()
     bot_methods.send_image(chat_id=message.chat.id, image=open(enemy.image, 'rb'))
     fight_main.thread_fight([{message.chat.id: human.Human(message.from_user.first_name).to_dict()},
