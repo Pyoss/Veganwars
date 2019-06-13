@@ -15,7 +15,7 @@ def run_fight(*args, chat_id=None):
     # [team={chat_id:(name, unit_dict)} or team={ai_class:(ai_class.name, unit_dict)}].
     fight = Fight(chat_id=chat_id)
     bot_methods.err(repr(args))
-    fight.form_teams(args)
+    fight.form_teams(*args)
     results = fight.run()
     return results
 
