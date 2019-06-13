@@ -143,15 +143,12 @@ def start(message):
 
 @bot.message_handler(commands=['test_fight'])
 def start(message):
-    from fight.unit_files import human, bloodbug
-    enemy_class = bloodbug.BloodBug
+    from fight.unit_files import human, goblin
+    enemy_class = goblin.Goblin
     enemy = enemy_class()
     bot_methods.send_image(chat_id=message.chat.id, image=open(enemy.image, 'rb'))
-    try:
-        fight_main.thread_fight([{message.chat.id: human.Human(message.from_user.first_name).to_dict()},
-                                 {(enemy_class, 1): enemy.to_dict()}], chat_id=message.chat.id)
-    except Exception as e:
-        bot_methods.err(repr(e))
+    fight_main.thread_fight([{message.chat.id: human.Human(message.from_user.first_name).to_dict()},
+                             {(enemy_class, 1): enemy.to_dict()}], chat_id=message.chat.id)
 
 
 @bot.message_handler(commands=['join_chat'])
