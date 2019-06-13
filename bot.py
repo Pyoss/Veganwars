@@ -144,6 +144,9 @@ def start(message):
 @bot.message_handler(commands=['test_fight'])
 def start(message):
     from fight.unit_files import human, goblin
+    enemy_class = goblin.Goblin
+    enemy = enemy_class()
+    bot_methods.send_image(message.chat.id, enemy.image)
     fight_main.thread_fight([{message.chat.id: human.Human(message.from_user.first_name).to_dict()}, {(goblin.Goblin, 1): goblin.Goblin().to_dict()}], chat_id=message.chat.id)
 
 
