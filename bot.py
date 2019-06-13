@@ -147,8 +147,11 @@ def start(message):
     enemy_class = bloodbug.BloodBug
     enemy = enemy_class()
     bot_methods.send_image(chat_id=message.chat.id, image=open(enemy.image, 'rb'))
-    fight_main.thread_fight([{message.chat.id: human.Human(message.from_user.first_name).to_dict()},
-                             {(enemy_class, 1): enemy.to_dict()}], chat_id=message.chat.id)
+    try:
+        fight_main.thread_fight([{message.chat.id: human.Human(message.from_user.first_name).to_dict()},
+                                 {(enemy_class, 1): enemy.to_dict()}], chat_id=message.chat.id)
+    except Exception as e:
+        bot_methods.err(repr(e))
 
 
 @bot.message_handler(commands=['join_chat'])
