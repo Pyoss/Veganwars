@@ -18,7 +18,6 @@ def thread_fight(game, *args, chat_id=None):
     bot_methods.err('test')
     kwargs = {'chat_id': chat_id}
     thread = threading.Thread(target=target, args=args, kwargs=kwargs)
-    thread.daemon = True
     thread.start()
 
 
