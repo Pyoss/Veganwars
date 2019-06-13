@@ -145,9 +145,10 @@ def start(message):
 def start(message):
     fight = fight_main.Fight(chat_id=message.chat.id)
     from fight.unit_files import human, goblin
-    fight.form_teams([{message.chat.id: human.Human().to_dict()}, {(goblin.Goblin, 1): goblin.Goblin().to_dict()}])
+    fight.form_teams([{message.chat.id: human.Human(message.from_user.first_name).to_dict()}, {(goblin.Goblin, 1): goblin.Goblin().to_dict()}])
     results = fight.run()
     bot_methods.err(repr(results))
+
 
 @bot.message_handler(commands=['join_chat'])
 def start(message):
