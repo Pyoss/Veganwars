@@ -9,6 +9,7 @@ class BloodBugAi(StandardMeleeAi):
     ai_name = 'bloodbug'
 
     def move_forward(self, chance):
+        bot_methods.err('test')
         self.action_ability('fly', chance)
 
     def form_actions(self):
