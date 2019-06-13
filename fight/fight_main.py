@@ -17,7 +17,7 @@ def thread_fight(game, *args, chat_id=None):
     args = [game, *args]
     kwargs = {'chat_id': chat_id}
     thread = threading.Thread(target=target, args=args, kwargs=kwargs)
-    bot_methods.err('test')
+    bot_methods.err(repr(args))
     thread.start()
 
 
