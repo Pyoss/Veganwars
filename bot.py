@@ -25,7 +25,9 @@ WEBHOOK_URL_BASE = "https://%s:%s" % (WEBHOOK_HOST, WEBHOOK_PORT)
 WEBHOOK_URL_PATH = "/%s/" % (config.token)
 
 bot = telebot.TeleBot(config.token, threaded=False)
-
+telebot.apihelper.proxy = {
+  'https': 'http://62.141.35.197:3128'
+}
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
@@ -33,6 +35,7 @@ game_dict = dynamic_dicts.lobby_list
 types = telebot.types
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 bot.remove_webhook()
+
 
 bot.send_message(config.main_chat_id, 'Инициация бота...')
 bot.locked = False
