@@ -113,9 +113,10 @@ class DuelImage(ImageConstructor):
 
 
 def create_dungeon_image(background, image_tuples):
-    constructor = DuelImage(ImageBackground(Image.open(background)), image_tuples)
+    constructor = ImageConstructor(ImageBackground(Image.open(background)), image_tuples)
     image = constructor.create_image()
     return io_from_PIL(image)
+
 
 def io_from_PIL(image):
     img_byte_arr = io.BytesIO()
@@ -127,13 +128,14 @@ def io_from_PIL(image):
 if __name__ == '__main__':
     from fight.unit_files.human import Human
     from fight.unit_files.goblin import Goblin
-    from fight import weapons
+    from fight import weapons, armors
     unit = Human()
     unit.weapon = weapons.Knife()
+    unit.armor = [armors.SteamPunk_Mask(unit)]
     unit1 = Goblin()
     print(*unit.get_image())
-    constructor = DuelImage(ImageBackground(Image.open('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\Duel.png')),
-                                                   (unit.get_image(), unit1.get_image()))
+    constructor = ImageConstructor(ImageBackground(Image.open('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\Duel.png')),
+                                                   (unit.get_image(),))
     image = constructor.create_image()
 
     image.save('test.png', 'PNG')

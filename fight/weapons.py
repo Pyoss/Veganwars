@@ -144,7 +144,7 @@ class Weapon(standart_actions.GameObject):
 
     def get_menu_string(self, short_menu=False, target=None):
         if not short_menu:
-            return localization.LangTuple(self.table_row, 'weapon_menu_1' ,
+            return localization.LangTuple(self.table_row, 'weapon_menu_1',
                                           format_dict={'chance': self.get_hit_chance()})
         else:
             return localization.LangTuple(self.table_row, 'short_menu',

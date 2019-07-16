@@ -143,6 +143,7 @@ class BaseAttack(Action):
         self.special_emotes = []
         self.target = None
         self.armored = None
+        self.attack_tuple = None
 
     def to_emotes(self, emote):
         if emote not in self.special_emotes:
@@ -175,8 +176,9 @@ class BaseAttack(Action):
             attack_dict = {'actor': self.unit.name, 'target': self.target.name,
                            'damage': self.dmg_done if not self.special_emotes else str(self.dmg_done) +
                            ''.join(self.special_emotes)}
-            attack_tuple = localization.LangTuple(self.weapon.table_row, action, attack_dict)
-            self.fight.string_tuple.row(attack_tuple)
+            self.attack_tuple = localization.LangTuple(self.weapon.table_row, action, attack_dict)
+            self.fight.string_tuple.row(self.attack_tuple)
+            self.target.death_lang_tuple = self.attack_tuple
         else:
             self.armor_string()
 

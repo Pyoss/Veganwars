@@ -4,7 +4,7 @@
 import telebot
 from bot_utils import config, bot_handlers, bot_methods
 import dynamic_dicts
-from fight import fight_main, units
+from fight import fight_main, units, weapons
 import time
 from chat_wars import chat_main, chat_lobbies, chat_menu, user_menu
 import sys
@@ -25,9 +25,6 @@ WEBHOOK_URL_BASE = "https://%s:%s" % (WEBHOOK_HOST, WEBHOOK_PORT)
 WEBHOOK_URL_PATH = "/%s/" % (config.token)
 
 bot = telebot.TeleBot(config.token, threaded=False)
-telebot.apihelper.proxy = {
-  'https': 'http://62.141.35.197:3128'
-}
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
@@ -37,11 +34,12 @@ types = telebot.types
 bot.remove_webhook()
 
 
-bot.send_message(config.main_chat_id, 'Инициация бота...')
+bot.send_message(config.admin_id, 'Инициация бота...')
 bot.locked = False
 
 
-@bot.message_handler(func=lambda message: True if bot.locked and message.from_user.id != config.admin_id else False, content_types=['text'])
+@bot.message_handler(func=lambda message: True if bot.locked and message.from_user.id != config.admin_id else False,
+                     content_types=['text'])
 def start(message):
     pass
 
@@ -113,6 +111,7 @@ def game(message):
             user = chat_menu.get_user(message.from_user.id)
             unit_dict = user.get_unit_dict(name=message.from_user.first_name)
             dynamic_dicts.lobby_list[data[1]].player_join(message.from_user.id, unit_dict=unit_dict)
+            bot_methods.send_message(message.from_user.id, 'Вы успешно присоединились.')
 
 
 @bot.message_handler(commands=["dicts"])
@@ -147,10 +146,12 @@ def start(message):
 @bot.message_handler(commands=['test_fight'])
 def start(message):
     from fight.unit_files import human, bloodbug
+    my_unit = human.Human(message.from_user.first_name)
+    my_unit.weapon = weapons.Hatchet()
     enemy_class = bloodbug.BloodBug
     enemy = enemy_class()
     bot_methods.send_image(chat_id=message.chat.id, image=open(enemy.image, 'rb'))
-    fight_main.thread_fight([{message.chat.id: human.Human(message.from_user.first_name).to_dict()},
+    fight_main.thread_fight([{message.chat.id: my_unit.to_dict()},
                              {(enemy_class, 1): enemy.to_dict()}], chat_id=message.chat.id)
 
 
@@ -254,10 +255,10 @@ def start(message):
 
 @bot.callback_query_handler(func=lambda call: call)
 def action(call):
-    try:
+#    try:
         call_handler.handle(call)
-    except Exception as e:
-        bot_methods.err(repr(e))
+#    except Exception as e:
+#        bot_methods.err(repr(e))
 
 bot.skip_pending = True
 

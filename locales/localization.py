@@ -1,6 +1,6 @@
 
 import sqlite3
-from locales import emoji_utils
+from locales import emoji_utils, text_generation
 from random import choice
 import string
 from file_manager import my_path
@@ -55,7 +55,7 @@ class LangTuple:
 
     def str(self, lang):
         string_data = get_string(self, lang)
-        tuple_string = string_data[self.string]
+        tuple_string = text_generation.generate_unique_text(string_data[self.string])
         return self.format(tuple_string, lang)
 
     def translate(self, lang):

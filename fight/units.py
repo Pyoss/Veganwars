@@ -65,6 +65,7 @@ class Unit:
         self.default_weapon = weapons.Fist(self)
         self.lost_weapon = []
         self.boosted_attributes = {}
+        self.death_lang_tuple = None
 
         # Временные параметры
         self.blocked_damage = 0
@@ -96,10 +97,13 @@ class Unit:
         else:
             self.weapon = weapons.weapon_dict[self.default_weapon](self)
         self.weapons = []
+        self.statuses = {}
         self.abilities = [abilities.ability_dict[ability['name']](self, obj_dict=ability) for ability in unit_dict['abilities']]
         self.items = engine.Container(base_dict=unit_dict['inventory']).fight_list(self)
         self.inventory = engine.Container(base_dict=unit_dict['inventory']).inv_list(self)
         self.armor = [armors.armor_dict[armor['name']](self, obj_dict=armor) for armor in unit_dict['armor']]
+        for status in unit_dict['statuses']:
+            standart_actions.object_dict[status['name']](self, obj_dict=status)
 
     def additional_actions(self):
         actions = [(1, MoveForward(self)),
@@ -110,7 +114,7 @@ class Unit:
         return actions
     # -----------------------  Создание новых способностей для мобов -------------------
 
-    def new_ability(self, ability_name, ability_type, ability_func, ability_available, targets, ability_order=5):
+    def new_ability(self, ability_name, ability_type, ability_func, ability_available=None, targets=None, name_tuple=None, ability_order=5):
         types_dict = {'instant': abilities.InstantAbility,
                       'target': abilities.TargetAbility,
                       'opinion': abilities.OptionAbility,
@@ -122,17 +126,28 @@ class Unit:
 
         class AbilityClass(types_dict[ability_type]):
             name = ability_name
-            order = ability_available
+            order = ability_order
+            name_lng_tuple = name_tuple
 
-            def targets(self):
-                return targets(self)
+            def name_lang_tuple(ability):
+                print(ability.name_lng_tuple)
+                print(ability.name)
+                return ability.name_lng_tuple
 
-            def activate(self, action):
-                return ability_func(action)
+            def targets(ability):
+                return targets(ability)
 
-            def available(self):
-                return ability_available(self)
+            def activate(ability, action=None):
+                return ability_func(ability, action=action)
 
+            def available(ability):
+                return ability_available(ability) if ability_available is not None\
+                    else types_dict[ability_type].available(ability)
+
+        abilities.ability_dict[ability_name] = AbilityClass
+
+        if not any(ability.name == ability_name for ability in self.abilities):
+            self.abilities.append(AbilityClass(self))
         return AbilityClass
 
     # -----------------------  Функции создания картинки -------------------
@@ -179,7 +194,7 @@ class Unit:
 
     def get_hairstyle(self):
         import hairstyles
-        return random.choice([hairstyles.Hairstyle_2])()
+        return random.choice([hairstyles.Hairstyle_4])()
 
     def calculate_base_image_parameters(self, unit_image_dict, equipment_dicts):
         base = unit_image_dict['file']
@@ -258,6 +273,8 @@ class Unit:
         pass
 
     def waste_energy(self, energy):
+        if 'wounded' in self.statuses:
+            energy += 5
         self.wasted_energy += energy
 
     def change_hp(self, hp):
@@ -458,9 +475,10 @@ class Unit:
                 break
         return blocked_damage, acted_piece
 
-    def receive_damage(self, dmg_done):
+    def receive_damage(self, dmg_done, death_lang_tuple=None):
         # Получение урона
         damage = dmg_done
+        self.death_lang_tuple = death_lang_tuple
         self.dmg_received += damage if damage > 0 else 0
 
     def lose_round(self):
@@ -468,9 +486,24 @@ class Unit:
 
     def dies(self):
         if not self.alive() and self not in self.fight.dead:
+            self.add_death_effect()
             self.fight.string_tuple.row(LangTuple('fight', 'death', format_dict={'actor': self.name}))
             return True
         return False
+
+    def add_death_effect(self):
+        if self.death_lang_tuple is not None:
+            death_tuple = self.get_death_effect_tuple(self.death_lang_tuple)
+            for n, tpl in enumerate(self.fight.string_tuple.tuples):
+                if tpl == self.death_lang_tuple:
+                    self.fight.string_tuple.tuples[n] = death_tuple
+
+    def get_death_effect_tuple(self, attack_tuple):
+        format_dict = attack_tuple.format_dict
+        attack_weapon = weapons.weapon_dict[attack_tuple.row]()
+        lang_tuple = attack_weapon.lang_tuple('finish_animal')
+        lang_tuple.format_dict = format_dict
+        return lang_tuple
     # ---------------------------- Служебные методы ------------------------------
 
     def __str__(self):
@@ -544,13 +577,18 @@ class Unit:
         return new_unit
 
     @staticmethod
-    def get_dungeon_format_dict(member, inventory, inventory_fill):
+    def get_dungeon_format_dict(member, inventory='', inventory_fill=''):
+        print(member['statuses'])
+        status_list = ''.join([standart_actions.object_dict[status['name']](obj_dict=status).map_string()
+                    for status in member['statuses'] if
+                    standart_actions.object_dict[status['name']](obj_dict=status).map_string() is not False])
 
         return {'name': member.name,
                 'hp': member['hp'],
                 'max_hp': member['max_hp'] - member['hp'],
                 'equipment': member.inventory.get_equipment_string(member.lang),
-                'inventory': inventory, 'fill': inventory_fill}
+                'inventory': inventory, 'fill': inventory_fill, 'statuses': status_list,
+                'exhaustion': member.max_exhaustion - member.exhaustion, 'max_exhaustion': member.max_exhaustion}
 
     # Выдавание конечного списка лута при смерти.
     def generate_loot(self):
@@ -616,7 +654,8 @@ class StandardCreature(Unit):
             'abilities': [ability.to_dict() for ability in self.abilities],
             'inventory': engine.Container(base_list=[*[item.to_dict() for item in self.items], *[item.to_dict() for item in self.inventory]]).base_dict,
             'armor': [armor.to_dict() for armor in self.armor],
-            'weapon': self.weapon
+            'weapon': self.weapon,
+            'statuses': [status.to_dict() for status in list(self.statuses.values()) if status.to_dict() is not False]
         }
         if unit_dict['weapon'] is not None:
             if unit_dict['weapon'].natural:
@@ -627,10 +666,13 @@ class StandardCreature(Unit):
             unit_dict[key] -= self.boosted_attributes[key]
         if unit_dict['hp'] < 1:
             unit_dict['hp'] = 1
+            print(unit_dict)
+            if not any(status['name'] == 'wounded' for status in unit_dict['statuses']):
+                unit_dict['statuses'].append(statuses.Wounded().to_dict())
         return unit_dict
 
     def recovery(self):
-        speed = self.get_speed() if self.get_speed() > 2 else 2
+        speed = self.get_speed() if self.get_speed() > 2 and 'exhausted' not in self.statuses else 2
         self.energy += speed if speed < self.max_energy else self.max_energy
         self.weapon.recovery()
         return speed if speed < self.max_energy else self.max_energy
@@ -666,7 +708,7 @@ class StandardCreature(Unit):
                                                                                      + self.weapon.name, 'name'),
                                           'statuses': self.get_status_string()}).translate(self.controller.lang)
             menu_string += '\n'
-            menu_string += self.weapon.get_menu_string(short_menu=True, target=self.weapon.targets()[0].name).translate(self.controller.lang)
+            # menu_string += self.weapon.get_menu_string(short_menu=False, target=self.weapon.targets()[0].name).translate(self.controller.lang)
             return menu_string
 
     def refresh(self):
@@ -688,207 +730,6 @@ class StandardCreature(Unit):
         if self.dmg_received > 0:
             toughness = self.toughness if self.toughness > 1 else 2
             self.hp_delta -= 1 + self.dmg_received // toughness
-
-
-class Necromancer(StandardCreature):
-    unit_name = 'necromancer'
-    emote = emote_dict['skeleton_em']
-
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
-        Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
-        # Максимальные параметры
-        self.max_hp = 4
-        self.hp = self.max_hp
-        self.max_energy = 5
-        self.toughness = 6
-        self.recovery_energy = 5
-        self.melee_accuracy = 0
-        self.range_accuracy = 0
-        self.evasion = 0
-        self.damage = 0
-        self.weapon = weapons.Knife(self)
-        self.weapons = []
-        self.abilities = [abilities.Witch(self), abilities.Necromancer(self)]
-        self.items = []
-        self.armor = []
-        self.inventory = []
-        if unit_dict is not None:
-            self.equip_from_dict(unit_dict)
-        self.energy = self.max_energy
-
-    def to_dict(self):
-        unit_dict = {
-            'unit_name': self.unit_name,
-            'name': self.name,
-            'max_hp': self.max_hp,
-            'hp': self.hp,
-            'max_energy': self.max_energy,
-            'recovery_energy': self.recovery_energy,
-            'melee_accuracy': self.melee_accuracy,
-            'range_accuracy': self.range_accuracy,
-            'evasion': self.evasion,
-            'damage': self.damage,
-            'toughness': self.toughness,
-            'abilities': [ability.to_dict() for ability in self.abilities],
-            'inventory': [*[item.to_dict() for item in self.items], *[item.to_dict() for item in self.inventory]],
-            'armor': [armor.to_dict() for armor in self.armor],
-            'weapon': self.weapon.to_dict()
-        }
-        for key in self.boosted_attributes:
-            unit_dict[key] -= self.boosted_attributes[key]
-        if unit_dict['hp'] < 1:
-            unit_dict['hp'] = 1
-        return unit_dict
-
-    def recovery(self):
-        if self.recovery_energy:
-            self.energy += self.recovery_energy
-        else:
-            self.energy = self.max_energy
-        self.weapon.recovery()
-
-    def add_energy(self, number):
-        self.energy += number
-        self.max_energy += number
-        self.recovery_energy += number
-
-    def info_string(self, lang=None):
-        lang = self.lang if lang is None else lang
-        ability_list = ', '.join([LangTuple('abilities_' + ability.name, 'name').translate(lang)
-                                  for ability in self.abilities if 'tech' not in ability.types])
-        item_list = ', '.join([LangTuple('items_' + item.name, 'button').translate(lang)
-                               for item in self.items])
-        return LangTuple('utils', 'full_info', format_dict={'actor': self.name,
-                                                            'hp': self.hp,
-                                                            'energy': self.energy,
-                                                            'abilities': ability_list,
-                                                            'items': item_list})
-
-    def menu_string(self):
-        return LangTuple('unit_' + self.unit_name, 'player_menu',
-                         format_dict={'actor': self.name, 'hp': self.hp,
-                                      'energy': self.energy, 'weapon': LangTuple('weapon_'
-                                                                                 + self.weapon.name, 'name'),
-                                      'statuses': self.get_status_string()})
-
-    def refresh(self):
-        Unit.refresh(self)
-        self.wasted_energy = 0
-        self.hp_delta = 0
-        if self.energy < 0:
-            self.energy = 0
-        elif self.energy > self.max_energy:
-            self.energy = self.max_energy
-
-    def alive(self):
-        if self.hp > 0:
-            return True
-        else:
-            return False
-
-    def lose_round(self):
-        if self.dmg_received > 0:
-            self.hp_delta -= 1 + self.dmg_received // self.toughness
-
-
-class Pyromant(StandardCreature):
-    unit_name = 'human'
-
-    def __init__(self, name, controller=None, fight=None, unit_dict=None, complexity=None):
-        Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
-        # Максимальные параметры
-        self.max_hp = 4
-        self.hp = self.max_hp
-        self.max_energy = 5
-        self.toughness = 6
-        self.recovery_energy = 5
-        self.melee_accuracy = 0
-        self.range_accuracy = 0
-        self.evasion = 0
-        self.damage = 0
-        self.weapon = random.choice([weapons.Crossbow, weapons.Hatchet, weapons.Spear])(self)
-        self.weapons = []
-        self.abilities = [abilities.Muscle(self)]
-        self.items = [items.Bandages(self), items.Bandages(self), items.Adrenalin(self)]
-        self.armor = []
-        self.inventory = []
-        if unit_dict is not None:
-            self.equip_from_dict(unit_dict)
-        self.energy = self.max_energy
-
-    def to_dict(self):
-        unit_dict = {
-            'unit_name': self.unit_name,
-            'name': self.name,
-            'max_hp': self.max_hp,
-            'hp': self.hp,
-            'max_energy': self.max_energy,
-            'recovery_energy': self.recovery_energy,
-            'melee_accuracy': self.melee_accuracy,
-            'range_accuracy': self.range_accuracy,
-            'evasion': self.evasion,
-            'damage': self.damage,
-            'toughness': self.toughness,
-            'abilities': [ability.to_dict() for ability in self.abilities],
-            'inventory': [*[item.to_dict() for item in self.items], *[item.to_dict() for item in self.inventory]],
-            'armor': [armor.to_dict() for armor in self.armor],
-            'weapon': self.weapon.to_dict()
-        }
-        for key in self.boosted_attributes:
-            unit_dict[key] -= self.boosted_attributes[key]
-        if unit_dict['hp'] < 1:
-            unit_dict['hp'] = 1
-        return unit_dict
-
-    def recovery(self):
-        if self.recovery_energy:
-            self.energy += self.recovery_energy
-        else:
-            self.energy = self.max_energy
-        self.weapon.recovery()
-
-    def add_energy(self, number):
-        self.energy += number
-        self.max_energy += number
-        self.recovery_energy += number
-
-    def info_string(self, lang=None):
-        lang = self.lang if lang is None else lang
-        ability_list = ', '.join([LangTuple('abilities_' + ability.name, 'name').translate(lang)
-                                  for ability in self.abilities if 'tech' not in ability.types])
-        item_list = ', '.join([LangTuple('items_' + item.name, 'button').translate(lang)
-                               for item in self.items])
-        return LangTuple('utils', 'full_info', format_dict={'actor': self.name,
-                                                            'hp': self.hp,
-                                                            'energy': self.energy,
-                                                            'abilities': ability_list,
-                                                            'items': item_list})
-
-    def menu_string(self):
-        return LangTuple('unit_' + self.unit_name, 'player_menu',
-                         format_dict={'actor': self.name, 'hp': self.hp,
-                                      'energy': self.energy, 'weapon': LangTuple('weapon_'
-                                                                                 + self.weapon.name, 'name'),
-                                      'statuses': self.get_status_string()})
-
-    def refresh(self):
-        Unit.refresh(self)
-        self.wasted_energy = 0
-        self.hp_delta = 0
-        if self.energy < 0:
-            self.energy = 0
-        elif self.energy > self.max_energy:
-            self.energy = self.max_energy
-
-    def alive(self):
-        if self.hp > 0:
-            return True
-        else:
-            return False
-
-    def lose_round(self):
-        if self.dmg_received > 0:
-            self.hp_delta -= 1 + self.dmg_received // self.toughness
 
 
 class Tech(Unit):
@@ -1009,8 +850,6 @@ class Basilisk(Unit):
             self.energy = self.max_energy
 
 
-# Мобы Артема
-
 class Shadow(StandardCreature):
     unit_name = 'shadow'
     emote = emote_dict['skeleton_em']
@@ -1025,116 +864,8 @@ class Shadow(StandardCreature):
             self.equip_from_dict(unit_dict)
         self.energy = self.max_energy
 
-
-# Мобы Пасюка
-
-class SperMonster(StandardCreature):
-    unit_name = 'spermonster'
-    control_class = ai.SperMonsterAi
-    emote = emote_dict['spermonster_em']
-
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
-        StandardCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
-        self.max_hp = 5
-        self.hp = self.max_hp
-        self.toughness = 4
-        self.triggered = False
-        self.default_weapon = 'cock'
-        self.weapon = weapons.Cock(self)
-        self.abilities = [abilities.Spermonster(self)]
-        self.sperm_check_action = self.create_action('sperm_check', self.sperm_check, 'button_3', order=59)
-
-    def sperm_check(self, action):
-        unit = action.unit
-        if not unit.triggered and unit.hp <= 1:
-            unit.triggered = True
-            unit.sperm_shower(action)
-
-    def sperm_shower(self, action):
-        unit = action.unit
-        target = random.choice(unit.targets())
-        unit.string('skill_1', format_dict={'actor': unit.name, 'target': target.name})
-        statuses.Stun(target)
-
-
-class PedoBear(StandardCreature):
-    unit_name = 'pedobear'
-    control_class = ai.PedoBearAi
-    emote = emote_dict['pedobear_em']
-
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
-        StandardCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
-        self.find_target_action = self.create_action('find_target', self.find_target, 'button_3', order=5)
-        self.hug_action = self.create_action('hug', self.hug, 'button_3', order=10)
-        self.locked_in = None
-        self.max_hp = 6
-        self.hp = self.max_hp
-
-    def find_target(self, action):
-        unit = action.unit
-        targets = unit.weapon.targets()
-        target = random.choice(targets)
-        unit.string('skill_1', format_dict={'actor': unit.name, 'target': unit.target.name})
-        unit.locked_in = target
-
-    def hug(self, action):
-        unit = action.unit
-        if 'dodge' not in unit.target.action and 'move' not in unit.target.action:
-            unit.damage += 1
-            unit.target.receive_damage(unit.damage)
-            unit.string('skill_2', format_dict={'actor': unit.name, 'target': unit.target.name, 'damage': unit.damage})
-            unit.string('skill_4', format_dict={'actor': unit.name}, order=23)
-            unit.locked_in = None
-        else:
-            unit.string('skill_3', format_dict={'actor': unit.name, 'target': unit.target.name})
-            unit.locked_in = None
-
-
-# Мобы Асгард
-
-class BirdRukh(StandardCreature):
-    unit_name = 'bird_rukh'
-    control_class = ai.BirdRukhAi
-
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
-        StandardCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
-        self.fly_action = self.create_action('bird_fly', self.fly, 'button_1', order=10)
-        self.stun_action = self.create_action('bird_stun', self.stun, 'button_2', order=10)
-        self.weapon = weapons.RukhBeak(self)
-
-    def stun(self, action):
-        unit = action.unit
-        targets = unit.targets()
-        unit.string('skill_2', format_dict={'actor': unit.name})
-        for target in targets:
-            if 'dodge' not in target.action:
-                statuses.Stun(target)
-                target.receive_damage(3)
-
-    def fly(self, action):
-        unit = action.unit
-        unit.move_forward()
-        unit.string('skill_1', format_dict={'actor': unit.name})
-
-
-class Bear(StandardCreature):
-    unit_name = 'bear'
-    control_class = ai.BearAi
-
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
-        StandardCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
-        self.destroy_action = self.create_action('destroy', self.destroy, 'button_1', order=10)
-        self.weapon = weapons.BearClaw(self)
-
-    def destroy(self, action):
-        unit = action.unit
-        unit.damage += 3
-        attack = standart_actions.BaseAttack(unit=unit, fight=unit.fight)
-        attack.activate()
-        unit.damage -= 3
-        unit.string('skill_1', format_dict={'actor': unit.name, 'target': unit.target.name, 'damage': attack.dmg_done})
-
 units_dict = {}
+
 
 def fill_unit_dict():
     from fight.unit_files import skeleton, goblin, human, lich, rat, bloodbug, snail, worm, zombie, goblin_bomber

@@ -52,6 +52,7 @@ class Party:
         self.member_dict = {member.chat_id: member for member in self.members}
         self.experience = 0
         self.collected_receipts = engine.ChatContainer()
+        self.time = 0
 
     # Перемещение группы
 
@@ -67,10 +68,20 @@ class Party:
             self.send_message('Вы находите рецепт на {}({})'.format(name, amount))
         self.collected_receipts.put(name, value=amount)
 
-    def move(self, location):
+    def move(self, location, new_map=False, advance=True):
         if self.current_location is not None:
             self.current_location.leave_location()
-        location.enter_location(self)
+        if advance:
+            self.advance()
+        location.enter_location(self, new_map=new_map)
+
+    def advance(self):
+        self.exhaust()
+
+    def exhaust(self):
+        self.time += 1
+        for member in self.members:
+            member.advance()
 
     # Игроки пытаются переместится в локацию. Показывает ошибку либо перемещает игроков.
     def ask_move(self, location, call):
@@ -90,12 +101,20 @@ class Party:
         for member in self.members:
             func(member)
 
-    def send_message(self, lang_tuple, reply_markup=None, image=None, leader_reply=False):
-        self.leader.send_message(lang_tuple.translate(self.leader.lang), reply_markup=reply_markup, image=image)
+    def send_message(self, *args, reply_markup_func=None, image=None, leader_reply=True, short_member_ui=False):
+
+        def form_message(*rgs, sh_m_ui=False, memb=None):
+            if sh_m_ui:
+                rgs = [*rgs, LangTuple('dungeon_short-member', 'name', format_dict=units.units_dict[memb['unit_name']].get_dungeon_format_dict(memb))]
+            msg = '\n'.join([arg.translate(self.leader.lang) for arg in rgs])
+            return msg
+
+        self.leader.send_message(form_message(*args, sh_m_ui=short_member_ui, memb=self.leader),
+                                 reply_markup=reply_markup_func(self.leader) if reply_markup_func is not None else None, image=image)
         for member in self.members:
             if member != self.leader:
-                member.send_message(lang_tuple.translate(member.lang),
-                                    reply_markup=reply_markup if not leader_reply else None, image=image)
+                member.send_message(form_message(*args, sh_m_ui=short_member_ui, memb=member),
+                                    reply_markup=reply_markup_func(member) if reply_markup_func is not None else None if not leader_reply else None, image=image)
 
     def edit_message(self, text, reply_markup=None):
         for member in self.members:
@@ -105,6 +124,7 @@ class Party:
 
     def join_fight(self):
         team_dict = {member.team_dict_item()[0]: member.team_dict_item()[1] for member in self.members}
+        team_dict['marker'] = 'party'
         return team_dict
 
     def occupied(self):
@@ -152,6 +172,8 @@ class Member:
         self.inventory = Inventory(self)
         self.experience = 0
         self.occupied = False
+        self.exhaustion = 0
+        self.max_exhaustion = 20
 
     def send_message(self, text, reply_markup=None, image=None):
         if image is None:
@@ -289,6 +311,13 @@ class Member:
         buttons.append(keyboards.DungeonButton('Закрыть', self, 'menu', 'main', named=True))
         keyboard = form_keyboard(*buttons)
         return keyboard
+
+    def advance(self):
+
+        self.exhaustion += 1
+        if self.exhaustion >= self.max_exhaustion and not any(status['name'] == 'exhausted' for status in self['statuses']):
+            bot_methods.send_message(self.chat_id, 'Вы чувствуете себя ужасно усталым.')
+            self['statuses'].append(standart_actions.object_dict['exhausted']().to_dict())
 
     def __getitem__(self, item):
         return self.unit_dict[item]

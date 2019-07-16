@@ -4,6 +4,7 @@ from fight import standart_actions
 from locales import emoji_utils
 import engine
 import random
+import inspect, sys
 # 1-20 До эффектов, 21-40 - эффекты, 41-60 результаты
 # 31-40 - неблокирующийся урон
 
@@ -14,15 +15,18 @@ class Status(standart_actions.GameObject):
     effect = True
     passive = False
 
+    def to_dict(self):
+        return False
+
     def __init__(self, unit, acting=False, **kwargs):
         standart_actions.GameObject.__init__(self, unit)
         self.kwargs = kwargs
-        if self.name not in unit.statuses:
+        if unit is not None and self.name not in unit.statuses:
             unit.statuses[self.name] = self
             print('Инициирован статус {} для {}...'.format(self.name, unit.name))
             if acting:
                 self.act()
-        else:
+        elif unit is not None:
             self.reapply(unit.statuses[self.name])
 
     def act(self, action=None):
@@ -43,6 +47,9 @@ class Status(standart_actions.GameObject):
             pass
 
     def menu_string(self):
+        return False
+
+    def map_string(self):
         return False
 
 
@@ -217,6 +224,8 @@ class SpellShield(ReceiveSpellStatus):
 
 
 class Buff:
+    name = None
+
     def __init__(self, unit, attr, value, length):
         self.value = value
         self.attr = attr
@@ -510,3 +519,58 @@ class Confused(Status):
     def menu_string(self):
         return emoji_utils.emote_dict['confused_em'] + str(self.turns)
 
+
+class Exhausted(Status):
+    name = 'exhausted'
+
+    def __init__(self, actor=None, obj_dict=None):
+        Status.__init__(self, actor)
+        if actor is not None:
+            setattr(self.unit, 'max_energy', getattr(self.unit, 'max_energy',) - 1)
+            setattr(self.unit, 'melee_accuracy', getattr(self.unit, 'melee_accuracy',) - 1)
+            setattr(self.unit, 'range_accuracy', getattr(self.unit, 'range_accuracy',) - 1)
+            self.unit.boost_attribute('max_energy', -1)
+            self.unit.boost_attribute('melee_accuracy', -1)
+            self.unit.boost_attribute('range_accuracy', -1)
+
+    def to_dict(self):
+        return standart_actions.GameObject.to_dict(self)
+
+    def menu_string(self):
+        return '😩'
+
+    def map_string(self):
+        return '[Устал]'
+
+    def activate(self, action=None):
+        pass
+
+
+class Wounded(Status):
+    name = 'wounded'
+
+    def __init__(self, actor=None, obj_dict=None):
+        Status.__init__(self, actor)
+        if actor is not None:
+            setattr(self.unit, 'toughness', 1)
+
+    def to_dict(self):
+        return standart_actions.GameObject.to_dict(self)
+
+    def menu_string(self):
+        return '🤕'
+
+    def map_string(self):
+        return '[Ранен]'
+
+    def activate(self, action=None):
+        pass
+
+
+statuses_dict = {value.name: value for key, value
+                in dict(inspect.getmembers(sys.modules[__name__], inspect.isclass)).items()
+                if value.name is not None}
+
+
+for k, v in statuses_dict.items():
+    standart_actions.object_dict[k] = v

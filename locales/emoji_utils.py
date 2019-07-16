@@ -14,6 +14,8 @@ emote_dict = {
     'warning_em': u'\U000026A0',
     "check_em": u'\U00002714',
     'cross_em': u'\U0000274C',
+    'unseen_em': '❔',
+    "anger_em": '👊',
 
     # Бой
     "reload_em": u'\U0001F553',

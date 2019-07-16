@@ -1,5 +1,5 @@
 from adventures import map_engine
-from locales import emoji_utils
+from locales import emoji_utils, localization
 from fight import fight_main, ai, items, units, armors, standart_actions
 import locales.localization
 from image_generator import create_dungeon_image
@@ -10,6 +10,8 @@ import sys
 import engine
 import threading
 import time
+
+victory_image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\\victory.jpg'
 
 
 class OpenLocation(map_engine.Location):
@@ -154,54 +156,7 @@ class MobLocation(OpenLocation):
     image = './files/images/backgrounds/default.jpg'
     impact = 'negative'
     impact_integer = 10
-
-    def __init__(self, x, y, dungeon, map_tuple, mobs=None, loot=list()):
-        map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
-        mobs = map_engine.get_enemy(self.complexity, dungeon.map.enemy_list, map_tuple) if mobs is None else mobs
-        self.mobs = map_engine.MobPack(*mobs, complexity=self.complexity)
-        self.loot = engine.ChatContainer()
-        if self.mobs is not None:
-            main_mob = units.units_dict[max(mobs, key=lambda mob: units.units_dict[mob].danger)]
-            self.emote = main_mob.emote
-            self.greet_msg = main_mob.greet_msg
-
-    def get_image(self):
-        if not self.visited:
-            image_list = []
-            for mob in self.mob_team:
-                unit = mob[0](None, unit_dict=self.mob_team[mob])
-                image_list.append(unit.get_image())
-            return create_dungeon_image(self.image, image_list)
-        else:
-            return None
-
-    def on_enter(self):
-        if not self.visited and self.dungeon.map.entrance != self:
-            for member in self.dungeon.party.members:
-                member.occupied = True
-            self.dungeon.delete_map()
-            thread = threading.Thread(target=self.location_fight)
-            thread.start()
-        else:
-            self.dungeon.update_map()
-
-    def process_results(self, results):
-        if not any(unit_dict['name'] == self.dungeon.party.leader.unit_dict['name'] for unit_dict in results['winners']):
-                keyboard = keyboards.form_keyboard(keyboards.DungeonButton('Покинуть карту', self, 'menu', 'defeat', named=True))
-                self.dungeon.party.send_message('Вы проиграли!', reply_markup=keyboard)
-        else:
-            for member in self.dungeon.party.members:
-                member.occupied = False
-                member.unit_dict = [unit_dict for unit_dict in results['winners']
-                                    if unit_dict['name'] == member.unit_dict['name']][0]
-                member.inventory.update()
-            loot = results['loot'] + self.loot
-            experience = sum([units.units_dict[mob].experience for mob in self.mobs.mob_units if self.mobs is not None])
-            self.dungeon.party.experience += experience
-            print('Раздача добычи:{}'.format(loot))
-            self.dungeon.party.distribute_loot(loot)
-            self.collect_receipts()
-            self.dungeon.update_map()
+    standard_mobs = True
 
 
 class LoseLoot(OpenLocation):
@@ -255,9 +210,198 @@ class ForestNeg(OpenLocation):
     impact = 'negative'
     impact_integer = 1
     image = 'AgADAgADSaoxGxm_CUioZK0h2y0xQzlpXw8ABNGUQWMolIOL0_MFAAEC'
+    standard_mobs = True
 
     def get_emote(self):
         return '-' + str(self.complexity)
+
+    def get_button_list(self):
+        if self.state == 'entrance':
+            return [('Осмотреться', 'scout'),
+                    ('Пройти', 'rush')]
+        elif self.state == 'scouted':
+            return [('Выйти', 'map')]
+        elif self.state == 'rushed':
+            return [('Выйти', 'map')]
+
+    def handler(self, call):
+        bot_methods.err(call.data)
+        data = call.data.split('_')
+        action = data[3]
+        if action == 'map':
+            bot_methods.bot.edit_message_reply_markup(chat_id=call.from_user.id, message_id=call.message.message_id)
+            for member in self.dungeon.party.members:
+                member.occupied = False
+            self.dungeon.update_map(new=True)
+        elif action == 'scout':
+            self.state = 'scouted'
+            self.reset_message(self.image, 'text_1')
+        elif action == 'rush':
+            self.state = 'rushed'
+            image = create_dungeon_image('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\dark_forest.jpg', self.mobs.get_image_tuples())
+            self.reset_message(image, 'text_2', keyboard_func=None)
+            self.fight()
+        elif action == 'victory':
+            self.state = 'scouted'
+            self.reset_message(self.image, 'text_1')
+
+
+class ForestGob(OpenLocation):
+    name = 'forest_goblin_trap'
+    impact = 'negative'
+    impact_integer = 1
+    image = 'AgADAgADSaoxGxm_CUioZK0h2y0xQzlpXw8ABNGUQWMolIOL0_MFAAEC'
+    image_file = './files/images/backgrounds/dark_forest_1.jpg'
+    standard_mobs = True
+
+    def get_emote(self):
+        # return '-' + str(self.complexity)
+        if not self.visited:
+            return '❓'
+        elif not self.cleared:
+            return '👹'
+        else:
+            return ''
+
+    def get_button_list(self):
+        if self.state == 'entrance':
+            return [(0, 'scout'),
+                    (1, 'rush')]
+        elif self.state == 'scouted':
+            return [(2, 'attack'),
+                    (3, 'back')]
+        elif self.state == 'rushed' or self.state == 'attacked':
+            return [(4, 'map')]
+
+    def handler(self, call):
+        bot_methods.err(call.data)
+        data = call.data.split('_')
+        action = data[3]
+        if action == 'map':
+            bot_methods.bot.edit_message_reply_markup(chat_id=call.from_user.id, message_id=call.message.message_id)
+            for member in self.dungeon.party.members:
+                member.occupied = False
+            self.dungeon.update_map(new=True)
+        elif action == 'scout':
+            self.state = 'scouted'
+            self.dungeon.party.exhaust()
+            self.reset_message('text_1', image=self.mob_image, short_member_ui=True)
+        elif action == 'rush':
+            self.state = 'rushed'
+            self.reset_message('text_2', image=self.mob_image, keyboard_func=None)
+            self.fight(first_turn='mobs')
+        elif action == 'attack':
+            self.state = 'attacked'
+            self.reset_message('text_5', image=self.mob_image, keyboard_func=None)
+            self.fight()
+        elif action == 'back':
+            self.reset_message('text_6', image=self.mob_image, keyboard_func=None)
+            for member in self.dungeon.party.members:
+                member.occupied = False
+            self.dungeon.party.move(self.entrance_location, new_map=True, advance=False)
+
+    def get_greet_tuple(self):
+        if self.state == 'scouted':
+            return localization.LangTuple(self.table_row, 'text_4')
+        else:
+            return localization.LangTuple(self.table_row, 'greeting')
+
+    def enter(self):
+        lang_tuple = self.get_greet_tuple()
+        actions_keyboard = self.get_action_keyboard
+        if self.state == 'scouted':
+            image = self.mob_image
+        else:
+            image = self.image
+        self.dungeon.party.send_message(lang_tuple, image=image,
+                                        reply_markup_func=actions_keyboard, leader_reply=True, short_member_ui=True)
+
+    def victory(self):
+        self.cleared = True
+        self.reset_message('text_3', image=self.image)
+
+
+class ForestGobTotem(OpenLocation):
+    name = 'forest_goblin_totem'
+    impact = 'negative'
+    impact_integer = 1
+    image = 'AgADAgADSaoxGxm_CUioZK0h2y0xQzlpXw8ABNGUQWMolIOL0_MFAAEC'
+    standard_mobs = True
+
+    def get_emote(self):
+        return '-' + str(self.complexity)
+
+    def get_button_list(self):
+        if self.state == 'entrance':
+            return [('Подкрасться', 'sneak'),
+                    ('Напасть', 'attack')]
+        elif self.state == 'sneaked':
+            return [('Напасть', 'sneak_attack'),
+                    ('Пройти дальше', 'leave')]
+
+    def handler(self, call):
+        bot_methods.err(call.data)
+        data = call.data.split('_')
+        action = data[3]
+        if action == 'map':
+            bot_methods.bot.edit_message_reply_markup(chat_id=call.from_user.id, message_id=call.message.message_id)
+            for member in self.dungeon.party.members:
+                member.occupied = False
+            self.dungeon.update_map(new=True)
+        elif action == 'sneak':
+            if engine.roll_chance(50):
+                self.state = 'sneaked'
+                for member in self.dungeon.party.members:
+                    member.delete_message()
+                self.dungeon.party.send_message(self.get_lang_tuple('text_1'), image=self.image, reply_markup=self.get_action_keyboard())
+            else:
+                self.state = 'attacked'
+                for member in self.dungeon.party.members:
+                    member.delete_message()
+                image = create_dungeon_image('./files/images/backgrounds/dark_forest.jpg', self.mobs.get_image_tuples())
+                self.fight(first_turn='mobs')
+        elif action == 'leave':
+            for member in self.dungeon.party.members:
+                member.delete_message()
+                member.occupied = False
+            self.dungeon.party.send_message(self.get_lang_tuple('text_3'), image=self.image)
+            self.dungeon.update_map(new=True)
+        elif action == 'attack':
+            self.state = 'attacked'
+            for member in self.dungeon.party.members:
+                member.delete_message()
+            image = create_dungeon_image('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\dark_forest.jpg', self.mobs.get_image_tuples())
+            self.dungeon.party.send_message(self.get_lang_tuple('text_2'), image=image)
+            self.fight()
+        elif action == 'sneak_attack':
+            self.state = 'attacked'
+            for member in self.dungeon.party.members:
+                member.delete_message()
+            image = create_dungeon_image('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\dark_forest.jpg', self.mobs.get_image_tuples())
+            self.dungeon.party.send_message(self.get_lang_tuple('text_2'), image=image)
+            self.fight(first_turn='party')
+
+    def first_enter(self):
+        lang_tuple = self.get_greet_tuple()
+        actions_keyboard = self.get_action_keyboard()
+        self.dungeon.party.send_message(lang_tuple, image=self.image,
+                                        reply_markup=actions_keyboard, leader_reply=True, short_member_ui=True)
+
+    def get_victory_keyboard(self):
+        self.state = 'totem_available'
+        buttons = [('Взять тотем', 'take_totem'),
+                   ('Оставить тотем', 'leave_totem')]
+
+        keyboard = keyboards.form_keyboard(*[self.create_button(button[0], self.dungeon.party.leader, 'location', button[1],
+                                                      named=True) for button in buttons])
+        return keyboard
+
+    def victory_message(self):
+        self.dungeon.party.send_message(self.get_lang_tuple('text_5'), image=self.image,
+                                        reply_markup=self.get_victory_keyboard())
+
+    def cleared(self):
+        return True if self.state == 'attacked' else False
 
 
 class ForestNeutral(OpenLocation):

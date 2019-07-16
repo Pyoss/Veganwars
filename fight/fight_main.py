@@ -134,7 +134,8 @@ class Fight:
         self.lang = self.langs[0]
         self.dead = {}
         self.teams = []
-        self.public = True
+        self.public = False
+        self.first_turn = None
         self.listeners = list()
         self.action_queue = ActionQueue()
         self.string_tuple = FightString(self)
@@ -142,8 +143,9 @@ class Fight:
 
     #  ---------- Основная функция, отвечающая за сражение между готовыми командами -------
 
-    def run(self, func=None):
+    def run(self, func=None, first_turn=None):
         # self._send_chosen_weapons_()
+        self.first_turn = first_turn
         results = self.fight_loop()
         if func is None:
             return results
@@ -217,7 +219,12 @@ class Fight:
             unit.team = team
 
     def active_actors(self):
-        return [unit for unit in self.units if unit.alive() and not unit.disabled]
+        active_actors = [unit for unit in self.units if unit.alive() and not unit.disabled]
+        if self.first_turn is not None:
+            first_turn_party = next(team for team in self.teams if team.team_marker == self.first_turn)
+            active_actors = [unit for unit in active_actors if unit in first_turn_party.units
+                             or unit.get_speed() > 5 - self.turn and self.turn > 1]
+        return active_actors
 
     def players(self):
         return [unit for unit in self.units if not unit.controller.ai]
@@ -325,9 +332,10 @@ class Fight:
                 if abs(unit.hp_delta) > unit.hp:
                     unit.hp_delta = - unit.hp
                 unit.hp += unit.hp_delta
-                self.string_tuple.row(LangTuple('fight', 'hp_loss', format_dict={'actor': unit.name,
-                                                                                 'hp': unit.hp,
-                                                                                 'hp_delta':  abs(unit.hp_delta)}))
+                if unit.alive():
+                    self.string_tuple.row(LangTuple('fight', 'hp_loss', format_dict={'actor': unit.name,
+                                                                                     'hp': unit.hp,
+                                                                                     'hp_delta':  abs(unit.hp_delta)}))
 
     def kill_units(self):
         for unit in self.units:

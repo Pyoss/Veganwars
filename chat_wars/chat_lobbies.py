@@ -86,12 +86,12 @@ class Lobby:
     def run(self):
         pass
 
-    def run_fight(self, *args):
+    def run_fight(self, *args, first_turn=None):
         # В качестве аргумента должны быть переданы словари команд в виде
         # [team={chat_id: unit_dict} or team={(ai_class, n):unit_dict}].
         fight = fight_main.Fight(chat_id=self.chat_id)
         fight.form_teams(args)
-        results = fight.run()
+        results = fight.run(first_turn=first_turn)
         return results
 
     def send_lobby(self):
@@ -220,11 +220,12 @@ class Dungeon(Lobby):
         return str(self.id)
 
     def run(self):
-        path = file_manager.my_path + '/files/images/backgrounds/default.jpg'
+        path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
         bot_methods.send_image(image_generator.create_dungeon_image(path,
                                                                     (self.get_image(key) for key in self.team)),
                                self.chat_id)
-        self.complexity = len(self.teams)
+        # len(self.teams)
+        self.complexity = 1
         self.create_dungeon_map()
         dynamic_dicts.dungeons[self.id] = self
         self.add_party(player_list=self.team)
@@ -301,9 +302,11 @@ class Dungeon(Lobby):
             member.message_id = bot_methods.send_message(member.chat_id, member.member_string(), reply_markup=keyboard).message_id
 
     def update_map(self, new=False):
+        print(new)
         if self.party.leader.message_id is None:
             self.send_movement_map()
         else:
+            print(self.party.members)
             for member in self.party.members:
                 member.update_map(new=new)
 

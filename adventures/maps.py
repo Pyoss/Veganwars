@@ -76,17 +76,10 @@ class Forest(DungeonMap):
         self.impact_integer_range = (-5, 5)
         self.wall_emote = emoji_utils.emote_dict['tree_em']
 
-        self.enemy_list = (EnemyKey('bloodbug', 9, 238, 10),
-                           EnemyKey('goblin', 7, 238, 10),
-                           EnemyKey('bloodbug+goblin', 7, 238, 10),
-                           EnemyKey('skeleton', 12, 238, 5),
-                           EnemyKey('worm', 8, 238, 10),
-                           EnemyKey('worm+bloodbug', 8, 238, 10),
-                           EnemyKey('snail+worm', 16, 238, 4),
-                           EnemyKey('goblin+goblin-bomber', 12, 238, 10))
+        self.enemy_list = (EnemyKey('goblin', 7, 238, 10),)
 
     def generate_location_dict(self):
-        base_list = [(locations.ForestNeutral, 1), (locations.ForestPos, 10), (locations.ForestNeg, 10)]
+        base_list = [(locations.ForestNeutral, 1), (locations.ForestPos, 10), (locations.ForestGob, 10)]
         self.location_dict = engine.ListedDict(base_dict={('core', 'end'): [(locations.ForestEnd, 1)],
                                                           ('core', 'crossroad'): [(locations.ForestCrossroad, 1)],
                                                           ('core', 'default'): base_list,

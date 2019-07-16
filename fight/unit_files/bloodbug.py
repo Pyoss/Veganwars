@@ -14,7 +14,6 @@ class BloodBugAi(StandardMeleeAi):
 
     def form_actions(self):
         StandardMeleeAi.form_actions(self)
-        self.make_action(self.unit.get_blood_action)
 
 
 class BloodBug(StandardCreature):
@@ -35,17 +34,19 @@ class BloodBug(StandardCreature):
         self.max_energy = 4
         self.energy = 4
         self.weapon = weapons.Sting(self)
-        self.get_blood_action = self.create_action('get_blood', self.get_blood, None, order=21)
         self.blood_filled = False
-        fly_ability = self.new_ability(ability_name='fly', ability_func=self.fly,
-                                       ability_type='instant',
-                                       ability_available=self.available,
-                                       targets=None)
-        self.abilities.append(fly_ability(self))
+        self.new_ability(ability_name='fly', ability_func=self.fly,
+                         ability_type='instant',
+                        name_tuple=self.to_string('button_1'))
+
+        self.new_ability(ability_name='get_blood',
+                         ability_func=self.get_blood,
+                         ability_type='passive',
+                         ability_order=21)
 
     @staticmethod
-    def get_blood(action):
-        unit = action.unit
+    def get_blood(ability, action=None):
+        unit = ability.unit
         trigger_target = None
         if unit.blood_filled:
             return False
@@ -63,14 +64,10 @@ class BloodBug(StandardCreature):
             unit.start_regenerating()
 
     @staticmethod
-    def fly(action):
+    def fly(ability, action):
         unit = action.unit
         unit.move_forward()
         unit.string('skill_1', format_dict={'actor': unit.name})
-
-    def available(self):
-        return True
-
 
     def start_regenerating(self):
         statuses.Buff(self, 'damage', 2, 3)

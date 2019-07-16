@@ -252,9 +252,8 @@ class ObjectButton(FightButton):
             cd = str(game_object.ready_turn - game_object.unit.fight.turn)
         if not game_object.available():
             ready = False
-        FightButton.__init__(self, 'button', self.unit, game_object.types[0],
-                             game_object.name, special='_'.join([game_object.db_string, game_object.name]),
-                             ready=ready, cd=cd)
+        FightButton.__init__(self, game_object.name_lang_tuple(), self.unit, game_object.types[0],
+                             game_object.name, ready=ready, cd=cd)
 
 
 class ListAbilities(FightButton):
@@ -317,7 +316,7 @@ def get_item_buttons(unit):
 
 
 def form_second_row(unit):
-    ability_list = [ability for ability in unit.abilities]
+    ability_list = [ability for ability in unit.abilities if ability.active]
     if len(get_item_buttons(unit)) + len(ability_list) < 3:
         button_list = [*get_item_buttons(unit), *[ability.button() for ability in ability_list]]
     else:

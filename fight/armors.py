@@ -122,6 +122,26 @@ class Mask(Armor):
         }
 
 
+class SteamPunk_Mask(Armor):
+    name = 'steampunk_mask'
+    placement = 'head'
+    max_armor = 1
+    rating = 0
+    coverage = 0
+    destructable = True
+    real = True
+    weight = 0
+
+    def get_image_dict(self):
+        return {
+         'handle': (33, 35),
+         'placement': 'head',
+         'file': './files/images/mask_1.png',
+         'covered': False,
+         'layer': 0
+        }
+
+
 class Shield(Armor):
     name = 'shield'
     types = ['usable']

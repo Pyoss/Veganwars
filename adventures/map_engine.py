@@ -1,12 +1,13 @@
 import random
 
-import engine
+import engine, image_generator
 from adventures import map_generator
 from bot_utils import bot_methods
 from bot_utils.keyboards import Button, DungeonButton, form_keyboard
 from fight import units
 from locales.emoji_utils import emote_dict
 from locales.localization import LangTuple
+import threading, json
 
 
 class PartyMovement:
@@ -19,6 +20,7 @@ class PartyMovement:
     def execute(self, call):
         if self.party.ask_move(self.end_location, call) and self.start_location.move_permission(self, call) \
                 and self.end_location.move_permission(self, call):
+            self.end_location.entrance_location = self.start_location
             self.party.move(self.end_location)
 
 
@@ -77,7 +79,7 @@ class DungeonMap:
         bot_methods.err(map_string)
 
     def create_map_tuples(self):
-        self.map_tuples = map_generator.generate_core(complexity=len(self.dungeon.team) * 10, length=self.length)
+        self.map_tuples = map_generator.generate_core(complexity=self.dungeon.complexity * 10, length=self.length)
         if self.branch_number:
             for i in range(self.branch_number):
                 map_generator.generate_branch(self.map_tuples, self.branch_length)
@@ -148,7 +150,7 @@ class DungeonMap:
     def start(self):
         #self.greetings_message()
         location = self.dungeon.map.get_location(0, 0)
-        location.visited = True
+        location.cleared = True
         self.dungeon.party.move(location)
 
     # Возвращает локацию от координат матрицы
@@ -161,7 +163,7 @@ class DungeonMap:
             bot_methods.send_message(member.chat_id, message)
 
 
-def get_enemy(complexity, total_enemy_list, map_tuple):
+def get_enemy(complexity, total_enemy_list):
     enemy_pool = (enemy_key for enemy_key in total_enemy_list if enemy_key.min_complexity < complexity < enemy_key.max_complexity)
     enemy = engine.get_random_with_chances([(enemy_key.name, enemy_key.probability) for enemy_key in list(enemy_pool)])
     enemy_types = [name for name in enemy.split('+')]
@@ -194,13 +196,15 @@ def get_enemy(complexity, total_enemy_list, map_tuple):
 class Location:
     name = 'location'
     image = None
+    image_file = None
     finish = False
     default_emote = emote_dict['wall_em']
-    visited_emote = emote_dict['visited_map_em']
     impact = 'neutral'
     impact_integer = 0
+    standard_mobs = False
 
     def __init__(self, x, y, dungeon, map_tuple):
+        self.state = 'entrance'
         self.table_row = 'locations_' + self.name
         self.visited = False
         self.current = False
@@ -212,10 +216,37 @@ class Location:
         self.special = '0'
         self.mobs = None
         self.mob_team = None
+        self.mob_image = None
         self.receipts = engine.ChatContainer()
         if map_tuple is not None:
             self.complexity = map_tuple.complexity
         self.emote = self.get_emote()
+        self.get_mobs()
+        self.loot = engine.ChatContainer()
+        self.cleared_emote = ' '
+        self.entrance_location = None
+        self.cleared = False
+        self.create_images()
+
+    def get_button_tuples(self, lang):
+        print(LangTuple(self.table_row, 'buttons').translate(lang))
+        button_tuples = json.loads(LangTuple(self.table_row, 'buttons').translate(lang))
+        return button_tuples
+
+    def create_images(self):
+        if self.mobs is not None:
+            self.mob_image = image_generator.create_dungeon_image(self.image_file, self.mobs.get_image_tuples())
+
+    def get_mobs(self):
+        if self.standard_mobs:
+            mobs = get_enemy(self.complexity, self.dungeon.map.enemy_list)
+            self.mobs = MobPack(*mobs, complexity=self.complexity)
+
+    def fight(self, first_turn=None):
+        for member in self.dungeon.party.members:
+            member.occupied = True
+        thread = threading.Thread(target=self.location_fight, kwargs={'first_turn': first_turn})
+        thread.start()
 
     def get_emote(self):
         return self.dungeon.map.wall_emote
@@ -255,39 +286,32 @@ class Location:
     def emoji(self):
         if self.current:
             return emote_dict['current_map_em']
-        elif self.visited:
-            return self.visited_emote
+        elif self.cleared:
+            return self.cleared_emote
         elif self.is_close(self.dungeon.party.current_location) or self.seen:
-            return self.emote
+            return self.get_emote()
         else:
-            return emote_dict['question_em']
+            return emote_dict['unseen_em']
 
     def get_image(self):
         return self.image
 
     # Перемещение группы
-    def enter_location(self, party):
+    def enter_location(self, party, new_map=False):
         if self.mobs:
-            self.mob_team = self.mobs.generate_team()
+            self.mob_team = self.mobs.team_dict
         self.image = self.get_image()
         self.current = True
         party.current_location = self
-        if not self.visited:
+        if not self.cleared:
             self.dungeon.delete_map()
             for member in party.members:
                 member.message_id = None
                 member.occupied = True
-            self.first_enter()
+            self.enter()
         else:
-            self.on_enter()
+            self.on_enter(new_map=new_map)
         self.visited = True
-
-    def greet_party(self):
-        lang_tuple = self.get_greet_tuple()
-        if lang_tuple:
-            self.dungeon.delete_map()
-            self.dungeon.party.send_message(lang_tuple,
-                                            image=self.image)
 
     def available(self):
         return False
@@ -301,17 +325,36 @@ class Location:
         return self.available()
 
     # Функция, запускающаяся при входе в комнату. Именно сюда планируется пихать события.
-    def first_enter(self):
+    def enter(self):
         lang_tuple = self.get_greet_tuple()
-        actions_keyboard = self.get_action_keyboard()
-        self.dungeon.party.send_message(lang_tuple, image=self.image, reply_markup=actions_keyboard, leader_reply=True)
+        actions_keyboard = self.get_action_keyboard
+        self.dungeon.party.send_message(lang_tuple, image=self.image,
+                                        reply_markup_func=actions_keyboard, leader_reply=True, short_member_ui=True)
 
-    def get_action_keyboard(self):
-        keyboard = form_keyboard(self.create_button('Назад', self.dungeon.party.leader, 'location', 'map', named=True))
+    def get_action_keyboard(self, member):
+        buttons = self.get_button_list()
+        buttons = [(self.get_button_tuples(member.lang)[str(button[0])], button[1]) for button in buttons]
+        keyboard = form_keyboard(*[self.create_button(button[0], member, 'location', button[1],
+                                                      named=True) for button in buttons])
         return keyboard
 
-    def on_enter(self):
-        self.dungeon.update_map()
+    def reset_message(self, db_string, image=None, keyboard_func=True, short_member_ui=False):
+        if keyboard_func:
+            keyboard_func = self.get_action_keyboard
+        for member in self.dungeon.party.members:
+            member.delete_message()
+        self.dungeon.party.send_message(self.get_lang_tuple(db_string), image=image, reply_markup_func=keyboard_func,
+                                        short_member_ui=short_member_ui)
+
+    def victory(self):
+        self.dungeon.party.send_message(LangTuple('dungeon', 'victory'), image=self.image,
+                                        reply_markup_func=self.get_action_keyboard)
+
+    def get_button_list(self):
+        return [('Назад', 'map')]
+
+    def on_enter(self, new_map=False):
+        self.dungeon.update_map(new=new_map)
 
     def collect_receipts(self):
         if self.receipts:
@@ -397,26 +440,51 @@ class Location:
         visited = 'visited' if self.visited else 'closed'
         return self.name + '_' + self.special + '_' + visited
 
-    def location_fight(self):
-            results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mob_team)
-            self.process_results(results)
+    def location_fight(self, first_turn=None):
+            results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mob_team, first_turn=first_turn)
+            self.process_fight_results(results)
 
-    def process_results(self, results):
-        pass
+    def process_fight_results(self, results):
+        if not any(unit_dict['name'] == self.dungeon.party.leader.unit_dict['name'] for unit_dict in results['winners']):
+
+                def get_exit_keyboard(mmbr):
+                    keyboard = form_keyboard(DungeonButton('Покинуть карту', mmbr, 'menu', 'defeat', named=True))
+                    return keyboard
+
+                self.dungeon.party.send_message('Вы проиграли!', reply_markup_func=get_exit_keyboard)
+        else:
+            for member in self.dungeon.party.members:
+                member.occupied = False
+                member.unit_dict = [unit_dict for unit_dict in results['winners']
+                                    if unit_dict['name'] == member.unit_dict['name']][0]
+                member.inventory.update()
+            loot = results['loot'] + self.loot
+            experience = sum([units.units_dict[mob].experience for mob in self.mobs.mob_units if self.mobs is not None])
+            self.dungeon.party.experience += experience
+            print('Раздача добычи:{}'.format(loot))
+            self.dungeon.party.distribute_loot(loot)
+            self.collect_receipts()
+            self.victory()
 
 
 class MobPack:
     def __init__(self, *args, complexity=None):
         self.mob_units = args
         self.complexity = complexity
+        self.team_dict = self.generate_team()
 
     def generate_team(self):
-        team_dict = {}
+        team_dict = {'marker': 'mobs'}
         i = 0
         for unit in self.mob_units:
             team_dict[(units.units_dict[unit], i)] = units.units_dict[unit](complexity=self.complexity).to_dict()
             i += 1
         return team_dict
+
+    def get_image_tuples(self):
+        for k, v in self.team_dict.items():
+            if k != 'marker':
+                yield units.units_dict[v['unit_name']](unit_dict=v).get_image()
 
 
 class EnemyKey:
