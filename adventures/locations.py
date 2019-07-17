@@ -295,7 +295,7 @@ class ForestGob(OpenLocation):
             self.reset_message('text_6', image=self.mob_image, keyboard_func=None)
             for member in self.dungeon.party.members:
                 member.occupied = False
-            self.dungeon.party.move(self.entrance_location, new_map=True, advance=False)
+            self.dungeon.party.move(self.entrance_location, new_map=True, exhaust=False)
 
     def get_greet_tuple(self):
         if self.state == 'scouted':

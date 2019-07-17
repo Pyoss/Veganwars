@@ -6,7 +6,7 @@ from locales.localization import LangTuple
 from chat_wars.chat_main import pyossession, get_chat, get_user
 import image_generator
 from fight import fight_main, standart_actions, units
-from adventures import dungeon_main
+from adventures import dungeon_main, dungeon_events
 import file_manager
 
 
@@ -237,6 +237,9 @@ class Dungeon(Lobby):
                                  .translate(self.lang))
         del dynamic_dicts.lobby_list[self.id]
         self.map.start()
+
+    def get_event_list(self):
+        return [(dungeon_events.GoblinChaser, 1)]
 
     def end_dungeon(self, defeat=False, boss_beaten=False):
         farmed_resources = 0

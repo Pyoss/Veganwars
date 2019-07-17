@@ -1,17 +1,15 @@
 # Сохраняет матрицу в виде словая
 from adventures import locations, map_engine
 from bot_utils import bot_methods, keyboards
-from fight import fight_main, abilities, items, weapons, armors, ai, standart_actions, units
+from fight import abilities, standart_actions, units
 from locales.localization import LangTuple
 from locales.emoji_utils import emote_dict
-from bot_utils.keyboards import Button, form_keyboard
-from chat_wars import chat_main
+from bot_utils.keyboards import form_keyboard
 import dynamic_dicts
 import time
 import threading
 import random
 import engine
-import json
 
 
 class MapHandler:
@@ -47,6 +45,7 @@ class Party:
         self.current_location = None
         self.id = chat_id
         # Чат, куда будет посылаться информация по игре
+        self.dungeon = dynamic_dicts.dungeons[dungeon_id]
         self.members = [Member(key, value['unit_dict'], dungeon=dynamic_dicts.dungeons[dungeon_id]) for key, value in player_dict.items()]
         self.leader = self.members[0]
         self.member_dict = {member.chat_id: member for member in self.members}
@@ -68,15 +67,19 @@ class Party:
             self.send_message('Вы находите рецепт на {}({})'.format(name, amount))
         self.collected_receipts.put(name, value=amount)
 
-    def move(self, location, new_map=False, advance=True):
+    def move(self, location, new_map=False, exhaust=True):
         if self.current_location is not None:
             self.current_location.leave_location()
-        if advance:
-            self.advance()
-        location.enter_location(self, new_map=new_map)
+        if exhaust:
+            self.exhaust()
+        if self.wait_for_event(func=location.enter_location, kwargs={'new_map':new_map}):
+            pass
+        else:
+            location.enter_location(self, new_map=new_map)
 
-    def advance(self):
-        self.exhaust()
+    def wait_for_event(self, func, kwargs=None):
+        event = engine.get_random_with_chances(self.dungeon.get_event_list())
+        event(self.dungeon, 10).start(func=func, kwargs=kwargs)
 
     def exhaust(self):
         self.time += 1
