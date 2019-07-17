@@ -1,15 +1,12 @@
 from adventures import map_engine
 from locales import emoji_utils, localization
 from fight import fight_main, ai, items, units, armors, standart_actions
-import locales.localization
 from image_generator import create_dungeon_image
 from bot_utils import bot_methods, keyboards
 import random
 import inspect
 import sys
 import engine
-import threading
-import time
 
 victory_image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\\victory.jpg'
 
