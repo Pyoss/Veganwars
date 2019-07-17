@@ -2,7 +2,7 @@ from bot_utils.keyboards import ChatButton, UserButton, form_keyboard
 from bot_utils.bot_methods import send_message, edit_message, delete_message, answer_callback_query
 from fight.standart_actions import object_dict, get_name
 from chat_wars.buildings import building_dict
-from chat_wars.chat_main import get_chat
+from chat_wars.chat_main import get_chat, get_user
 from locales.emoji_utils import emote_dict
 import sys, inspect
 import engine
