@@ -83,7 +83,7 @@ def start(message):
 def start(message):
   
     if message.from_user.id == config.admin_id:
-        print(message.for_error)
+        bot_methods.err(message.for_error)
 
 
 @bot.message_handler(commands=['stop'])
@@ -97,7 +97,7 @@ def start(message):
 def start(message):
   
     if message.from_user.id == config.admin_id:
-        print(message.chat.id)
+        bot_methods.err(message.chat.id)
         bot.send_message(config.admin_id, message.text)
 
     
@@ -191,7 +191,7 @@ def start(message):
 
 @bot.message_handler(commands=['start_attack'])
 def start(message):
-    print(message)
+    bot_methods.err(message)
     if message.chat.id < 0:
         chat = chat_main.pyossession.get_chat(message.chat.id)
         chat.ask_attack(message.from_user.id)

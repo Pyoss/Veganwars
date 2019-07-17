@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from fight import standart_actions, statuses, armors
+from fight import standart_actions, statuses
 import sys
 import inspect
 import random

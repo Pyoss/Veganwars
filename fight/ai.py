@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from fight import weapons, abilities, items, armors, standart_actions
-from fight import fight_main
+
 import random
 from fight.standart_actions import MoveBack, MoveForward, SpecialWeaponAction, Item, MeleeReload, Ability, SpecialWeaponOption, Attack
 from operator import attrgetter

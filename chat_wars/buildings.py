@@ -1,7 +1,4 @@
 from locales.localization import LangTuple
-from bot_utils.keyboards import form_keyboard, ChatButton
-from locales.emoji_utils import emote_dict
-from bot_utils.bot_methods import send_message, edit_message
 import inspect, sys
 
 

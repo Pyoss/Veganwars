@@ -5,9 +5,8 @@ from locales import localization
 from locales.localization import LangTuple
 from chat_wars.chat_main import pyossession, get_chat, get_user
 import image_generator
-from chat_wars.chat_war import current_war
 from fight import fight_main, standart_actions, units
-from adventures import dungeon_main, map_engine, maps
+from adventures import dungeon_main
 import file_manager
 
 
@@ -89,10 +88,13 @@ class Lobby:
     def run_fight(self, *args, first_turn=None):
         # В качестве аргумента должны быть переданы словари команд в виде
         # [team={chat_id: unit_dict} or team={(ai_class, n):unit_dict}].
-        fight = fight_main.Fight(chat_id=self.chat_id)
-        fight.form_teams(args)
-        results = fight.run(first_turn=first_turn)
-        return results
+        try:
+            fight = fight_main.Fight(chat_id=self.chat_id)
+            fight.form_teams(args)
+            results = fight.run(first_turn=first_turn)
+            return results
+        except Exception as e:
+            bot_methods.err(repr(e))
 
     def send_lobby(self):
         message = bot_methods.send_message(self.chat_id, self.create_lobby(), reply_markup=self.keyboard())

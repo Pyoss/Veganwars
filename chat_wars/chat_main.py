@@ -4,13 +4,12 @@ import sql_alchemy
 from bot_utils import keyboards
 from bot_utils.bot_methods import send_message, edit_message, delete_message, get_chat_administrators
 from sql_alchemy import Pyossession
-from fight import fight_main, units, standart_actions, abilities
-from adventures import dungeon_main, map_engine
+from fight import units, standart_actions
+from adventures import dungeon_main
 import engine
 import dynamic_dicts
 from chat_wars.chat_war import current_war, AttackAction
 from chat_wars.buildings import building_dict
-from threading import Thread
 
 
 class Chat(sql_alchemy.SqlChat):

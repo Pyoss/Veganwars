@@ -4,7 +4,6 @@ from fight import standart_actions, statuses, weapons, units
 from bot_utils import keyboards, bot_methods, config
 from locales.localization import *
 import time
-import random
 import engine
 import threading
 import dynamic_dicts

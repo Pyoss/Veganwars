@@ -1,9 +1,7 @@
-from bot_utils.keyboards import UserButton, form_keyboard
-from bot_utils.bot_methods import send_message, edit_message, delete_message, answer_callback_query
+from bot_utils.keyboards import UserButton
+from bot_utils.bot_methods import answer_callback_query
 from fight.abilities import ability_dict
-from fight.standart_actions import get_name
-from chat_wars.buildings import building_dict
-from chat_wars.chat_main import get_chat, get_user
+from chat_wars.chat_main import get_user
 from chat_wars.chat_menu import MenuPage, MenuAction, CloseMenu
 import sys, inspect
 

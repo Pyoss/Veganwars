@@ -1,4 +1,3 @@
-import sys
 import telebot
 import os
 from bot_utils import config

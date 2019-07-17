@@ -3,7 +3,6 @@
 from fight import standart_actions
 from locales import emoji_utils
 import engine
-import random
 import inspect, sys
 # 1-20 До эффектов, 21-40 - эффекты, 41-60 результаты
 # 31-40 - неблокирующийся урон

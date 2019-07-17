@@ -1,13 +1,6 @@
 import random
-from chat_wars.chat_main import get_chat, get_user
-from chat_wars.chat_menu import chat_action_dict
-from bot_utils import keyboards
-from locales.emoji_utils import emote_dict
-from bot_utils.bot_methods import send_message, edit_message, delete_message, get_chat_administrators
-from chat_wars.buildings import building_dict
+
 chat_wars_activated = False
-
-
 
 class TestChat:
 
