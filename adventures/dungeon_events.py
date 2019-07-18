@@ -76,6 +76,7 @@ class DungeonEvents:
                                         short_member_ui=short_member_ui)
 
     def process_fight_results(self, results):
+        bot_methods.err('Processing fight results...')
         if not any(unit_dict['name'] == self.dungeon.party.leader.unit_dict['name'] for unit_dict in results['winners']):
 
                 def get_exit_keyboard(mmbr):
