@@ -73,7 +73,7 @@ class Party:
         if exhaust:
             self.exhaust()
         if events:
-            if self.wait_for_event(func=location.enter_location, kwargs={'new_map':new_map}):
+            if self.wait_for_event(func=location.enter_location, kwargs={'party': self, 'new_map': new_map}):
                 pass
         else:
             location.enter_location(self, new_map=new_map)
