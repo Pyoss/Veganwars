@@ -97,6 +97,7 @@ class DungeonEvents:
             self.victory()
 
     def victory(self):
+        bot_methods.err(str(self.continue_func))
         self.continue_func(**self.kwargs)
 
     def get_button_tuples(self, lang):
