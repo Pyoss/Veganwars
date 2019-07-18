@@ -4,6 +4,7 @@ from bot_utils.keyboards import DungeonButton, form_keyboard
 from bot_utils import bot_methods
 import json
 import engine
+import threading
 from fight import units
 
 
@@ -24,19 +25,25 @@ class DungeonEvents:
         self.get_mobs()
         self.entrance_location = None
         self.continue_func = None
-        self.kwargs=None
+        self.kwargs = None
         self.loot = engine.Container()
 
     def start(self, func, kwargs=None):
-        pass
+        self.dungeon.delete_map()
+        self.kwargs = kwargs
+        self.continue_func = func
+
+    def event_fight(self, first_turn=None):
+        for member in self.dungeon.party.members:
+            member.occupied = True
+        results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mob_team, first_turn=first_turn)
+        self.process_fight_results(results)
 
     def fight(self, first_turn=None):
         for member in self.dungeon.party.members:
             member.occupied = True
-        bot_methods.err(self.dungeon.party.join_fight())
-        bot_methods.err(self.mob_team)
-        results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mob_team, first_turn=first_turn)
-        self.process_fight_results(results)
+        thread = threading.Thread(target=self.event_fight, kwargs={'first_turn': first_turn})
+        thread.start()
 
     def get_mobs(self):
         if self.standard_mobs:
@@ -121,9 +128,8 @@ class GoblinChaser(DungeonEvents):
     image_file = './files/images/backgrounds/dark_forest_1.jpg'
 
     def start(self, func, kwargs=None):
+        DungeonEvents.start(self, func, kwargs=kwargs)
         self.new_message('greeting', keyboard_func=False)
-        self.continue_func=func
-        self.kwargs=kwargs
         self.fight()
 
 
