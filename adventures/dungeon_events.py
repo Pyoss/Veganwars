@@ -33,6 +33,8 @@ class DungeonEvents:
     def fight(self, first_turn=None):
         for member in self.dungeon.party.members:
             member.occupied = True
+        bot_methods.err(self.dungeon.party.join_fight())
+        bot_methods.err(self.mob_team)
         results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mob_team, first_turn=first_turn)
         self.process_fight_results(results)
 
