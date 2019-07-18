@@ -61,14 +61,18 @@ class DungeonEvents:
                                                       named=True) for button in buttons])
         return keyboard
 
-    def new_message(self, db_string, image=None, keyboard_func=True, short_member_ui=False):
-        if keyboard_func:
+    def new_message(self, db_string, image=None, keyboard_func=False, short_member_ui=False):
+        if not keyboard_func:
+            keyboard_func = None
+        else:
             keyboard_func = self.get_action_keyboard
         self.dungeon.party.send_message(self.get_lang_tuple(db_string), image=image, reply_markup_func=keyboard_func,
                                         short_member_ui=short_member_ui)
 
     def reset_message(self, db_string, image=None, keyboard_func=True, short_member_ui=False):
-        if keyboard_func:
+        if not keyboard_func:
+            keyboard_func = None
+        else:
             keyboard_func = self.get_action_keyboard
         for member in self.dungeon.party.members:
             member.delete_message()

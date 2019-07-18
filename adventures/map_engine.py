@@ -325,9 +325,7 @@ class Location:
     # Функция, запускающаяся при входе в комнату. Именно сюда планируется пихать события.
     def enter(self):
         lang_tuple = self.get_greet_tuple()
-        actions_keyboard = self.get_action_keyboard
-        self.dungeon.party.send_message(lang_tuple, image=self.image,
-                                        reply_markup_func=actions_keyboard, leader_reply=True, short_member_ui=True)
+        self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True, short_member_ui=True)
 
     def get_action_keyboard(self, member):
         buttons = self.get_button_list()
@@ -337,8 +335,10 @@ class Location:
         return keyboard
 
     def reset_message(self, db_string, image=None, keyboard_func=True, short_member_ui=False):
-        if keyboard_func is not None:
-            keyboard_func = reply_markup_func
+        if not keyboard_func:
+            keyboard_func = None
+        else:
+            keyboard_func = self.get_action_keyboard
         for member in self.dungeon.party.members:
             member.delete_message()
         self.dungeon.party.send_message(self.get_lang_tuple(db_string), image=image, reply_markup_func=keyboard_func,
