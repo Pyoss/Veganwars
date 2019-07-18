@@ -11,7 +11,7 @@ class DungeonEvents:
     name = None
     image = 'AgADAgADSaoxGxm_CUioZK0h2y0xQzlpXw8ABNGUQWMolIOL0_MFAAEC'
     image_file = './files/images/backgrounds/dark_forest_1.jpg'
-    standard_mobs = None
+    standard_mobs = True
 
     def __init__(self, dungeon, complexity):
         self.table_row = 'events_' + self.name
@@ -42,6 +42,7 @@ class DungeonEvents:
         if self.standard_mobs:
             mobs = map_engine.get_enemy(self.complexity, self.dungeon.map.enemy_list)
             self.mobs = map_engine.MobPack(*mobs, complexity=self.complexity)
+            self.mob_team = self.mobs.team_dict
 
     def get_button_list(self):
         return [('Назад', 'map')]
