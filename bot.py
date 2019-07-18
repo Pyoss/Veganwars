@@ -20,8 +20,6 @@ bot.remove_webhook()
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
-telebot.apihelper.proxy = {'http': 'http://{}'.format(x),
-                           'https': 'http://{}'.format(x)}
 types = telebot.types
 
 
