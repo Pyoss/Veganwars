@@ -34,10 +34,14 @@ class DungeonEvents:
         self.continue_func = func
 
     def event_fight(self, first_turn=None):
-        for member in self.dungeon.party.members:
-            member.occupied = True
-        results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mob_team, first_turn=first_turn)
-        self.process_fight_results(results)
+        try:
+            for member in self.dungeon.party.members:
+                member.occupied = True
+            results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mob_team, first_turn=first_turn)
+            self.process_fight_results(results)
+        except Exception:
+            import traceback
+            bot_methods.err(traceback.format_exc())
 
     def fight(self, first_turn=None):
         for member in self.dungeon.party.members:
