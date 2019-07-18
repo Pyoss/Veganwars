@@ -337,8 +337,8 @@ class Location:
         return keyboard
 
     def reset_message(self, db_string, image=None, keyboard_func=True, short_member_ui=False):
-        if keyboard_func:
-            keyboard_func = self.get_action_keyboard
+        if keyboard_func is not None:
+            keyboard_func = reply_markup_func
         for member in self.dungeon.party.members:
             member.delete_message()
         self.dungeon.party.send_message(self.get_lang_tuple(db_string), image=image, reply_markup_func=keyboard_func,
