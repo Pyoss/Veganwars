@@ -67,13 +67,14 @@ class Party:
             self.send_message('Вы находите рецепт на {}({})'.format(name, amount))
         self.collected_receipts.put(name, value=amount)
 
-    def move(self, location, new_map=False, exhaust=True):
+    def move(self, location, new_map=False, exhaust=True, events=True):
         if self.current_location is not None:
             self.current_location.leave_location()
         if exhaust:
             self.exhaust()
-        if self.wait_for_event(func=location.enter_location, kwargs={'new_map':new_map}):
-            pass
+        if events:
+            if self.wait_for_event(func=location.enter_location, kwargs={'new_map':new_map}):
+                pass
         else:
             location.enter_location(self, new_map=new_map)
 
@@ -113,11 +114,11 @@ class Party:
             return msg
 
         self.leader.send_message(form_message(*args, sh_m_ui=short_member_ui, memb=self.leader),
-                                 reply_markup=reply_markup_func(self.leader) if reply_markup_func is not None else None, image=image)
+                                 reply_markup=reply_markup_func(self.leader) if reply_markup_func else None, image=image)
         for member in self.members:
             if member != self.leader:
                 member.send_message(form_message(*args, sh_m_ui=short_member_ui, memb=member),
-                                    reply_markup=reply_markup_func(member) if reply_markup_func is not None else None if not leader_reply else None, image=image)
+                                    reply_markup=reply_markup_func(member) if reply_markup_func else None if not leader_reply else None, image=image)
 
     def edit_message(self, text, reply_markup=None):
         for member in self.members:
@@ -138,7 +139,6 @@ class Party:
         return False
 
     def distribute_loot(self, loot_container):
-        print('Инициализирована раздача добычи:{}'.format(loot_container.base_dict))
         loot_receivers = list(self.members)
         random.shuffle(loot_receivers)
         if not loot_container.empty():

@@ -18,7 +18,8 @@ def run_fight(*args, chat_id=None):
         results = fight.run()
         return results
     except Exception as e:
-        bot_methods.err(repr(e))
+        import traceback
+        bot_methods.err(traceback.format_exc())
 
 
 def thread_fight(*args, chat_id=None):

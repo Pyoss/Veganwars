@@ -6,6 +6,7 @@ from sqlalchemy.orm import mapper, sessionmaker, relationship, scoped_session
 import json
 import engine
 import threading
+from bot_utils import bot_methods
 
 # Создание объекта соединения с нашей базой данных
 engn = sqlalchemy.create_engine('sqlite:///chat_data.db', echo=False)
@@ -73,7 +74,8 @@ class SqlChat(object):
         try:
             session.commit()
         except Exception as e:
-            print(e)
+            import traceback
+            bot_methods.err(traceback.format_exc())
             session.rollback()
             pass
 

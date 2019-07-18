@@ -285,17 +285,17 @@ class ForestGob(OpenLocation):
             self.reset_message('text_1', image=self.mob_image, short_member_ui=True)
         elif action == 'rush':
             self.state = 'rushed'
-            self.reset_message('text_2', image=self.mob_image, keyboard_func=None)
+            self.reset_message('text_2', image=self.mob_image, keyboard_func=False)
             self.fight(first_turn='mobs')
         elif action == 'attack':
             self.state = 'attacked'
-            self.reset_message('text_5', image=self.mob_image, keyboard_func=None)
+            self.reset_message('text_5', image=self.mob_image, keyboard_func=False)
             self.fight()
         elif action == 'back':
-            self.reset_message('text_6', image=self.mob_image, keyboard_func=None)
+            self.reset_message('text_6', image=self.mob_image, keyboard_func=False)
             for member in self.dungeon.party.members:
                 member.occupied = False
-            self.dungeon.party.move(self.entrance_location, new_map=True, exhaust=False)
+            self.dungeon.party.move(self.entrance_location, new_map=True, exhaust=False, events=False)
 
     def get_greet_tuple(self):
         if self.state == 'scouted':

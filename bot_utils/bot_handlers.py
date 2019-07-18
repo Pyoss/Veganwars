@@ -27,7 +27,7 @@ class CallbackHandler:
 
     def handle(self, call):
         call_split = call.data.split('_')
-        print(call_split)
+        bot_methods.err(call_split)
         call_type = call_split[0]
         if call_type == 'switch':
             try:

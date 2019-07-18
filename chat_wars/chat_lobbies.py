@@ -94,7 +94,8 @@ class Lobby:
             results = fight.run(first_turn=first_turn)
             return results
         except Exception as e:
-            bot_methods.err(repr(e))
+            import traceback
+            bot_methods.err(traceback.format_exc())
 
     def send_lobby(self):
         message = bot_methods.send_message(self.chat_id, self.create_lobby(), reply_markup=self.keyboard())
@@ -202,7 +203,11 @@ class StartChecker:
         self.start_fight()
 
     def start_fight(self):
-        self.lobby.run()
+        try:
+            self.lobby.run()
+        except Exception:
+            import traceback
+            bot_methods.err(traceback.format_exc())
 
 
 class Dungeon(Lobby):
@@ -252,8 +257,6 @@ class Dungeon(Lobby):
             farmed_resources *= 2
         if defeat:
             farmed_resources = 0
-        print('Поход группы {} окончен. Количество заработанных ресурсов - {}. Выгрузка результата в бд...'.format
-            (self.party.leader.name, farmed_resources))
         self.delete_map()
         try:
             if not defeat:
@@ -283,9 +286,6 @@ class Dungeon(Lobby):
             message += 'Группа добыла рецепты: {}'.format(receipts_string)
         return message
 
-    def __del__(self):
-        print('Удаление объекта данжа {}...'.format(self.id))
-
     def create_dungeon_map(self):
         self.map_type(self).create_map()
 
@@ -307,11 +307,9 @@ class Dungeon(Lobby):
             member.message_id = bot_methods.send_message(member.chat_id, member.member_string(), reply_markup=keyboard).message_id
 
     def update_map(self, new=False):
-        print(new)
         if self.party.leader.message_id is None:
             self.send_movement_map()
         else:
-            print(self.party.members)
             for member in self.party.members:
                 member.update_map(new=new)
 
@@ -344,7 +342,6 @@ class AttackLobby(Lobby):
     def run(self):
         self.attack_action.attack_ready = True
         if self.attack_action.defense_ready:
-            print('Starting from attacking...')
             self.attack_action.start()
 
     def to_team(self):
@@ -367,7 +364,6 @@ class DefenceLobby(Lobby):
     def run(self):
         self.attack_action.attack_ready = True
         if self.attack_action.attack_ready:
-            print('Starting from defending...')
             self.attack_action.start()
 
     def to_team(self):

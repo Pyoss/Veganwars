@@ -130,8 +130,6 @@ class Unit:
             name_lng_tuple = name_tuple
 
             def name_lang_tuple(ability):
-                print(ability.name_lng_tuple)
-                print(ability.name)
                 return ability.name_lng_tuple
 
             def targets(ability):
@@ -578,7 +576,6 @@ class Unit:
 
     @staticmethod
     def get_dungeon_format_dict(member, inventory='', inventory_fill=''):
-        print(member['statuses'])
         status_list = ''.join([standart_actions.object_dict[status['name']](obj_dict=status).map_string()
                     for status in member['statuses'] if
                     standart_actions.object_dict[status['name']](obj_dict=status).map_string() is not False])
@@ -666,7 +663,6 @@ class StandardCreature(Unit):
             unit_dict[key] -= self.boosted_attributes[key]
         if unit_dict['hp'] < 1:
             unit_dict['hp'] = 1
-            print(unit_dict)
             if not any(status['name'] == 'wounded' for status in unit_dict['statuses']):
                 unit_dict['statuses'].append(statuses.Wounded().to_dict())
         return unit_dict

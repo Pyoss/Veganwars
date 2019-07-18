@@ -128,7 +128,6 @@ class DungeonMap:
                 current_modifier = self.positive_modifier
 
         self.statistics[impact] += 1
-        print(self.statistics)
 
         locations_pool = [location_weight for location_weight in self.location_dict[map_tuple.types]
                           if location_weight[0].impact == impact
@@ -151,7 +150,7 @@ class DungeonMap:
         #self.greetings_message()
         location = self.dungeon.map.get_location(0, 0)
         location.cleared = True
-        self.dungeon.party.move(location)
+        self.dungeon.party.move(location, events=False, exhaust=False)
 
     # Возвращает локацию от координат матрицы
     def get_location(self, x, y):
@@ -229,7 +228,6 @@ class Location:
         self.create_images()
 
     def get_button_tuples(self, lang):
-        print(LangTuple(self.table_row, 'buttons').translate(lang))
         button_tuples = json.loads(LangTuple(self.table_row, 'buttons').translate(lang))
         return button_tuples
 
@@ -461,7 +459,6 @@ class Location:
             loot = results['loot'] + self.loot
             experience = sum([units.units_dict[mob].experience for mob in self.mobs.mob_units if self.mobs is not None])
             self.dungeon.party.experience += experience
-            print('Раздача добычи:{}'.format(loot))
             self.dungeon.party.distribute_loot(loot)
             self.collect_receipts()
             self.victory()

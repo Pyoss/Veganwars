@@ -34,7 +34,7 @@ class ActionHandler:
             unit.active = False
             action.act()
         else:
-            print('Ошибка обработки запроса к ActionHandler. Controller_id={}, message_id={}, unit_active={}'.
+            bot_methods.err('Ошибка обработки запроса к ActionHandler. Controller_id={}, message_id={}, unit_active={}'.
                   format(unit.controller.chat_id, call.message.message_id, unit.active))
             return self.handler.actor_error(call)
 

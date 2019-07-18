@@ -82,7 +82,6 @@ class DungeonEvents:
             loot = results['loot'] + self.loot
             experience = sum([units.units_dict[mob].experience for mob in self.mobs.mob_units if self.mobs is not None])
             self.dungeon.party.experience += experience
-            print('Раздача добычи:{}'.format(loot))
             self.dungeon.party.distribute_loot(loot)
             self.victory()
 
@@ -90,7 +89,6 @@ class DungeonEvents:
         self.continue_func(**self.kwargs)
 
     def get_button_tuples(self, lang):
-        print(LangTuple(self.table_row, 'buttons').translate(lang))
         button_tuples = json.loads(LangTuple(self.table_row, 'buttons').translate(lang))
         return button_tuples
 
@@ -120,7 +118,7 @@ class GoblinChaser(DungeonEvents):
     image_file = './files/images/backgrounds/dark_forest_1.jpg'
 
     def start(self, func, kwargs=None):
-        self.new_message('greeting')
+        self.new_message('greeting', keyboard_func=False)
         self.continue_func=func
         self.kwargs=kwargs
         self.fight()

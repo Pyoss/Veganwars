@@ -133,7 +133,6 @@ if __name__ == '__main__':
     unit.weapon = weapons.Knife()
     unit.armor = [armors.SteamPunk_Mask(unit)]
     unit1 = Goblin()
-    print(*unit.get_image())
     constructor = ImageConstructor(ImageBackground(Image.open('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\Duel.png')),
                                                    (unit.get_image(),))
     image = constructor.create_image()

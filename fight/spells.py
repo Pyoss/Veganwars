@@ -26,7 +26,6 @@ class Spell(standart_actions.GameObject):
                                    unit=self.unit)
 
     def use(self):
-        print('{} is casting {}'.format(self.unit.name, self.name))
         self.unit.on_spell(self)
         if self.targetable:
             self.target.receive_spell(self)

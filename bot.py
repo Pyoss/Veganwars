@@ -13,25 +13,16 @@ import subprocess
 
 units.fill_unit_dict()
 
-WEBHOOK_HOST = '157.230.19.240:80'
-WEBHOOK_PORT = 443  # 443, 80, 88 или 8443 (порт должен быть открыт!)
-
-WEBHOOK_LISTEN = '0.0.0.0'  # На некоторых серверах придется указывать такой же IP, что и выше
-
-WEBHOOK_SSL_CERT = './webhook_cert.pem'  # Путь к сертификату
-WEBHOOK_SSL_PRIV = './webhook_pkey.pem'  # Путь к приватному ключу
-
-WEBHOOK_URL_BASE = "https://%s:%s" % (WEBHOOK_HOST, WEBHOOK_PORT)
-WEBHOOK_URL_PATH = "/%s/" % (config.token)
-
 bot = telebot.TeleBot(config.token, threaded=False)
+# Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
+bot.remove_webhook()
+
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
-
+telebot.apihelper.proxy = {'http': 'http://{}'.format(x),
+                           'https': 'http://{}'.format(x)}
 types = telebot.types
-# Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
-bot.remove_webhook()
 
 
 bot.send_message(config.admin_id, 'Инициация бота...')
@@ -258,7 +249,8 @@ def action(call):
     try:
         call_handler.handle(call)
     except Exception as e:
-        bot_methods.err(repr(e))
+        import traceback
+        bot_methods.err(traceback.format_exc())
 
 bot.skip_pending = True
 

@@ -9,7 +9,6 @@ class BloodBugAi(StandardMeleeAi):
     ai_name = 'bloodbug'
 
     def move_forward(self, chance):
-        bot_methods.err('test')
         self.action_ability('fly', chance)
 
     def form_actions(self):
@@ -78,7 +77,6 @@ class BloodBug(StandardCreature):
 
     def regenerate(self):
         if self.hp < self.max_hp:
-            print('{} восстанавливает 1 жизнь'.format(self.unit_name))
             self.change_hp(1)
 
     def reset_blood(self):

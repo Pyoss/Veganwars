@@ -79,7 +79,6 @@ class MenuPage(MenuAction):
     def send_page(self):
         self.form_actions()
         text = self.get_menu_string()
-        print(self.user_id)
         if self.call is None:
             send_message(self.user_id, text, reply_markup=self.get_menu_keyboard())
         else:
