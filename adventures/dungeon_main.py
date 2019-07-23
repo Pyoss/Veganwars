@@ -72,7 +72,7 @@ class Party:
             self.current_location.leave_location()
         if exhaust:
             self.exhaust()
-        if events:
+        if events and False:
             if self.wait_for_event(func=location.enter_location, kwargs={'party': self, 'new_map': new_map}):
                 pass
         else:

@@ -15,7 +15,10 @@ emote_dict = {
     "check_em": u'\U00002714',
     'cross_em': u'\U0000274C',
     'unseen_em': '❔',
-    "anger_em": '👊',
+    "anger_em": '😡',
+    "meat_em": '🥩',
+    "ancor_em": '💫',
+
 
     # Бой
     "reload_em": u'\U0001F553',
@@ -44,6 +47,7 @@ emote_dict = {
     'running_em': '\U0001f3c3',
     'frozen_em': '\U0001f976',
     'spell_shield_em': '\U0001f535',
+    'prone_em': '⬇️',
 
     # Оружие
     "hammer_em": u'\U0001F528',
@@ -111,6 +115,7 @@ emote_dict = {
     'bear_em': '\U0001f43b',
     'goblin_em': '\U0001f47a',
     'bloodbug_em': '\U0001f99f',
+    'red_oak_em': '🍂',
 
     # Меню_мобов
     "arm_em": u'\U0001F4AA',

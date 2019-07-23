@@ -46,6 +46,9 @@ class ActionHandler:
 # подойти: 10
 # отойти: 1
 
+# act срабатывает по нажатию кнопки
+# activate срабатывает во время раунда
+
 
 class Action:
     name = None
@@ -178,7 +181,9 @@ class BaseAttack(Action):
                            ''.join(self.special_emotes)}
             self.attack_tuple = localization.LangTuple(self.weapon.table_row, action, attack_dict)
             self.fight.string_tuple.row(self.attack_tuple)
-            self.target.death_lang_tuple = self.attack_tuple
+            self.target.death_lang_tuple = {'tuple': self.attack_tuple,
+                                            'weapon': self.weapon,
+                                            'target': self.target}
         else:
             self.armor_string()
 
@@ -243,6 +248,7 @@ class Attack(BaseAttack):
     name = 'attack'
 
     def activate(self, target=None, weapon=None, waste=None):
+        self.weapon = weapon if weapon is not None else self.weapon
         # Определение цели
         self.target = self.unit.target if target is None else target
         self.attack(waste=waste)
@@ -305,15 +311,26 @@ class MoveForward(Action):
         self.fight.string_tuple += localization.LangTuple('fight', 'move', {'actor': self.unit.name})
         self.unit.move_forward()
 
+    def available(self):
+        if self.unit.rooted:
+            return False
+        return True
+
 
 class MoveBack(Action):
     name = 'move-back'
-    action_type = ['move']
+    action_type = ['move', 'back']
     order = 1
 
     def activate(self):
         self.fight.string_tuple += localization.LangTuple('fight', 'move_back', {'actor': self.unit.name})
         self.unit.move_back()
+
+    def available(self):
+        if self.unit.rooted:
+            print('rooted')
+            return False
+        return True
 
 
 class Reload(Action):
@@ -435,6 +452,25 @@ class ListItems(MenuAction):
         keyboard = keyboards.form_keyboard(*keyboards.get_item_buttons(self.unit),
                                            keyboards.MenuButton(self.unit, 'back'))
         self.unit.controller.edit_message(localization.LangTuple('utils', 'items'), reply_markup=keyboard)
+
+
+class StatusAction(Action):
+    name = 'status-action'
+    full = True
+
+    def __init__(self, unit, fight, info=None, call=None, status_name=None):
+        Action.__init__(self, unit, fight, info=info, call=call)
+        status_name = info[4] if status_name is None else status_name
+        self.status = self.unit.statuses[status_name]
+        self.order = self.status.action_order
+        self.types = self.status.action_types
+
+    def act(self):
+        self.unit.action = [*self.unit.action, *self.types]
+        Action.act(self)
+
+    def activate(self):
+        self.status.handle(self.call)
 
 
 class Item(Action):
@@ -564,7 +600,7 @@ class GameObject:
     keyboard_button = keyboards.ObjectButton
     effect = False
     one_time = True
-    action_type = []
+    actions_type = []
     price = 100
     emote = emoji_utils.emote_dict['question_em']
 

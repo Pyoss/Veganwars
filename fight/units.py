@@ -76,17 +76,24 @@ class Unit:
         self.statuses = {}
         self.target = None
         self.action = []
-        self.disabled = []
         self.hp_changed = False
         self.weapon_to_member = []
+
+        # Параметры для отсутствия возможности действовать/ходить/атаковать/использовать магию
+        self.disabled = []
+        self.rooted = []
+        self.disarmed = []
+        self.silenced = []
 
         # Параметры для ai
         self.number = 1
         self.named = True
+        self.additional_actions = []
 
     def available_actions(self):
         actions = [(1, WeaponButton(self, self.weapon)), (1, MoveForward(self)), (1, self.weapon.reload_button()),
                    (3, AdditionalKeyboard(self))]
+        actions = [*actions, *self.additional_actions]
         return actions
 
     def equip_from_dict(self, unit_dict):
@@ -105,7 +112,7 @@ class Unit:
         for status in unit_dict['statuses']:
             standart_actions.object_dict[status['name']](self, obj_dict=status)
 
-    def additional_actions(self):
+    def get_additional_actions(self):
         actions = [(1, MoveForward(self)),
                    (1, MoveBack(self)),
                    (2, PickUpButton(self)),
@@ -114,7 +121,9 @@ class Unit:
         return actions
     # -----------------------  Создание новых способностей для мобов -------------------
 
-    def new_ability(self, ability_name, ability_type, ability_func, ability_available=None, targets=None, name_tuple=None, ability_order=5):
+    def new_ability(self, ability_name, ability_type, ability_func,
+                    ability_available=None, targets=None,
+                    name_tuple=None, ability_order=5, cooldown=0):
         types_dict = {'instant': abilities.InstantAbility,
                       'target': abilities.TargetAbility,
                       'opinion': abilities.OptionAbility,
@@ -128,6 +137,7 @@ class Unit:
             name = ability_name
             order = ability_order
             name_lng_tuple = name_tuple
+            cd = cooldown
 
             def name_lang_tuple(ability):
                 return ability.name_lng_tuple
@@ -492,16 +502,19 @@ class Unit:
     def add_death_effect(self):
         if self.death_lang_tuple is not None:
             death_tuple = self.get_death_effect_tuple(self.death_lang_tuple)
+            if death_tuple is None:
+                return
             for n, tpl in enumerate(self.fight.string_tuple.tuples):
                 if tpl == self.death_lang_tuple:
                     self.fight.string_tuple.tuples[n] = death_tuple
 
     def get_death_effect_tuple(self, attack_tuple):
-        format_dict = attack_tuple.format_dict
-        attack_weapon = weapons.weapon_dict[attack_tuple.row]()
-        lang_tuple = attack_weapon.lang_tuple('finish_animal')
-        lang_tuple.format_dict = format_dict
-        return lang_tuple
+        format_dict = attack_tuple['tuple'].format_dict
+        attack_weapon = attack_tuple['weapon']
+        if 'alive' in self.types:
+            lang_tuple = attack_weapon.lang_tuple('finish_animal')
+            lang_tuple.format_dict = format_dict
+            return lang_tuple
     # ---------------------------- Служебные методы ------------------------------
 
     def __str__(self):
@@ -569,7 +582,6 @@ class Unit:
     def summon_unit(self, unit_class, name=None, unit_dict=None, **kwargs):
         new_unit = self.fight.add_ai(unit_class, name=name, unit_dict=unit_dict, **kwargs)
         new_unit.team = self.team
-        new_unit.weapon = weapons.weapon_dict[new_unit.default_weapon](new_unit)
         self.team.units.append(new_unit)
         new_unit.summoned = True
         return new_unit
@@ -619,7 +631,6 @@ class StandardCreature(Unit):
         self.hp = self.max_hp
         self.max_energy = 5
         self.toughness = 5
-        self.recovery_energy = 5
         self.melee_accuracy = 0
         self.range_accuracy = 0
         self.evasion = 0
@@ -641,7 +652,6 @@ class StandardCreature(Unit):
             'max_hp': self.max_hp,
             'hp': self.hp,
             'max_energy': self.max_energy,
-            'recovery_energy': self.recovery_energy,
             'melee_accuracy': self.melee_accuracy,
             'range_accuracy': self.range_accuracy,
             'spell_damage': self.spell_damage,
@@ -669,14 +679,15 @@ class StandardCreature(Unit):
 
     def recovery(self):
         speed = self.get_speed() if self.get_speed() > 2 and 'exhausted' not in self.statuses else 2
-        self.energy += speed if speed < self.max_energy else self.max_energy
+        recovery_speed = speed if speed < self.max_energy else self.max_energy
+
+        self.energy += recovery_speed
         self.weapon.recovery()
-        return speed if speed < self.max_energy else self.max_energy
+        return recovery_speed
 
     def add_energy(self, number):
         self.energy += number
         self.max_energy += number
-        self.recovery_energy += number
 
     def info_string(self, lang=None):
         lang = self.lang if lang is None else lang
@@ -734,118 +745,6 @@ class Tech(Unit):
     summoned = True
 
 
-class Basilisk(Unit):
-    unit_name = 'basilisk'
-    types = ['animal', 'alive']
-    emote = emote_dict['basilisk_em']
-    control_class = ai.BasiliskAi
-
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
-        Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
-        # Максимальные параметры
-        self.max_hp = 5
-        self.hp = self.max_hp
-        self.max_energy = 6
-        self.recovery_energy = 0
-        self.toughness = 6
-        self.melee_accuracy = 0
-        self.range_accuracy = 0
-        self.evasion = 0
-        self.damage = 2
-        self.weapon = weapons.PoisonedBloodyFangs(self)
-        self.weapons = []
-        self.abilities = []
-        self.items = []
-        self.armor = []
-        self.inventory = []
-        if unit_dict is not None:
-            self.equip_from_dict(unit_dict)
-        self.energy = int(self.max_energy/2 + 1)
-
-        self.stun_action = self.create_action('basilisk-stun', self.stun, 'button_1', order=5)
-        self.rush_action = self.create_action('basilisk-rush', self.rush, 'button_2', order=10)
-        self.recovery_action = self.create_action('basilisk-recovery', self.rest, 'button_3', order=5)
-        self.hurt = False
-        self.stun_ready = False
-
-    def to_dict(self):
-        unit_dict = {
-            'unit_name': self.unit_name,
-            'name': self.name,
-            'max_hp': self.max_hp,
-            'hp': self.hp,
-            'max_energy': self.max_energy,
-            'melee_accuracy': self.melee_accuracy,
-            'recovery_energy': self.recovery_energy,
-            'range_accuracy': self.range_accuracy,
-            'evasion': self.evasion,
-            'damage': self.damage,
-            'toughness': self.toughness,
-            'abilities': [ability.to_dict() for ability in self.abilities],
-            'inventory': [*[item.to_dict() for item in self.items], *[item.to_dict() for item in self.inventory]],
-            'armor': [armor.to_dict() for armor in self.armor],
-            'weapon': self.weapon.to_dict()
-        }
-        for key in self.boosted_attributes:
-            unit_dict[key] -= self.boosted_attributes[key]
-        return unit_dict
-
-    def rest(self, action):
-        unit = action.unit
-        if unit.recovery_energy:
-            unit.energy += unit.recovery_energy
-        else:
-            unit.energy = unit.max_energy
-        unit.weapon.recovery()
-        unit.change_hp(1)
-        unit.hurt = False
-        unit.stun_ready = True
-        unit.string('skill_1', format_dict={'actor': action.unit.name})
-
-    def rush(self, action):
-        unit = action.unit
-        for target in unit.targets():
-            if target not in unit.melee_targets:
-                unit.melee_targets.append(target)
-                target.melee_targets.append(unit)
-        statuses.Buff(unit, 'damage', 1, 1)
-        unit.string('skill_2', format_dict={'actor': action.unit.name})
-
-    def stun(self, action):
-        unit = action.unit
-        names = []
-        unit.stun_ready = False
-        for target in unit.melee_targets:
-            statuses.Stun(target)
-            target.receive_damage(3)
-            names.append(target.name)
-        if names:
-            unit.string('skill_3', format_dict={'actor': unit.name, 'targets': ' ,'.join(names)})
-        else:
-            unit.string('skill_4', format_dict={'actor': unit.name})
-
-    def lose_round(self):
-        if self.dmg_received > 0:
-            self.hp_delta -= 1 + self.dmg_received // self.toughness
-            self.hurt = True
-
-    def alive(self):
-        if self.hp > 0:
-            return True
-        else:
-            return False
-
-    def refresh(self):
-        Unit.refresh(self)
-        self.wasted_energy = 0
-        self.hp_delta = 0
-        self.hurt = False
-        if self.energy < 0:
-            self.energy = 0
-        elif self.energy > self.max_energy:
-            self.energy = self.max_energy
-
-
 class Shadow(StandardCreature):
     unit_name = 'shadow'
     emote = emote_dict['skeleton_em']
@@ -864,6 +763,6 @@ units_dict = {}
 
 
 def fill_unit_dict():
-    from fight.unit_files import skeleton, goblin, human, lich, rat, bloodbug, snail, worm, zombie, goblin_bomber
+    from fight.unit_files import skeleton, goblin, human, lich, rat, bloodbug, snail, worm, zombie, goblin_bomber, red_oak
 
 

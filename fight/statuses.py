@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from fight import standart_actions
-from locales import emoji_utils
+from locales import emoji_utils, localization
 import engine
 import inspect, sys
+from bot_utils import keyboards
 # 1-20 До эффектов, 21-40 - эффекты, 41-60 результаты
 # 31-40 - неблокирующийся урон
 
@@ -13,13 +14,17 @@ class Status(standart_actions.GameObject):
     db_string = 'statuses'
     effect = True
     passive = False
+    action_order = 5
+    action_types = []
 
     def to_dict(self):
         return False
 
     def __init__(self, unit, acting=False, **kwargs):
         standart_actions.GameObject.__init__(self, unit)
+        self.additional_buttons_actions = None
         self.kwargs = kwargs
+        self.handle_dict = {}
         if unit is not None and self.name not in unit.statuses:
             unit.statuses[self.name] = self
             print('Инициирован статус {} для {}...'.format(self.name, unit.name))
@@ -27,6 +32,26 @@ class Status(standart_actions.GameObject):
                 self.act()
         elif unit is not None:
             self.reapply(unit.statuses[self.name])
+
+    def create_status_button(self, button_name, lang_tuple):
+        button = keyboards.FightButton(lang_tuple, self.unit, 'status-action', self.name, button_name)
+        return button
+
+    def add_additional_buttons(self):
+
+        # Добавление дополнительных действий, доступных при наличии статуса
+        buttons = []
+        if self.additional_buttons_actions is not None:
+            for action_tpl in self.additional_buttons_actions:
+                button = action_tpl[0]
+                action = action_tpl[1]
+                lang_tuple = action_tpl[2]
+                buttons.append((3, self.create_status_button(button, lang_tuple)))
+                self.handle_dict[button] = action
+        return buttons
+
+    def handle(self, call):
+        self.handle_dict[call.data.split('_')[-1]]()
 
     def act(self, action=None):
         if not self.passive:
@@ -53,14 +78,19 @@ class Status(standart_actions.GameObject):
 
 
 class CustomStatus(Status):
+    action_types = []
 
-    def __init__(self, unit, order, delay, func, args=None, name=None, permanent=False, acting=False):
-        self.name = 'custom_' + str(id(self)) if name is None else name
+    def __init__(self, unit, order, delay, func, args=None, name=None, permanent=False, acting=False,
+                 additional_buttons_actions=None):
+        self.name = 'custom-' + str(id(self)) if name is None else name
         self.args = [] if args is None else args
         self.order = order
         self.delay = delay
         self.func = func
+        self.unit = unit
+
         Status.__init__(self, unit, acting=acting)
+        self.additional_buttons_actions = additional_buttons_actions
         if permanent:
             self.types.append('permanent')
 
@@ -423,6 +453,38 @@ class Stun(Status):
             self.string('end', format_dict={'actor': self.unit.name})
             self.unit.disabled.remove('stun')
             self.finish()
+
+
+class Prone(Status):
+    name = 'prone'
+    order = 60
+    action_order = 20
+    effect = False
+
+    def __init__(self, actor):
+        if 'prone' not in actor.disarmed:
+            actor.disarmed.append('prone')
+        if 'prone' not in actor.rooted:
+            actor.rooted.append('prone')
+        Status.__init__(self, actor)
+
+        self.additional_buttons_actions = [('free', self.finish,
+                                                localization.LangTuple('buttons', 'get_up'))]
+
+    def reapply(self, parent):
+        pass
+
+    def activate(self, action=None):
+        pass
+
+    def finish(self):
+        self.unit.string('get_up', format_dict={'actor': self.unit.name})
+        self.unit.disarmed.remove('prone')
+        self.unit.rooted.remove('prone')
+        Status.finish(self)
+
+    def menu_string(self):
+        return emoji_utils.emote_dict['prone_em']
 
 
 class Frozen(Status):

@@ -36,7 +36,7 @@ class BloodBug(StandardCreature):
         self.blood_filled = False
         self.new_ability(ability_name='fly', ability_func=self.fly,
                          ability_type='instant',
-                        name_tuple=self.to_string('button_1'))
+                         name_tuple=self.to_string('button_1'))
 
         self.new_ability(ability_name='get_blood',
                          ability_func=self.get_blood,

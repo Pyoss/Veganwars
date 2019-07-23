@@ -118,6 +118,8 @@ class Dodge(InstantAbility):
             return False
         if 'running' in self.unit.statuses:
             return False
+        if self.unit.rooted:
+            return False
         return True
 
     def error_text(self):
@@ -125,6 +127,9 @@ class Dodge(InstantAbility):
             return 'Способность еще не готова'
         if 'running' in self.unit.statuses:
             return 'Вы не можете уворачиваться после движения'
+        if self.unit.rooted:
+            print(self.unit.rooted)
+            return 'Вы обездвижены'
 
 
 class SpellCaster(OptionAbility):

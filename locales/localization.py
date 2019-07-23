@@ -4,6 +4,7 @@ from locales import emoji_utils, text_generation
 from random import choice
 import string
 from file_manager import my_path
+from bot_utils import bot_methods
 
 
 eng = my_path + '/locales/en_US/locale_en.sql'
@@ -55,8 +56,12 @@ class LangTuple:
 
     def str(self, lang):
         string_data = get_string(self, lang)
-        tuple_string = text_generation.generate_unique_text(string_data[self.string])
-        return self.format(tuple_string, lang)
+        try:
+            tuple_string = text_generation.generate_unique_text(string_data[self.string])
+            return self.format(tuple_string, lang)
+        except TypeError:
+            bot_methods.err(str((self.string, self.table, self.row)))
+
 
     def translate(self, lang):
         return self.str(lang)

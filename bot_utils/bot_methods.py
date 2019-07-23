@@ -8,7 +8,8 @@ import threading
 types = telebot.types
 bot = telebot.TeleBot(config.token)
 admin_bot = telebot.TeleBot('777849028:AAFKdy8OJcLn37H7A8bJVsSCTSB-5S37zf4')
-admin_mode = False
+admin_mode = True
+images = False
 
 
 # Переопределение метода отправки сообщения (защита от ошибок)
@@ -26,7 +27,12 @@ def edit_message(chat_id, message_id, message_text, reply_markup=None, parse_mod
 
 def send_image(image, chat_id, message=None, reply_markup=None, parse_mode='markdown', to_admin=False):
     if admin_mode and chat_id != config.admin_id:
-        bot.send_photo(config.admin_id, caption=message, photo=image)
+        if message is not None:
+            bot.send_message(config.admin_id, message)
+    if not images:
+        if message is not None:
+            return bot.send_message(chat_id, message, reply_markup=reply_markup)
+        return
     return bot.send_photo(chat_id=chat_id, caption=message, photo=image, reply_markup=reply_markup)
 
 
@@ -37,7 +43,8 @@ def delete_message(chat_id=None, message_id=None, call=None):
 
 
 def err(text):
-    admin_bot.send_message(config.admin_id, str(text), parse_mode=None)
+    # admin_bot.send_message(config.admin_id, str(text), parse_mode=None)
+    print(text)
 
 
 def get_chat_administrators(chat_id):

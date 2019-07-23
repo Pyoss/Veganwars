@@ -348,11 +348,11 @@ class Fight:
     def send_string(self):
         self.string_tuple.construct()
         if self.string_tuple.active:
-            for listener in [listener for listener in self.listeners if listener.chat_id not in self.chat_id]:
+            for listener in self.listeners:
                 listener.send_message(self.string_tuple[listener.lang])
                 if not listener.unit.alive():
                     self.listeners.remove(listener)
-            if self.public:
+            if self.public and self.chat_id not in self.listeners:
                 self.send_message(self.string_tuple[self.lang])
         self.string_tuple.clear()
 

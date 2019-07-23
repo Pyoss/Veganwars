@@ -174,6 +174,8 @@ class Weapon(standart_actions.GameObject):
         return True
 
     def available(self):
+        if self.unit.disarmed:
+            return False
         if self.targets() or self.range_option:
             return True
 
@@ -805,6 +807,26 @@ class RukhBeak(Weapon):
     damage = 1
     dice_num = 4
     accuracy = 0
+
+
+class RedOakBranch(Weapon):
+    name = 'red-oak-branch'
+    types = ['unique', 'natural']
+    natural = True
+    accuracy = 1
+    dice_num = 4
+    energy_cost = 2
+
+
+class RedOakAncor(Weapon):
+    name = 'red-oak-ancor'
+    types = ['unique', 'natural']
+    natural = True
+    accuracy = 2
+    dice_num = 2
+    energy_cost = 2
+    damage_cap = 1
+    melee = False
 
 
 class Cock(Weapon):

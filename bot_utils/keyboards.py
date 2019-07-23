@@ -152,12 +152,12 @@ class MoveForward(FightButton):
         FightButton.__init__(self, 'move', unit, 'move')
 
     def available(self):
-        if self.unit.melee_targets or not self.unit.weapon.melee or self.unit.weapon.range_option:
+        if self.unit.melee_targets or not self.unit.weapon.melee or self.unit.weapon.range_option or self.unit.rooted:
             return False
         return True
 
     def add_available(self):
-        if self.unit.melee_targets == self.unit.targets() or self.available():
+        if self.unit.melee_targets == self.unit.targets() or self.unit.rooted:
             return False
         return True
 
@@ -206,7 +206,12 @@ class MoveBack(FightButton):
         FightButton.__init__(self, 'move_back', unit, 'move-back')
 
     def add_available(self):
-        if not self.unit.melee_targets:
+        if not self.unit.melee_targets or self.unit.rooted:
+            return False
+        return True
+
+    def available(self):
+        if self.unit.melee_targets or not self.unit.weapon.melee or self.unit.weapon.range_option or self.unit.rooted:
             return False
         return True
 
@@ -220,9 +225,15 @@ class AdditionalKeyboard(FightButton):
     def __init__(self, unit):
         self.unit = unit
         additional_actions = [(available_action[0],
-                                       available_action[1]) for available_action in unit.additional_actions()
-                                       if available_action[1].add_available()]
+                               available_action[1]) for available_action in unit.get_additional_actions()
+                               if available_action[1].add_available()]
         urgent = False
+        for status in self.unit.statuses.values():
+            if status.additional_buttons_actions is not None:
+                urgent = True
+                buttons = status.add_additional_buttons()
+                for tpl in buttons:
+                    additional_actions.append(tpl)
         if any(additional_action[1].name not in self.unit.standart_additional for additional_action in additional_actions):
             urgent = True
         FightButton.__init__(self, 'additional_keyboard' if not urgent else '!_additional_keyboard',
@@ -289,8 +300,13 @@ def form_turn_keyboard(unit):
 
 def form_additional_keyboard(unit):
     keyboard = types.InlineKeyboardMarkup(row_width=2)
-    buttons = (*[(available_action[0], available_action[1]) for available_action in unit.additional_actions()],
+    buttons = (*[(available_action[0], available_action[1]) for available_action in unit.get_additional_actions()],
+
                (4, MenuButton(unit, 'back')))
+    for status in unit.statuses.values():
+        print(status)
+        if status.additional_buttons_actions is not None:
+            buttons = [*buttons, *status.add_additional_buttons()]
     for i in range(1, 5):
         button_list = [button[1] for button in buttons if button[1].add_available() and button[0] == i]
         if button_list:

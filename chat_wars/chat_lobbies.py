@@ -244,7 +244,8 @@ class Dungeon(Lobby):
         self.map.start()
 
     def get_event_list(self):
-        return [(dungeon_events.GoblinChaser, 1)]
+        # return [(dungeon_events.GoblinChaser, 1)]
+        return []
 
     def end_dungeon(self, defeat=False, boss_beaten=False):
         farmed_resources = 0
