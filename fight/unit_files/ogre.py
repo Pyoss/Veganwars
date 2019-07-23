@@ -51,7 +51,7 @@ class Ogre(StandardCreature):
     unit_name = 'ogre'
     control_class = OgreAi
     emote = emote_dict['ogre_em']
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\\ogre.png'
+    image = './files/images/units/ogre.png'
 
     danger = 7
 
