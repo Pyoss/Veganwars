@@ -52,6 +52,7 @@ class Ogre(StandardCreature):
     control_class = OgreAi
     emote = emote_dict['ogre_em']
     image = './files/images/units/ogre.png'
+    body_height = 'high'
 
     danger = 7
 
@@ -81,11 +82,7 @@ class Ogre(StandardCreature):
                          name_tuple=self.to_string('button_1'))
 
     def get_image(self):
-        if self.weapon.name == 'bow':
-            image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\skeleton_archer.png'
-        else:
-            image = self.image
-        return Image.open(image), 'standard', (0, 0)
+        return Image.open(self.image), self.body_height, (0, 0)
 
     @staticmethod
     def grab(ability, action):

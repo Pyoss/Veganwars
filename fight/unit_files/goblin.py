@@ -88,6 +88,7 @@ class Goblin(StandardCreature):
     emote = emote_dict['goblin_em']
     default_loot = [('goblin_ear', (1, 70)), ('goblin_ear', (1, 30)), ('bandages', (1, 5)), ('bandages', (1, 5))]
     image = './files/images/units/sword_goblin.png'
+    body_height = 'short'
 
     danger = 7
 
@@ -114,7 +115,7 @@ class Goblin(StandardCreature):
             image = './files/images/units/harpoon_goblin.png'
         else:
             image = './files/images/units/fist_goblin.png'
-        return Image.open(image), 'low', (0, 0)
+        return Image.open(image), self.body_height, (0, 0)
 
     def generate_loot(self):
         if self.stole:
