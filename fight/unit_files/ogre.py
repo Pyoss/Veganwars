@@ -117,7 +117,6 @@ class Ogre(StandardCreature):
         self.grabbed_target.disabled.remove(self)
         self.grabbed_target.move_back()
         if len(self.targets()) > 1:
-            print(self.targets())
             target = random.choice([trgt for trgt in self.targets() if trgt != self.grabbed_target])
             if 'dodge' not in self.target.action:
                 self.string('skill_7', format_dict={'target_1': self.grabbed_target.name, 'target_2': target.name,

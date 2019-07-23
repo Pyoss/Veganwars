@@ -334,7 +334,7 @@ class RedOak(OpenLocation):
         if not self.visited:
             return '❓'
         elif not self.cleared:
-            return emoji_utils.emote_dict['red_oak_em']
+            return emoji_utils.emote_dict['ogre_em']
         else:
             return ''
 
@@ -350,6 +350,59 @@ class RedOak(OpenLocation):
             self.state = 'attacked'
             self.reset_message('text_2', image=self.mob_image, keyboard_func=False)
             self.fight()
+
+    def get_greet_tuple(self):
+        return localization.LangTuple(self.table_row, 'text_1')
+
+    def enter(self):
+        lang_tuple = self.get_greet_tuple()
+        actions_keyboard = self.get_action_keyboard
+        image = self.mob_image
+        self.dungeon.party.send_message(lang_tuple, image=image,
+                                        reply_markup_func=actions_keyboard, leader_reply=True, short_member_ui=True)
+
+    def victory(self):
+        self.cleared = True
+        self.reset_message('text_3', image=self.image)
+
+
+class OgreCamp(OpenLocation):
+    name = 'forest_ogre_camp'
+    impact = 'negative'
+    impact_integer = 1
+    image = 'AgADAgADSaoxGxm_CUioZK0h2y0xQzlpXw8ABNGUQWMolIOL0_MFAAEC'
+    image_file = './files/images/backgrounds/dark_forest_1.jpg'
+    standard_mobs = False
+
+    def get_mobs(self):
+        self.mobs = map_engine.MobPack('ogre', complexity=self.complexity)
+
+    def get_emote(self):
+        # return '-' + str(self.complexity)
+        if not self.visited:
+            return '❓'
+        elif not self.cleared:
+            return emoji_utils.emote_dict['red_oak_em']
+        else:
+            return ''
+
+    def get_button_list(self):
+            return [(0, 'attack'),
+                    (1, 'back')]
+
+    def handler(self, call):
+        bot_methods.err(call.data)
+        data = call.data.split('_')
+        action = data[3]
+        if action == 'attack':
+            self.state = 'attacked'
+            self.reset_message('text_2', image=self.mob_image, keyboard_func=False)
+            self.fight()
+        elif action == 'map':
+            self.reset_message('text_3', image=self.mob_image, keyboard_func=False)
+            for member in self.dungeon.party.members:
+                member.occupied = False
+            self.dungeon.update_map(new=True)
 
     def get_greet_tuple(self):
         return localization.LangTuple(self.table_row, 'text_1')

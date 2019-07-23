@@ -43,8 +43,7 @@ def delete_message(chat_id=None, message_id=None, call=None):
 
 
 def err(text):
-    # admin_bot.send_message(config.admin_id, str(text), parse_mode=None)
-    print(text)
+    admin_bot.send_message(config.admin_id, str(text), parse_mode=None)
 
 
 def get_chat_administrators(chat_id):

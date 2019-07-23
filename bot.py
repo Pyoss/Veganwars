@@ -16,6 +16,13 @@ units.fill_unit_dict()
 bot = telebot.TeleBot(config.token, threaded=False)
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 
+x = '5.9.142.124:3128'
+telebot.apihelper.proxy = {
+'http': 'http://{}'.format(x),
+'https': 'http://{}'.format(x)
+}
+
+
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
