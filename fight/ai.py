@@ -108,7 +108,7 @@ class Ai:
         for action in actions:
             if current_chance in range(at, at + action[-1]):
                 action[0].act()
-                return True
+                return action[0]
             at += action[-1]
 
     def move_forward(self, chance):

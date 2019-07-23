@@ -236,7 +236,7 @@ class Fight:
         return [unit for unit in self.units if unit.alive()]
 
     def announce(self, lang_tuple, image=None):
-        for listener in [listener for listener in self.listeners if listener.chat_id not in self.chat_id]:
+        for listener in [listener for listener in self.listeners]:
             text = lang_tuple.translate(listener.lang)
             if image is None:
                 bot_methods.send_message(listener.chat_id, text)

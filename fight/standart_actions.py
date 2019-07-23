@@ -463,7 +463,7 @@ class StatusAction(Action):
         status_name = info[4] if status_name is None else status_name
         self.status = self.unit.statuses[status_name]
         self.order = self.status.action_order
-        self.types = self.status.action_types
+        self.types = self.status.action_type
 
     def act(self):
         self.unit.action = [*self.unit.action, *self.types]

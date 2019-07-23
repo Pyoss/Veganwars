@@ -99,7 +99,7 @@ class Goblin(StandardCreature):
         self.hp = 3
         self.abilities = [abilities.WeaponSnatcher(self), abilities.Dodge(self)]
         self.weapon = engine.get_random_with_chances(
-            ((weapons.Knife, 2), (weapons.Fist, 3), (weapons.Harpoon, 1))
+            ((weapons.Bow, 2), (weapons.Harpoon, 1))
         )(self)
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)

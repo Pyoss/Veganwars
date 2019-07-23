@@ -15,7 +15,7 @@ class Status(standart_actions.GameObject):
     effect = True
     passive = False
     action_order = 5
-    action_types = []
+    action_type = []
 
     def to_dict(self):
         return False
@@ -78,7 +78,7 @@ class Status(standart_actions.GameObject):
 
 
 class CustomStatus(Status):
-    action_types = []
+    action_type = []
 
     def __init__(self, unit, order, delay, func, args=None, name=None, permanent=False, acting=False,
                  additional_buttons_actions=None):

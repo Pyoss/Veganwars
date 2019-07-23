@@ -16,12 +16,6 @@ units.fill_unit_dict()
 bot = telebot.TeleBot(config.token, threaded=False)
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 
-x = '5.9.142.124:3128'
-telebot.apihelper.proxy = {
-'http': 'http://{}'.format(x),
-'https': 'http://{}'.format(x)
-}
-
 
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
@@ -140,10 +134,10 @@ def start(message):
 
 @bot.message_handler(commands=['test_fight'])
 def start(message):
-    from fight.unit_files import human, red_oak, bloodbug
+    from fight.unit_files import human, red_oak, bloodbug, ogre
     my_unit = human.Human(message.from_user.first_name)
     my_unit.weapon = weapons.Hatchet()
-    enemy_class = red_oak.RedOak
+    enemy_class = ogre.Ogre
     enemy = enemy_class()
     bot_methods.send_image(chat_id=message.chat.id, message='111', image=open(enemy.image, 'rb'))
     fight_main.thread_fight([{message.chat.id: my_unit.to_dict()},

@@ -4,7 +4,7 @@ from fight.ai import StandardMeleeAi, Ai
 from fight.standart_actions import *
 from bot_utils.keyboards import *
 from PIL import Image
-from fight import abilities, weapons
+from fight import abilities, weapons, statuses
 import random
 
 
@@ -14,115 +14,124 @@ class OgreAi(StandardMeleeAi):
 
     def __init__(self, fight):
         Ai.__init__(self, fight)
-        self.action_pattern_dict = {'default': self.default_weapon_actions,
-                                    'fist': self.snatch_weapon_action,
-                                    'bow': self.bow_weapon_actions,
-                                    'crossbow': self.crossbow_weapon_actions,
-                                    'harpoon': self.harpoon_weapon_actions}
 
     def form_actions(self):
         self.clear_actions()
         self.find_target()
-        if self.unit.weapon.name in self.action_pattern_dict:
-            self.action_pattern_dict[self.unit.weapon.name]()
-        else:
-            self.action_pattern_dict['default']()
-
-    def snatch_weapon_action(self):
-        self.clear_actions()
-        self.find_target()
-        self.move_forward(1 if not self.unit.weapon.targets() else 0)
-        self.attack(self.unit.energy if self.unit.target is not None else 0)
-        self.reload(5 - self.unit.energy if self.unit.energy < 3 else 0)
-        if self.unit.target is not None and 'natural' not in self.unit.target.weapon.types \
-                and not self.unit.weapon_to_member and not self.unit.lost_weapon:
-            self.action_ability('weapon-snatcher',
-                                (2 - self.unit.target.energy if self.unit.target.energy < 3 else 0)*5,
-                                target=self.unit.target)
-        elif self.unit.lost_weapon:
-            self.add_action(PickUpWeapon, 5 - self.unit.energy if self.unit.energy < 3 else 0)
-
-    def default_weapon_actions(self):
-        self.clear_actions()
-        self.find_target()
-        self.move_forward(3 if not self.unit.weapon.targets() else 0)
-        self.attack(self.unit.energy if self.unit.target is not None else 0)
+        if self.unit.grabbed_target is not None:
+            self.action_ability('ogre_throw', 10)
+            return
+        if len(self.unit.targets()) != len(self.unit.melee_targets):
+            self.action_ability('ogre_charge', self.unit.energy)
+        self.action_ability('ogre_grab', 5 if self.unit.target is not None else 0)
         self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
-
-    def bow_weapon_actions(self):
-        self.clear_actions()
-        self.find_target()
-        self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
-        self.move_back(5 - self.unit.energy if self.unit.melee_targets and self.unit.target.weapon.melee else 0)
+        self.move_forward(4 if not self.unit.weapon.targets() else 0)
         self.attack(self.unit.energy if self.unit.target is not None else 0)
-        if self.unit.weapon.special_available(self.unit.target):
-            self.action_weapon(self.unit.energy + 1 if self.unit.energy > 0 else 0)
 
-    def harpoon_weapon_actions(self):
-        self.clear_actions()
-        self.find_target()
-        self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
-        self.move_forward(2 if not self.unit.weapon.targets() else 0)
-        self.attack(self.unit.energy if self.unit.target is not None else 0)
-        if self.unit.weapon.special_available():
-            self.action_weapon_option(self.unit.energy if self.unit.energy > 0 else 0,
-                                      str(random.choice(self.unit.targets())))
+    def get_action(self, edit=False):
+        action = Ai.get_action(self, edit=edit)
+        if action.name == 'ability':
+            print(action.ability.name)
+            if action.ability.name is 'ogre_charge':
+                self.unit.target = random.choice([trgt for trgt in self.unit.targets() if trgt not in self.unit.melee_targets])
+                self.unit.announce(self.unit.to_string('skill_2', format_dict={'target': self.unit.target.name}))
+                return
+            elif action.ability.name is 'ogre_grab':
+                self.unit.announce(self.unit.to_string('skill_2', format_dict={'target': self.unit.target.name}))
+                return
 
-    def crossbow_weapon_actions(self):
-        self.clear_actions()
-        self.find_target()
-        self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
-        self.move_back(5 - self.unit.energy if self.unit.melee_targets
-                                                       and self.unit.target.weapon.melee
-                                                       and not self.unit.weapon.loaded else 0)
-        if not self.unit.weapon.loaded:
-            self.action_weapon(self.unit.energy if self.unit.target is not None else 0)
-        else:
-            self.attack(self.unit.energy if self.unit.target is not None else 0)
+        elif engine.roll_chance(50) and action.name == 'melee_reload':
+            self.unit.announce(self.unit.to_string('skill_1'))
+
+
+
 
 
 class Ogre(StandardCreature):
-    greet_msg = 'текст-гоблина'
-    unit_name = 'goblin'
+    unit_name = 'ogre'
     control_class = OgreAi
-    emote = emote_dict['goblin_em']
-    default_loot = [('goblin_ear', (1, 70)), ('goblin_ear', (1, 30)), ('bandages', (1, 5)), ('bandages', (1, 5))]
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\sword_goblin.png'
+    emote = emote_dict['ogre_em']
+    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\\ogre.png'
 
     danger = 7
 
     def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         StandardCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
-        self.max_hp = 5
+        self.max_hp = 6
         self.toughness = 8
-        self.hp = 5
+        self.hp = 6
         self.speed = 13
-        self.max_energy = 10
-        grab = self.create_ability('ogre_grab', self.grab, 'button_1', order=5, cd=3)
-        self.abilities = [abilities.WeaponSnatcher(self), abilities.Dodge(self)]
-        self.weapon = engine.get_random_with_chances(
-            ((weapons.Knife, 2), (weapons.Fist, 3), (weapons.Harpoon, 1))
-        )(self)
+        self.max_energy = 7
+        self.melee_accuracy = 1
+        self.weapon = weapons.Cleaver(self)
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
         self.energy = int(self.max_energy / 2 + 1)
         self.loot_chances['weapon'] = 5
-
+        self.grabbed_target = None
+        self.new_ability(ability_name='ogre_grab', ability_func=self.grab,
+                         ability_type='instant', cooldown=3,
+                         name_tuple=self.to_string('button_1'))
+        self.new_ability(ability_name='ogre_charge', ability_func=self.charge,
+                         ability_type='instant',
+                         name_tuple=self.to_string('button_1'), cooldown=2)
+        self.new_ability(ability_name='ogre_throw', ability_func=self.throw,
+                         ability_type='instant',
+                         name_tuple=self.to_string('button_1'))
 
     def get_image(self):
-        if self.weapon.name == 'knife':
-            image = random.choice(('D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\knife_goblin.png',))
-        elif self.weapon.name == 'harpoon':
-            image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\harpoon_goblin.png'
+        if self.weapon.name == 'bow':
+            image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\skeleton_archer.png'
         else:
-            image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\\fist_goblin.png'
-        return Image.open(image), 'low', (0, 0)
+            image = self.image
+        return Image.open(image), 'standard', (0, 0)
 
-    def generate_loot(self):
-        return StandardCreature.generate_loot(self)
+    @staticmethod
+    def grab(ability, action):
+        self = action.unit
+        if 'dodge' in self.target.action or 'back' in self.target.action:
+            self.string('skill_6', format_dict={'target': self.target.name})
+        else:
+            self.string('skill_5', format_dict={'target': self.target.name})
+            self.target.disabled.append(self)
+            self.grabbed_target = self.target
+        self.waste_energy(4)
 
-    def grab(self, target):
-        pass
+    @staticmethod
+    def charge(ability, action):
+        self = action.unit
+        self.move_forward()
+        x = Attack(self, self.fight, stringed=False)
+        x.activate()
+        if x.dmg_done:
+            self.string('skill_3', format_dict={'target': self.target.name, 'damage': x.dmg_done,
+                                                'weapon': self.weapon.name_lang_tuple()})
+        else:
+            self.string('skill_4', format_dict={'target': self.target.name,
+                                                'weapon': self.weapon.name_lang_tuple()})
+
+    @staticmethod
+    def throw(ability, action):
+        self = action.unit
+        damage = 3
+        statuses.Prone(self.grabbed_target)
+        self.grabbed_target.receive_damage(damage)
+        self.grabbed_target.disabled.remove(self)
+        self.grabbed_target.move_back()
+        if len(self.targets()) > 1:
+            print(self.targets())
+            target = random.choice([trgt for trgt in self.targets() if trgt != self.grabbed_target])
+            if 'dodge' not in self.target.action:
+                self.string('skill_7', format_dict={'target_1': self.grabbed_target.name, 'target_2': target.name,
+                                                    'damage': damage})
+                target.receive_damage(damage)
+                target.move_back()
+                statuses.Prone(target)
+                self.grabbed_target = None
+                return
+        self.string('skill_8', format_dict={'target_1': self.grabbed_target.name,
+                                            'damage': damage})
+        self.grabbed_target = None
 
 units_dict[Ogre.unit_name] = Ogre

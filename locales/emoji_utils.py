@@ -116,6 +116,7 @@ emote_dict = {
     'goblin_em': '\U0001f47a',
     'bloodbug_em': '\U0001f99f',
     'red_oak_em': '🍂',
+    'ogre_em': '💢',
 
     # Меню_мобов
     "arm_em": u'\U0001F4AA',
