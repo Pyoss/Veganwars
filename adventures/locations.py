@@ -322,12 +322,12 @@ class RedOak(OpenLocation):
     name = 'forest_red_oak'
     impact = 'negative'
     impact_integer = 1
-    image = 'AgADAgADSaoxGxm_CUioZK0h2y0xQzlpXw8ABNGUQWMolIOL0_MFAAEC'
+    image = 'AgADAgADSKsxGxvLwUktES4imektUif-tw8ABEUf09EZvfAKLXIBAAEC'
     image_file = './files/images/units/red_oak.jpg'
     standard_mobs = False
 
     def create_images(self):
-        self.mob_image = open(self.image_file, 'r')
+        self.mob_image = self.image
 
     def get_mobs(self):
         self.mobs = map_engine.MobPack('red_oak', complexity=self.complexity)
