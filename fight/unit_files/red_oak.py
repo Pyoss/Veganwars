@@ -305,6 +305,7 @@ class GrabberBranch(Tech):
                 self.string('skill_6', format_dict={'actor': self.name, 'target': self.target.name})
                 statuses.Prone(self.victim)
             self.victim = None
+            self.target = None
             self.controller.find_target()
 
         def release(self):
