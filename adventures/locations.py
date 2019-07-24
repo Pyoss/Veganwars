@@ -388,7 +388,7 @@ class OgreCamp(OpenLocation):
 
     def get_button_list(self):
             return [(0, 'attack'),
-                    (1, 'back')]
+                    (1, 'map')]
 
     def handler(self, call):
         bot_methods.err(call.data)
