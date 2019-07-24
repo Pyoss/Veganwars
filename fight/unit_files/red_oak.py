@@ -284,8 +284,8 @@ class GrabberBranch(Tech):
             elif unit.state == 'pull':
                 unit.string('skill_3', format_dict={'actor': unit.name,
                                                     'target': unit.target.name})
-                statuses.Buff(unit.victim, 'range_accuracy', -5, 1)
-                statuses.Buff(unit.victim, 'melee_accuracy', -3, 1)
+                statuses.Buff(unit.victim, 'range_accuracy', -5, 2)
+                statuses.Buff(unit.victim, 'melee_accuracy', -3, 2)
                 unit.state = 'lift'
             elif unit.state == 'lift':
                 unit.string('skill_4', format_dict={'actor': unit.name, 'target': unit.target.name})

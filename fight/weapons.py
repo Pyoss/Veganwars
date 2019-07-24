@@ -813,8 +813,8 @@ class RedOakBranch(Weapon):
     name = 'red-oak-branch'
     types = ['unique', 'natural']
     natural = True
-    accuracy = 1
-    dice_num = 4
+    accuracy = 2
+    dice_num = 5
     energy_cost = 2
 
 
@@ -825,7 +825,7 @@ class RedOakAncor(Weapon):
     accuracy = 2
     dice_num = 2
     energy_cost = 2
-    damage_cap = 1
+    damage_cap = 2
     melee = False
 
 

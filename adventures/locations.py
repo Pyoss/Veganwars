@@ -323,18 +323,18 @@ class RedOak(OpenLocation):
     impact = 'negative'
     impact_integer = 1
     image = 'AgADAgADSaoxGxm_CUioZK0h2y0xQzlpXw8ABNGUQWMolIOL0_MFAAEC'
-    image_file = './files/images/backgrounds/dark_forest_1.jpg'
+    image_file = './files/images/units/red_oak.jpg'
     standard_mobs = False
 
     def get_mobs(self):
-        self.mobs = map_engine.MobPack('ogre', complexity=self.complexity)
+        self.mobs = map_engine.MobPack('red_oak', complexity=self.complexity)
 
     def get_emote(self):
         # return '-' + str(self.complexity)
         if not self.visited:
             return '❓'
         elif not self.cleared:
-            return emoji_utils.emote_dict['ogre_em']
+            return emoji_utils.emote_dict['red_oak_em']
         else:
             return ''
 
