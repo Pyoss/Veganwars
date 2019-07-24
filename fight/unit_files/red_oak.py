@@ -54,8 +54,8 @@ class RedOak(Unit):
 
     def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller, fight=fight, unit_dict=unit_dict)
-        self.max_wounds = 25
-        self.wounds = 25
+        self.max_wounds = 30
+        self.wounds = 30
         self.weapon = weapons.RedOakBranch(self)
         self.melee_accuracy = 0
         self.range_accuracy = 0
@@ -243,7 +243,7 @@ class GrabberBranch(Tech):
                     self.victim.melee_targets.append(unit)
 
         def fling(self):
-            damage = 3
+            damage = 4
             self.target.receive_damage(damage)
             self.target.move_back()
             self.string('skill_10', format_dict={'actor': self.name,
@@ -254,7 +254,7 @@ class GrabberBranch(Tech):
 
         def choke(self):
             if self.target.alive():
-                damage = 2
+                damage = 3
                 self.target.receive_damage(damage)
                 self.string('skill_9', format_dict={'actor': self.name,
                                                     'target': self.target.name,
