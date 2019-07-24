@@ -48,7 +48,7 @@ class RedOak(Unit):
     control_class = RedOakAi
     emote = emote_dict['red_oak_em']
     types = ['tree']
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\\skeleton_archer.png'
+    image = './files/images/units/red_oak.jpg'
     danger = 20
     default_loot = [('living_branch', (1, 90))]
 
@@ -258,7 +258,7 @@ class GrabberBranch(Tech):
                 self.target.receive_damage(damage)
                 self.string('skill_9', format_dict={'actor': self.name,
                                                     'target': self.target.name,
-                                                     'damage': damage})
+                                                    'damage': damage})
             else:
                 self.fling()
 
