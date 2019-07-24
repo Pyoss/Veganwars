@@ -143,7 +143,7 @@ def start(message):
     from fight.unit_files import human, red_oak, bloodbug, ogre
     my_unit = human.Human(message.from_user.first_name)
     my_unit.weapon = weapons.Hatchet()
-    enemy_class = ogre.Ogre
+    enemy_class = red_oak.RedOak
     enemy = enemy_class()
     bot_methods.send_image(chat_id=message.chat.id, message='111', image=open(enemy.image, 'rb'))
     fight_main.thread_fight([{message.chat.id: my_unit.to_dict()},
