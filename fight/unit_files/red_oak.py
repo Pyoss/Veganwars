@@ -18,7 +18,7 @@ class RedOakAi(Ai):
     def form_actions(self):
         self.clear_actions()
         self.find_target()
-        if len(list(self.unit.team.alive_actors())) <= len(self.unit.targets()):
+        if not self.unit.branch_spawned:
             self.action_ability('spawn_grabber_branch', 8)
         if len(self.unit.melee_targets) > 0:
             self.action_ability('attack_everyone', self.unit.energy*len(self.unit.melee_targets))
@@ -76,6 +76,7 @@ class RedOak(Unit):
         self.energy = 7
         self.max_energy = 7
         self.branches = []
+        self.branch_spawned = False
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
 
@@ -146,9 +147,10 @@ class RedOak(Unit):
     @staticmethod
     def spawn_grabber_branch(ability, action):
         unit = action.unit
+        unit.branch_spawned = True
         target = random.choice(unit.targets())
 
-        branch_unit = unit.summon_unit(GrabberBranch)
+        branch_unit = unit.summon_unit(GrabberBranch, owner=unit)
         branch_unit.string('skill_7', format_dict={'actor': branch_unit.name, 'target': target.name})
         branch_unit.move_forward()
         branch_unit.victim = target
@@ -184,9 +186,10 @@ class GrabberBranch(Tech):
         emote = emote_dict['red_oak_em']
         types = ['tree']
 
-        def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+        def __init__(self, name=None, controller=None, fight=None, unit_dict=None, owner=None):
             Unit.__init__(self, name=name, controller=controller, fight=fight, unit_dict=unit_dict)
-            self.wounds = 6
+            self.owner = owner
+            self.wounds = 10
             self.evasion = 0
             self.state = 'reach'
             self.weapon = weapons.Knife(self)
@@ -205,6 +208,7 @@ class GrabberBranch(Tech):
                 else:
                     self.string('died_message', format_dict={'actor': self.name})
                 self.release()
+                self.owner.branch_spawned = False
                 return True
             elif self.dmg_received:
                 self.string('fire_out', format_dict={'actor': self.name})
@@ -310,10 +314,13 @@ class GrabberBranch(Tech):
                     self.victim.rooted.remove(self)
 
         def force_free(self):
-            if self.state != 'lift':
-                self.string('skill_5', format_dict={'actor': self.name, 'target': self.target.name})
-            self.free()
-            self.state = 'broken'
+            if self.victim.energy > self.wounds:
+                if self.state != 'lift':
+                    self.string('skill_5', format_dict={'actor': self.name, 'target': self.target.name})
+                self.free()
+                self.state = 'broken'
+            else:
+                self.string('button_2', format_dict={'target': self.victim.name})
 
         def alive(self):
             if self.wounds > 0:
