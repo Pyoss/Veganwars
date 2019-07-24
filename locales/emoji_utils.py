@@ -17,7 +17,7 @@ emote_dict = {
     'unseen_em': '❔',
     "anger_em": '😡',
     "meat_em": '🥩',
-    "ancor_em": '💫',
+    "ancor_em": '💥',
 
 
     # Бой
