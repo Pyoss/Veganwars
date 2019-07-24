@@ -327,7 +327,7 @@ class RedOak(OpenLocation):
     standard_mobs = False
 
     def create_images(self):
-        self.mob_image = self.image
+        self.mob_image = self.image_file
 
     def get_mobs(self):
         self.mobs = map_engine.MobPack('red_oak', complexity=self.complexity)
