@@ -35,7 +35,7 @@ class OneHanded:
 class TwoHanded:
     core_types = ['weapon', 'two-handed']
     dice_num = 5
-    accuracy = 1
+    accuracy = 2
     weight = 3
     damage_cap = 10
     energy_cost = 3
@@ -1266,4 +1266,4 @@ def get_weapon_statistic(weapon_class):
     print('Weapon value: {}'.format(int(round(weapon_value/1000, 0))))
 
 if __name__ == '__main__':
-    get_weapon_statistic(Hatchet)
+    get_weapon_statistic(Axe)
