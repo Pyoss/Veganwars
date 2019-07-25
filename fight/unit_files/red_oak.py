@@ -132,7 +132,6 @@ class RedOak(Unit):
             self.string('died_message', format_dict={'actor': self.name})
             for branch in self.branches:
                 branch.wounds = 0
-                branch.dies()
             return True
         elif self.dmg_received:
             self.string('skill_6', format_dict={'actor': self.name})
