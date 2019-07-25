@@ -315,7 +315,7 @@ class GrabberBranch(Tech):
                     self.victim.rooted.remove(self)
 
         def force_free(self):
-            if self.victim.energy > self.wounds:
+            if self.victim.energy + random.randint(1, 5) > self.wounds:
                 if self.state != 'lift':
                     self.string('skill_5', format_dict={'actor': self.name, 'target': self.target.name})
                 self.free()
