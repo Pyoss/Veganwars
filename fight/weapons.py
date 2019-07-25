@@ -434,6 +434,9 @@ class Fist(OneHanded, Weapon):
     dice_num = 2
     energy_cost = 2
 
+    def get_image_dict(self):
+        return
+
 
 class Cleaver(TwoHanded, Weapon):
     name = 'cleaver'
