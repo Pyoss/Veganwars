@@ -466,6 +466,8 @@ class Hatchet(OneHanded, Weapon):
                 self.get_cripple_chance()) and 'alive' in attack_action.target.types:
             statuses.Crippled(attack_action.unit.target)
             attack_action.to_emotes(emoji_utils.emote_dict['crippled_em'])
+        else:
+            attack_action.dmg_done += 1
 
     def info_dict(self):
         return {'bleed_chance': self.cripple_chance_modifier}
@@ -1239,7 +1241,7 @@ for k, v in weapon_dict.items():
 
 def get_weapon_statistic(weapon_class):
     class UnitPlaceholder:
-        energy = 5
+        energy = 3
         melee_accuracy = 0
         range_accuracy = 0
         evasion = 0
@@ -1264,4 +1266,4 @@ def get_weapon_statistic(weapon_class):
     print('Weapon value: {}'.format(int(round(weapon_value/1000, 0))))
 
 if __name__ == '__main__':
-    get_weapon_statistic(Cleaver)
+    get_weapon_statistic(Hatchet)
