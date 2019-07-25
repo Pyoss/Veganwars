@@ -290,8 +290,8 @@ class GrabberBranch(Tech):
             elif unit.state == 'lift':
                 unit.string('skill_4', format_dict={'actor': unit.name, 'target': unit.target.name})
                 unit.state = 'free'
-                unit.free()
                 unit.target.change_hp(-10)
+                unit.free()
             elif unit.state == 'free':
                 unit.string('skill_7', format_dict={'actor': unit.name, 'target': unit.target.name})
                 unit.move_forward()
@@ -304,9 +304,6 @@ class GrabberBranch(Tech):
             if self.state == 'lift':
                 self.string('skill_6', format_dict={'actor': self.name, 'target': self.target.name})
                 statuses.Prone(self.victim)
-            self.victim = None
-            self.target = None
-            self.controller.find_target()
 
         def release(self):
             if self.victim is not None and self.victim.alive():
