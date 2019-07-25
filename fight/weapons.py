@@ -462,12 +462,12 @@ class Hatchet(OneHanded, Weapon):
         Weapon.__init__(self, unit=unit, obj_dict=obj_dict)
 
     def on_hit(self, attack_action):
-        if attack_action.dmg_done and engine.roll_chance(
-                self.get_cripple_chance()) and 'alive' in attack_action.target.types:
-            statuses.Crippled(attack_action.unit.target)
-            attack_action.to_emotes(emoji_utils.emote_dict['crippled_em'])
-        else:
-            attack_action.dmg_done += 1
+        if attack_action.dmg_done and engine.roll_chance(self.get_cripple_chance()):
+            if 'alive' in attack_action.target.types:
+                statuses.Crippled(attack_action.unit.target)
+                attack_action.to_emotes(emoji_utils.emote_dict['crippled_em'])
+            else:
+                attack_action.dmg_done += 1
 
     def info_dict(self):
         return {'bleed_chance': self.cripple_chance_modifier}
