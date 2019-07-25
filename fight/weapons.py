@@ -426,7 +426,7 @@ class Spear(OneHanded, SpecialActionWeapon):
         self.unit.melee_accuracy -= 2
 
 
-class Fist(Weapon):
+class Fist(OneHanded, Weapon):
     name = 'fist'
     types = ['unique', 'natural']
     natural = True
@@ -704,7 +704,7 @@ class Harpoon(SpecialOptionWeapon, Knife):
 
 
 # --------------------------------------------------
-class Shovel(Weapon):
+class Shovel(OneHanded, Weapon):
     name = 'shovel'
     confuse_chance = 45
 
@@ -717,7 +717,7 @@ class Shovel(Weapon):
         return {'confuse_chance': self.confuse_chance}
 
 
-class Flamethrower(Weapon):
+class Flamethrower(OneHanded, Weapon):
     name = 'flamethrower'
     accuracy = 3
     dice_num = 1
@@ -730,7 +730,7 @@ class Flamethrower(Weapon):
             attack_action.to_emotes(emoji_utils.emote_dict['fire_em'])
 
 
-class Revolver(Weapon):
+class Revolver(OneHanded, Weapon):
     name = 'revolver'
     accuracy = 3
     dice_num = 1
@@ -739,7 +739,7 @@ class Revolver(Weapon):
     melee = False
 
 
-class Mace(Weapon):
+class Mace(OneHanded, Weapon):
     name = 'mace'
 
     def __init__(self, actor):
@@ -759,7 +759,7 @@ class Mace(Weapon):
         self.combo_turn = self.unit.fight.turn + 1
 
 
-class Knuckles(Weapon):
+class Knuckles(OneHanded, Weapon):
     name = 'knuckles'
     accuracy = 2
     dice_num = 2
@@ -777,7 +777,7 @@ class Knuckles(Weapon):
         return {'energy_loss': self.energy_loss}
 
 
-class BaseballBat(Weapon):
+class BaseballBat(OneHanded, Weapon):
     name = 'baseball-bat'
     stun_chance = 25
 
@@ -793,14 +793,14 @@ class BaseballBat(Weapon):
         return {'stun_chance': self.stun_chance}
 
 
-class BearClaw(BaseballBat):
+class BearClaw(OneHanded, BaseballBat):
     name = 'bear-claw'
     stun_chance = 70
     types = ['natural']
     natural = True
 
 
-class RukhBeak(Weapon):
+class RukhBeak(OneHanded, Weapon):
     name = 'rukh-beak'
     types = ['natural']
     natural = True
@@ -809,7 +809,7 @@ class RukhBeak(Weapon):
     accuracy = 0
 
 
-class RedOakBranch(Weapon):
+class RedOakBranch(OneHanded, Weapon):
     name = 'red-oak-branch'
     types = ['unique', 'natural']
     natural = True
@@ -818,7 +818,7 @@ class RedOakBranch(Weapon):
     energy_cost = 2
 
 
-class RedOakAncor(Weapon):
+class RedOakAncor(OneHanded, Weapon):
     name = 'red-oak-ancor'
     types = ['unique', 'natural']
     natural = True
@@ -829,13 +829,13 @@ class RedOakAncor(Weapon):
     melee = False
 
 
-class Cock(Weapon):
+class Cock(OneHanded, Weapon):
     name = 'cock'
     types = ['natural']
     natural = True
 
 
-class SniperRifle(SpecialTargetWeapon):
+class SniperRifle(OneHanded, SpecialTargetWeapon):
     name = 'sniper-rifle'
     order = 1
     dice_num = 1
@@ -898,7 +898,7 @@ class SniperRifle(SpecialTargetWeapon):
             self.stacked_accuracy = 0
 
 
-class Whip(SpecialTargetWeapon):
+class Whip(OneHanded, SpecialTargetWeapon):
     name = 'whip'
     order = 2
 
@@ -932,7 +932,7 @@ class Whip(SpecialTargetWeapon):
         return [*self.unit.melee_targets, *[actor for actor in self.unit.team.actors if actor != self.unit]]
 
 
-class Katana(TwoHanded, SpecialAttackWeapon, Knife):
+class Katana(OneHanded, TwoHanded, SpecialAttackWeapon, Knife):
     name = 'katana'
     order = 9
     bleed_chance = 15
@@ -951,13 +951,13 @@ class Katana(TwoHanded, SpecialAttackWeapon, Knife):
         return {'bleed_chance': self.bleed_chance}
 
 
-class Fangs(Knife):
+class Fangs(OneHanded, Knife):
     name = 'fangs'
     types = ['unique', 'natural']
     natural = True
 
 
-class Sting(Knife):
+class Sting(OneHanded, Knife):
     name = 'sting'
     types = ['unique', 'natural']
     natural = True
@@ -965,7 +965,7 @@ class Sting(Knife):
     damage_cap = 1
 
 
-class Teeth(Knife):
+class Teeth(OneHanded, Knife):
     name = 'teeth'
     types = ['unique', 'natural']
     natural = True
@@ -974,13 +974,13 @@ class Teeth(Knife):
     bleed_chance_modifier = 0
 
 
-class Claws(Knife):
+class Claws(OneHanded, Knife):
     name = 'fangs'
     types = ['unique', 'natural']
     natural = True
 
 
-class PoisonedFangs(Weapon):
+class PoisonedFangs(OneHanded, Weapon):
     name = 'poison-fangs'
     types = ['unique', 'natural']
     natural = True
@@ -995,7 +995,7 @@ class PoisonedFangs(Weapon):
                 attack_action.to_emotes(emoji_utils.emote_dict['poisoned_em'])
 
 
-class PoisonedBloodyFangs(Weapon):
+class PoisonedBloodyFangs(OneHanded, Weapon):
     name = 'poison-bloody-fangs'
     types = ['unique', 'natural']
     natural = True
@@ -1014,14 +1014,14 @@ class PoisonedBloodyFangs(Weapon):
                     attack_action.to_emotes(emoji_utils.emote_dict['bleeding_em'])
 
 
-class Pistol(Weapon):
+class Pistol(OneHanded, Weapon):
     name = 'pistol'
     melee = False
     accuracy = 3
     energy = 3
 
 
-class Shotgun(Weapon):
+class Shotgun(OneHanded, Weapon):
     name = 'shotgun'
     melee = False
     dice_num = 6
@@ -1046,7 +1046,7 @@ class SawnOff(Shotgun):
     energy = 3
 
 
-class Boomerang(SpecialAttackWeapon):
+class Boomerang(OneHanded, SpecialAttackWeapon):
     name = 'boomerang'
     melee = False
     bleed_chance = 100
@@ -1129,7 +1129,7 @@ class Boomerang(SpecialAttackWeapon):
         return True if target in self.unit.melee_targets else False
 
 
-class Torch(SpecialActionWeapon):
+class Torch(OneHanded, SpecialActionWeapon):
     name = 'torch'
     order = 0
 
@@ -1161,7 +1161,7 @@ class Torch(SpecialActionWeapon):
         return False
 
 
-class LasGun(Weapon):
+class LasGun(OneHanded, Weapon):
     name = 'lasgun'
     types = ['unique', 'arsenal']
     melee = False
@@ -1209,7 +1209,7 @@ class LasGun(Weapon):
                                                        'heat': (self.heat - 4) * 5})
 
 
-class ChainSword(Knife):
+class ChainSword(OneHanded, Knife):
     name = 'chainsword'
     types = ['unique', 'arsenal']
     energy = 2
@@ -1217,7 +1217,7 @@ class ChainSword(Knife):
     bleed_chance = 100
 
 
-class Target(Fist):
+class Target(OneHanded, Fist):
     image_pose = 'two-handed'
 
     def get_image_dict(self):
