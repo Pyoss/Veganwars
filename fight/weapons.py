@@ -483,7 +483,7 @@ class Hatchet(OneHanded, Weapon):
         return chance if chance < 100 else 100
 
 
-class Axe(Hatchet, TwoHanded):
+class Axe(TwoHanded, Hatchet):
     name = 'axe'
     cripple_chance_modifier = 10
 
@@ -492,7 +492,7 @@ class Axe(Hatchet, TwoHanded):
     file = './files/images/axe.png'
 
 
-class Halberd(Spear, TwoHanded):
+class Halberd(TwoHanded, Spear):
     name = 'halberd'
 
     # -------------------------
