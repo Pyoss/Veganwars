@@ -483,7 +483,7 @@ class Hatchet(OneHanded, Weapon):
         return chance if chance < 100 else 100
 
 
-class Axe(TwoHanded, Hatchet):
+class Axe(Hatchet, TwoHanded):
     name = 'axe'
     cripple_chance_modifier = 10
 
@@ -492,7 +492,7 @@ class Axe(TwoHanded, Hatchet):
     file = './files/images/axe.png'
 
 
-class Halberd(TwoHanded, Spear):
+class Halberd(Spear, TwoHanded):
     name = 'halberd'
 
     # -------------------------
@@ -594,7 +594,7 @@ class Chain(OneHanded, SpecialActionWeapon):
         return 'Вы уже крутите Цепь.'
 
 
-class Crossbow(SpecialActionWeapon):
+class Crossbow(TwoHanded, SpecialActionWeapon):
     name = 'crossbow'
     order = 5
     damage = 3
@@ -635,7 +635,7 @@ class Crossbow(SpecialActionWeapon):
         return keyboards.MeleeReloadButton(self.unit)
 
 
-class SledgeHammer(SpecialAttackWeapon):
+class SledgeHammer(TwoHanded, SpecialAttackWeapon):
     name = 'sledgehammer'
     order = 9
     special_energy_cost = 4
@@ -793,7 +793,7 @@ class BaseballBat(OneHanded, Weapon):
         return {'stun_chance': self.stun_chance}
 
 
-class BearClaw(OneHanded, BaseballBat):
+class BearClaw(BaseballBat):
     name = 'bear-claw'
     stun_chance = 70
     types = ['natural']
@@ -932,7 +932,7 @@ class Whip(OneHanded, SpecialTargetWeapon):
         return [*self.unit.melee_targets, *[actor for actor in self.unit.team.actors if actor != self.unit]]
 
 
-class Katana(OneHanded, TwoHanded, SpecialAttackWeapon, Knife):
+class Katana(SpecialAttackWeapon, Knife):
     name = 'katana'
     order = 9
     bleed_chance = 15
@@ -951,13 +951,13 @@ class Katana(OneHanded, TwoHanded, SpecialAttackWeapon, Knife):
         return {'bleed_chance': self.bleed_chance}
 
 
-class Fangs(OneHanded, Knife):
+class Fangs(Knife):
     name = 'fangs'
     types = ['unique', 'natural']
     natural = True
 
 
-class Sting(OneHanded, Knife):
+class Sting(Knife):
     name = 'sting'
     types = ['unique', 'natural']
     natural = True
@@ -965,7 +965,7 @@ class Sting(OneHanded, Knife):
     damage_cap = 1
 
 
-class Teeth(OneHanded, Knife):
+class Teeth(Knife):
     name = 'teeth'
     types = ['unique', 'natural']
     natural = True
@@ -974,7 +974,7 @@ class Teeth(OneHanded, Knife):
     bleed_chance_modifier = 0
 
 
-class Claws(OneHanded, Knife):
+class Claws(Knife):
     name = 'fangs'
     types = ['unique', 'natural']
     natural = True
@@ -1209,7 +1209,7 @@ class LasGun(OneHanded, Weapon):
                                                        'heat': (self.heat - 4) * 5})
 
 
-class ChainSword(OneHanded, Knife):
+class ChainSword(Knife):
     name = 'chainsword'
     types = ['unique', 'arsenal']
     energy = 2
@@ -1217,7 +1217,7 @@ class ChainSword(OneHanded, Knife):
     bleed_chance = 100
 
 
-class Target(OneHanded, Fist):
+class Target(Fist):
     image_pose = 'two-handed'
 
     def get_image_dict(self):
