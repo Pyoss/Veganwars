@@ -66,7 +66,7 @@ class RedOak(Unit):
         self.new_ability(ability_name='spawn_grabber_branch', ability_func=self.spawn_grabber_branch,
                          ability_type='instant',
                          name_tuple=self.to_string('button_1'),
-                         cooldown=2)
+                         cooldown=6)
         self.new_ability(ability_name='attack_everyone', ability_func=self.attack_everyone,
                          ability_type='instant',
                          name_tuple=self.to_string('button_1'))

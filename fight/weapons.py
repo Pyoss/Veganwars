@@ -14,6 +14,12 @@ class OneHanded:
     image_pose = 'one-handed'
     handle = (0, 0)
     weight = 1
+    accuracy = 3
+    dice_num = 3
+    energy_cost = 2
+    special_energy_cost = 2
+    damage = 0
+    damage_cap = 5
     file = './files/images/target.png'
 
     def get_image_dict(self):
@@ -52,14 +58,8 @@ class TwoHanded:
 class Weapon(standart_actions.GameObject):
     name = None
     natural = False
-    accuracy = 3
-    dice_num = 3
-    energy_cost = 2
-    special_energy_cost = 2
     melee = True
     range_option = False
-    damage = 0
-    damage_cap = 5
     price = 100
     emote = emoji_utils.emote_dict['weapon_em']
     db_string = 'weapon'
