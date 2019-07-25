@@ -215,6 +215,7 @@ class Flying(ReceiveHitStatus):
         if action is not None:
             if action.weapon.melee and action.dmg_done > 0:
                 action.dmg_done = 0
+            self.unit.action.append('dodge')
         else:
             self.unit.fight.edit_queue(self)
 
