@@ -290,7 +290,7 @@ class GrabberBranch(Tech):
             elif unit.state == 'lift':
                 unit.string('skill_4', format_dict={'actor': unit.name, 'target': unit.target.name})
                 unit.state = 'free'
-                unit.target.statuses['branch-grabbed'].finish()
+                unit.free()
                 unit.target.change_hp(-10)
             elif unit.state == 'free':
                 unit.string('skill_7', format_dict={'actor': unit.name, 'target': unit.target.name})
