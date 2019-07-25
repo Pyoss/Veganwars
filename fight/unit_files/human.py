@@ -9,7 +9,7 @@ class Human(StandardCreature):
         StandardCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         if unit_dict is None:
-            self.abilities = [abilities.Dodge(self)]
+            self.abilities = [abilities.Dodge(self), abilities.SpellCaster(self)]
 
     def get_image(self):
         image, padding = self.construct_image()
