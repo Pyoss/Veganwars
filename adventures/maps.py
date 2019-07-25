@@ -73,7 +73,7 @@ class Forest(DungeonMap):
         self.enemy_list = (EnemyKey('goblin', 7, 238, 10),)
 
     def generate_location_dict(self):
-        base_list = [(locations.ForestNeutral, 1), (locations.ForestPos, 10), (locations.RedOak, 10)]
+        base_list = [(locations.ForestNeutral, 1), (locations.ForestPos, 10), (locations.OgreCamp, 10)]
         self.location_dict = engine.ListedDict(base_dict={('core', 'end'): [(locations.ForestEnd, 1)],
                                                           ('core', 'crossroad'): [(locations.ForestCrossroad, 1)],
                                                           ('core', 'default'): base_list,

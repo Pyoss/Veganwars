@@ -209,7 +209,7 @@ class SpellDamage(Spell):
     def first_stage(self):
         self.use()
         statuses.Buff(self.target, 'spell_damage', 2, 3)
-        self.string('use', format_dict={'actor':self.unit.name, 'target': self.target.name})
+        self.string('use', format_dict={'actor': self.unit.name, 'target': self.target.name})
 
 # -------------- Fire Spells ------------------------- #
 
@@ -222,7 +222,7 @@ class Ignite(Spell):
 
     def first_stage(self):
         self.use()
-        statuses.Burning(self.target, stacks=1 + int(self.unit.spell_damage/2))
+        statuses.Burning(self.target, stacks=2 + int(self.unit.spell_damage/2))
         self.string('use', format_dict={'actor': self.unit.name, 'target': self.target.name})
 
 
@@ -237,7 +237,7 @@ class StrongIgnite(Spell):
 
     def second_stage(self):
         self.use()
-        statuses.Burning(self.target, 2 + int(self.unit.spell_damage/2))
+        statuses.Burning(self.target, 3 + int(self.unit.spell_damage))
         self.string('use', format_dict={'actor': self.unit.name, 'target': self.target.name})
 
 
@@ -283,7 +283,7 @@ class Chill(Spell):
 
     def first_stage(self):
         self.use()
-        statuses.Chilled(self.target, 2 + self.unit.spell_damage)
+        statuses.Chilled(self.target, 3 + self.unit.spell_damage)
         self.string('use', format_dict={'actor': self.unit.name, 'target': self.target.name})
 
 
@@ -302,7 +302,7 @@ class StrongChill(Spell):
 
     def second_stage(self):
         self.use()
-        statuses.Chilled(self.target, 3 + self.unit.spell_damage)
+        statuses.Chilled(self.target, 4 + self.unit.spell_damage*2)
         self.string('use', format_dict={'actor': self.unit.name, 'target': self.target.name})
 
 
