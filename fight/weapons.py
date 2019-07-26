@@ -435,7 +435,7 @@ class Fist(OneHanded, Weapon):
     energy_cost = 2
 
     def get_image_dict(self):
-        return
+        return None
 
 
 class Cleaver(TwoHanded, Weapon):
@@ -1226,12 +1226,7 @@ class Target(Fist):
     image_pose = 'two-handed'
 
     def get_image_dict(self):
-        return {
-         'handle': (0, 0),
-         'placement': 'right_hand',
-         'file': './files/images/target.png',
-         'covered': True
-        }
+        return None
 
 
 weapon_dict = {value.name: value for key, value

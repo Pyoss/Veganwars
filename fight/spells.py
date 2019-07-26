@@ -190,6 +190,7 @@ class FlyingSpark(Spell):
                                    unit=self.unit)
 
     def second_stage(self):
+        self.unit.action.append('dodge')
         self.string('alternative', format_dict={'actor': self.unit.name})
         statuses.Flying(self.unit, 1)
 
@@ -208,7 +209,7 @@ class SpellDamage(Spell):
 
     def first_stage(self):
         self.use()
-        statuses.Buff(self.target, 'spell_damage', 2, 3)
+        statuses.Buff(self.target, 'spell_damage', 2, 3, emoji='✨')
         self.string('use', format_dict={'actor': self.unit.name, 'target': self.target.name})
 
 # -------------- Fire Spells ------------------------- #

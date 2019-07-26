@@ -223,6 +223,11 @@ class SpellCaster(OptionAbility):
             return True
         return False
 
+    def error_text(self):
+        if self.unit.energy < 1:
+            return 'У вас недостаточно энергии'
+
+
 
 
 ################################# НИЖЕ НИЧЕГО НЕ ПРОВЕРЕНО #######################################

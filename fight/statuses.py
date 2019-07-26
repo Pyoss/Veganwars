@@ -81,13 +81,14 @@ class CustomStatus(Status):
     action_type = []
 
     def __init__(self, unit, order, delay, func, args=None, name=None, permanent=False, acting=False,
-                 additional_buttons_actions=None):
+                 additional_buttons_actions=None, emoji=None):
         self.name = 'custom-' + str(id(self)) if name is None else name
         self.args = [] if args is None else args
         self.order = order
         self.delay = delay
         self.func = func
         self.unit = unit
+        self.emote = emoji
 
         Status.__init__(self, unit, acting=acting)
         self.additional_buttons_actions = additional_buttons_actions
@@ -103,6 +104,8 @@ class CustomStatus(Status):
     def reapply(self, parent):
         self.unit.statuses[self.name] = self
 
+    def menu_string(self):
+        return False if self.emote is None else self.emote
 
 class CustomPassive(Status):
     order = 60
@@ -215,7 +218,6 @@ class Flying(ReceiveHitStatus):
         if action is not None:
             if action.weapon.melee and action.dmg_done > 0:
                 action.dmg_done = 0
-            self.unit.action.append('dodge')
         else:
             self.unit.fight.edit_queue(self)
 
@@ -256,14 +258,14 @@ class SpellShield(ReceiveSpellStatus):
 class Buff:
     name = None
 
-    def __init__(self, unit, attr, value, length):
+    def __init__(self, unit, attr, value, length, emoji=None):
         self.value = value
         self.attr = attr
         self.unit = unit
         setattr(self.unit, self.attr, getattr(self.unit, self.attr) + self.value)
         self.unit.boost_attribute(attr, value)
         CustomStatus(unit, delay=length, func=self.stop_buff, order=60, acting=True,
-                     name='buff_{}_{}'.format(attr, engine.rand_id()))
+                     name='buff_{}_{}'.format(attr, engine.rand_id()), emoji=emoji)
 
     def stop_buff(self):
         setattr(self.unit, self.attr, getattr(self.unit, self.attr) - self.value)

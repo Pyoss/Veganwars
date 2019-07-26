@@ -248,6 +248,7 @@ class Unit:
         base_png = Image.new('RGBA', (base_width, base_height), (255, 0, 0, 0))
         base_png.paste(Image.open(unit_image_dict['file']), (left_padding, top_padding))
         base_png = self.add_head(base_png, top_padding, left_padding)
+        print(equipment_dicts)
         equipment_dicts.sort(key=lambda i: i['layer'], reverse=True)
         for equipment in equipment_dicts:
             handle_x, handle_y = equipment['handle']
