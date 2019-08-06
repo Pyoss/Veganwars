@@ -44,7 +44,7 @@ class Team:
             return LangTuple('fight', 'team', format_dict={'team_name': self.captain.name})
 
     def alive_actors(self):
-        return (unit for unit in self.units if unit.alive())
+        return list(unit for unit in self.units if unit.alive())
 
 
 class Player:

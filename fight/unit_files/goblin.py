@@ -88,7 +88,7 @@ class Goblin(StandardCreature):
     emote = emote_dict['goblin_em']
     default_loot = [('goblin_ear', (1, 70)), ('goblin_ear', (1, 30)), ('bandages', (1, 5)), ('bandages', (1, 5))]
     image = './files/images/units/sword_goblin.png'
-    body_height = 'short'
+    body_height = 'low'
 
     danger = 7
 
@@ -100,7 +100,7 @@ class Goblin(StandardCreature):
         self.hp = 3
         self.abilities = [abilities.WeaponSnatcher(self), abilities.Dodge(self)]
         self.weapon = engine.get_random_with_chances(
-            ((weapons.Bow, 2), (weapons.Harpoon, 1))
+            ((weapons.Knife, 2), (weapons.Spear, 1), (weapons.Bow, 1))
         )(self)
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)

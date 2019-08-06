@@ -41,22 +41,23 @@ class ImageConstructor:
     def get_size_heights(self):
         return {'standard': int(self.background_image.height*2/3),
                 'high': int(self.background_image.height*5/6),
-                'short': int(self.background_image.height*2/5)}
+                'low': int(self.background_image.height*2/5)}
 
     def get_common_height_tier_list(self):
         for image_object in self.image_objects:
             image_object.resize(self.size_heights[image_object.height_type])
+            print(self.sized_lists_dict)
             self.sized_lists_dict[image_object.height_type].append(image_object)
 
         if len(self.sized_lists_dict['standard']) == len(self.sized_lists_dict['low']) == len(self.sized_lists_dict['high']) == 1:
-            self.common_pudding_list = ['high', 'standard', 'short']
+            self.common_pudding_list = ['high', 'standard', 'low']
         if len(self.sized_lists_dict['standard']) == len(self.sized_lists_dict['low']) == 1:
-            self.common_pudding_list = ['standard', 'short']
+            self.common_pudding_list = ['standard', 'low']
         elif len(self.sized_lists_dict['high']) == len(self.sized_lists_dict['standard']) == 1:
             self.common_pudding_list = ['high', 'standard']
         elif len(self.sized_lists_dict['high']) == len(self.sized_lists_dict['low']) == 1 and len(
                 self.sized_lists_dict['standard']) == 0:
-            self.common_pudding_list = ['high', 'short']
+            self.common_pudding_list = ['high', 'low']
 
     def setup_markers(self):
 

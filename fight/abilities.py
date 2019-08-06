@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from fight import standart_actions, statuses, items, weapons
+from fight import standart_actions, statuses, items, weapons, spells
 from locales import emoji_utils, localization
 from bot_utils import keyboards
 import random
@@ -143,7 +143,6 @@ class SpellCaster(OptionAbility):
     def act(self, action):
         if self.check_final(action.info):
             spell_tuple = tuple(action.info[-1].split('-'))
-            from fight import spells
             if spell_tuple in spells.spell_dict and len(action.info) < 7:
                 if spells.spell_dict[spell_tuple].targetable:
                     self.ask_target(action.info[-1])
@@ -174,7 +173,6 @@ class SpellCaster(OptionAbility):
 
     def activate(self, action):
         spell_list = tuple(action.info[-1].split('-'))
-        from fight import spells
         if spell_list in spells.spell_dict:
             spells.spell_dict[spell_list](self.unit).activate(action)
         else:

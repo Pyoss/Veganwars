@@ -5,6 +5,7 @@ import random
 import uuid
 import json
 import image_generator
+import math
 from fight import standart_actions
 
 
@@ -251,6 +252,13 @@ class ChatContainer(Container):
         return self.base_dict[item]
 
 
+def aoe_split(damage, victim_number):
+    damage_list = [0]*victim_number
+    for n in range(damage):
+        damage_list[(random.randint(0, len(damage_list)))-1] += 1
+    return damage_list
+
+
 def throw_dice(cap: int):
     return random.randint(1, cap)
 
@@ -299,5 +307,3 @@ def list_to_marked_string(my_list):
                 string += '\n ' + next_arrow + ' ' + item
             string += '\n ' + end_arrow + ' ' + my_list[-1]
         return string
-
-

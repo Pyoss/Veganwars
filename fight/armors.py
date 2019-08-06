@@ -34,7 +34,7 @@ class Armor(standart_actions.GameObject):
         return True
 
     def block(self, dmg_done):
-        blocked_damage = self.rating if self.armor else 0
+        blocked_damage = self.rating if self.armor > 0 else 0
         if blocked_damage > dmg_done:
             blocked_damage = dmg_done
         if self.destructable and not dmg_done > blocked_damage:

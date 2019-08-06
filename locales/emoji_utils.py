@@ -98,6 +98,8 @@ emote_dict = {
     'earth_em': u'\U0001f311',
     'wind_em': u'\U0001f32a',
     'random_em': u'\U0001f3b2',
+    'fiery_em': '🤯',
+    'magic_em': '✨',
 
     # Мобы
     "dog_em": u'\U0001F436',

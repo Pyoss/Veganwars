@@ -62,12 +62,17 @@ class Ai:
                 return False
         self.action_dict[action] = chance
 
-    def action_ability(self, name, chance, target=None):
+    def action_ability(self, name, chance, *args, target=None):
         info = ['fgt', str(self.fight), str(self.unit), 'ability', name]
         if target is not None:
             info.append(str(target))
+        if args:
+            info = [*info, *args]
         self.add_action(Ability, chance,
                         info=info)
+
+    def add_spell(self, sigils, chance, target=None):
+        self.action_ability('spellcast', chance, '-'.join(sigils), target=target)
 
     def action_item(self, name, chance, *args):
         info = ['fgt', str(self.fight), str(self.unit), 'item', name]
@@ -98,7 +103,7 @@ class Ai:
         print('Выбор действий моба ' + self.unit.name.translate(self.fight.lang) + ':')
         print('Энергия: {}'.format(self.unit.energy))
         for a in self.action_dict:
-            print(str(a.name) + '     ' + str(self.action_dict[a]))
+            print(str(a.name) + '     ' + str(self.action_dict[a]) + ' ' + str(a.info))
         chance_sum = sum([value for key, value in self.action_dict.items()])
         if chance_sum == 0:
             return False
@@ -144,6 +149,19 @@ class StandardMeleeAi(Ai):
         self.attack(self.unit.energy if self.unit.target is not None else 0)
         self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
 
+    # Возвращает "competing", "winning", "losing" или "fearless" в зависимости от энергии и жизней.
+    def get_team_state(self):
+        my_team_energy = sum(unit.energy for unit in self.unit.team.alive_actors())
+        top_enemy_team_energy = max([sum((unit.energy for unit in team.alive_actors()))
+                                     for team in [tm for tm in self.fight.teams if tm != self.unit.team]])
+        if self.unit.hp == 1:
+            return 'fearless'
+        elif my_team_energy - top_enemy_team_energy > len(self.unit.team.alive_actors())*2:
+            return 'winning'
+        elif my_team_energy - top_enemy_team_energy < - len(self.unit.team.alive_actors())*2:
+            return 'losing'
+        else:
+            return 'competing'
 
 class TechAi(Ai):
 

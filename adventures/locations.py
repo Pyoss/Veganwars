@@ -378,7 +378,7 @@ class OgreCamp(OpenLocation):
     standard_mobs = False
 
     def get_mobs(self):
-        self.mobs = map_engine.MobPack('ogre', complexity=self.complexity)
+        self.mobs = map_engine.MobPack('goblin_shaman', 'ogre', complexity=self.complexity)
 
     def get_emote(self):
         # return '-' + str(self.complexity)

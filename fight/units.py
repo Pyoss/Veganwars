@@ -679,10 +679,14 @@ class StandardCreature(Unit):
         return unit_dict
 
     def recovery(self):
+        if self.energy < 0:
+            self.energy = 0
         speed = self.get_speed() if self.get_speed() > 2 and 'exhausted' not in self.statuses else 2
         recovery_speed = speed if speed < self.max_energy else self.max_energy
 
         self.energy += recovery_speed
+        if self.energy > self.max_energy:
+            self.energy = self.max_energy
         self.weapon.recovery()
         return recovery_speed
 
@@ -765,7 +769,7 @@ units_dict = {}
 
 def fill_unit_dict():
     from fight.unit_files import skeleton, goblin, human, lich, rat,\
-        bloodbug, snail, worm, zombie, goblin_bomber, red_oak, ogre
+        bloodbug, snail, worm, zombie, goblin_bomber, red_oak, ogre, goblin_shaman
 
 
 

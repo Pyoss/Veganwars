@@ -107,6 +107,7 @@ class CustomStatus(Status):
     def menu_string(self):
         return False if self.emote is None else self.emote
 
+
 class CustomPassive(Status):
     order = 60
 
@@ -172,30 +173,6 @@ class ReceiveSpellStatus(ReceiveHitStatus):
     core_types = ['status', 'receive_spell']
 
 
-class Pudged(Status):
-    name = 'pudged'
-    order = 21
-
-    def __init__(self, unit,  dmg):
-        self.pudgedmg = dmg
-        Status.__init__(self, unit)
-        
-    def reapply(self, parent):
-        parent.pudgedmg += self.pudgedmg
-    
-    def act(self, action=None):
-        if 'reload' in self.unit.action:
-            self.string('end', format_dict={'actor': self.unit.name})
-            self.finish()
-        else:
-            self.unit.dmg_received += self.pudgedmg
-            self.string('damage', format_dict={'actor': self.unit.name, 'dmg': self.pudgedmg})
-            self.pudgedmg += 1
-
-    def menu_string(self):
-        return '💩'   
-
-
 class Running(OnHitStatus):
     name = 'running'
 
@@ -224,35 +201,6 @@ class Flying(ReceiveHitStatus):
     def menu_string(self):
         return '💨'
 
-
-class SpellShield(ReceiveSpellStatus):
-    name = 'spell_shield'
-
-    def __init__(self, unit, strength):
-        ReceiveSpellStatus.__init__(self, unit, acting=True)
-        self.strength = strength
-        self.activated = False
-
-    def act(self, action=None):
-        if action is not None:
-            if action.dmg_done > 0:
-                if not self.activated:
-                    self.unit.waste_energy(-2)
-                    self.activated = 1
-                dmg = action.dmg_done - self.strength
-                if dmg <= 0:
-                    self.strength = -dmg
-                    dmg = 0
-                    self.string('use', format_dict={'actor': action.target.name, 'target': action.unit.name})
-                else:
-                    self.strength = 0
-                    self.string('end', format_dict={'actor': action.target.name})
-                action.dmg_done = dmg
-        else:
-            self.unit.fight.edit_queue(self)
-
-    def menu_string(self):
-        return '💨'
 
 
 class Buff:
@@ -332,17 +280,22 @@ class Casting(Status):
     name = 'casting'
     order = 60
 
-    def __init__(self, unit, spell_id):
-        Status.__init__(self, unit)
+    def __init__(self, unit, spell_id, delay=1):
+        Status.__init__(self, unit, acting=True)
         self.spell_id = spell_id
+        self.delay = delay
         self.unit.disabled.append(self.name)
 
     def activate(self, action=None):
-        if len(self.unit.disabled) > 1:
+        if len(self.unit.disabled) > 1 or len(self.unit.disarmed) > 0:
+            self.finish()
+        self.delay -= 1
+        if self.delay <= 0:
             self.finish()
 
     def finish(self):
-        self.unit.disabled.remove(self.name)
+        if 'casting' in self.unit.disabled:
+            self.unit.disabled.remove(self.name)
         Status.finish(self)
 
 
@@ -388,7 +341,7 @@ class Chilled(Status):
     def __init__(self, actor, stacks=1):
         if 'frozen' not in actor.statuses:
             self.stacks = stacks
-            Status.__init__(self, actor)
+            Status.__init__(self, actor, acting=True)
 
     def reapply(self, parent):
         parent.stacks += self.stacks
@@ -402,16 +355,16 @@ class Chilled(Status):
                 self.unit.statuses['burning'].stacks -= self.stacks
                 self.finish()
                 return False
-        if self.stacks < 1:
-            self.finish()
-        elif self.stacks:
-            self.unit.waste_energy(self.stacks)
-            self.string('damage', format_dict={'actor': self.unit.name, 'energy_lost': self.stacks})
-        self.stacks -= 1
+        self.unit.waste_energy(self.stacks)
         if self.unit.energy - self.unit.wasted_energy < 0:
             self.finish()
             freeze = Frozen(self.unit)
             freeze.string('use', format_dict={'actor': self.unit.name})
+        elif self.stacks:
+            self.string('damage', format_dict={'actor': self.unit.name, 'energy_lost': self.stacks})
+        self.stacks -= 1
+        if self.stacks < 1:
+            self.finish()
 
     def menu_string(self):
         return emoji_utils.emote_dict['ice_em'] + str(self.stacks)

@@ -45,8 +45,6 @@ class OgreAi(StandardMeleeAi):
 
 
 
-
-
 class Ogre(StandardCreature):
     unit_name = 'ogre'
     control_class = OgreAi
