@@ -31,6 +31,7 @@ class ImageBackground:
 
 class ImageConstructor:
     def __init__(self, background: Image, image_objects: tuple):
+        print(image_objects)
         self.background_image = background
         self.size_heights = self.get_size_heights()
         self.sized_lists_dict = {'high': [], 'standard': [], 'low': []}

@@ -172,11 +172,13 @@ class Lobby1x1(Lobby):
         self.teams = [{}, {}]
 
     def run(self):
-        player_1 = list(self.teams[0].items())[0]
-        player_2 = list(self.teams[1].items())[0]
-        bot_methods.send_image(image_generator.create_duel_image((self.get_image(player_1[0]),
-                                                                  self.get_image(player_2[0]))),
-                               self.chat_id, message=player_1[1]['unit_dict']['name'] + '                 \              ' + player_2[1]['unit_dict']['name'])
+        player_1 = list(self.teams[0].keys())[0]
+        player_2 = list(self.teams[1].keys())[0]
+        path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
+        bot_methods.send_image(image_generator.create_dungeon_image(path,
+                                                                    (self.get_image(player_1),
+                                                                     self.get_image(player_2))),
+                               self.chat_id)
         result = self.run_fight(*[{chat_id: team[chat_id]['unit_dict'] for chat_id in team} for team in self.teams])
 
     def join_forbidden(self, user_id):
