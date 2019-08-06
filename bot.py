@@ -16,11 +16,6 @@ units.fill_unit_dict()
 bot = telebot.TeleBot(config.token, threaded=False)
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 
-x = '173.249.53.235:3128'
-telebot.apihelper.proxy = {
-'http': 'http://{}'.format(x),
-'https': 'http://{}'.format(x)
-}
 
 
 start_time = time.time()
