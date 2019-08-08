@@ -110,6 +110,7 @@ class Dodge(InstantAbility):
     cd = 2
 
     def activate(self, action):
+        InstantAbility.activate(self, action)
         self.string('use', format_dict={'actor': self.unit.name})
         statuses.Buff(self.unit, 'evasion', 6, 1)
 

@@ -92,15 +92,15 @@ class Goblin(StandardCreature):
 
     danger = 7
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
         StandardCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
-        self.max_hp = 3
-        self.toughness = 3
-        self.hp = 3
+        self.max_hp = 4
+        self.toughness = 5
+        self.hp = 4
         self.abilities = [abilities.WeaponSnatcher(self), abilities.Dodge(self)]
         self.weapon = engine.get_random_with_chances(
-            ((weapons.Knife, 2), (weapons.Spear, 1), (weapons.Bow, 1))
+            ((weapons.Fist, 2),)
         )(self)
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
@@ -121,5 +121,6 @@ class Goblin(StandardCreature):
         if self.stole:
             self.loot_chances['weapon'] = 100
         return StandardCreature.generate_loot(self)
+
 
 units_dict[Goblin.unit_name] = Goblin

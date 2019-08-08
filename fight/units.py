@@ -98,7 +98,8 @@ class Unit:
 
     def equip_from_dict(self, unit_dict):
         for key, value in unit_dict.items():
-            setattr(self, key, value)
+            if key is not 'controller':
+                setattr(self, key, value)
         if unit_dict['weapon'] is not None:
             self.weapon = weapons.weapon_dict[unit_dict['weapon']['name']](self, obj_dict=unit_dict['weapon'])
         else:
@@ -495,18 +496,30 @@ class Unit:
 
     def dies(self):
         if not self.alive() and self not in self.fight.dead:
-            self.add_death_effect()
-            self.fight.string_tuple.row(LangTuple('fight', 'death', format_dict={'actor': self.name}))
+            if self.death_lang_tuple is None:
+                self.fight.string_tuple.row(LangTuple('fight', 'death', format_dict={'actor': self.name}))
+            else:
+                death_tuple = self.get_death_effect_tuple
+                if death_tuple is not None:
+                    self.fight.string_tuple.row(self.get_death_effect_tuple(self.death_lang_tuple))
+                else:
+                    self.fight.string_tuple.row(LangTuple('fight', 'death', format_dict={'actor': self.name}))
             return True
         return False
 
     def add_death_effect(self):
+        print(self.death_lang_tuple)
         if self.death_lang_tuple is not None:
             death_tuple = self.get_death_effect_tuple(self.death_lang_tuple)
+            print(death_tuple)
             if death_tuple is None:
-                return
+                return False
             for n, tpl in enumerate(self.fight.string_tuple.tuples):
-                if tpl == self.death_lang_tuple:
+                print('Дано')
+                print(tpl)
+                print('Надо')
+                print(self.death_lang_tuple)
+                if tpl == self.death_lang_tuple['tuple']:
                     self.fight.string_tuple.tuples[n] = death_tuple
 
     def get_death_effect_tuple(self, attack_tuple):
@@ -648,6 +661,7 @@ class StandardCreature(Unit):
 
     def to_dict(self):
         unit_dict = {
+            'controller': None,
             'unit_name': self.unit_name,
             'name': self.name,
             'max_hp': self.max_hp,
@@ -679,15 +693,16 @@ class StandardCreature(Unit):
         return unit_dict
 
     def recovery(self):
-        if self.energy < 0:
-            self.energy = 0
         speed = self.get_speed() if self.get_speed() > 2 and 'exhausted' not in self.statuses else 2
         recovery_speed = speed if speed < self.max_energy else self.max_energy
 
         self.energy += recovery_speed
-        if self.energy > self.max_energy:
-            self.energy = self.max_energy
         self.weapon.recovery()
+        return recovery_speed
+
+    def recovery_speed(self):
+        speed = self.get_speed() if self.get_speed() > 2 and 'exhausted' not in self.statuses else 2
+        recovery_speed = speed if speed < self.max_energy else self.max_energy
         return recovery_speed
 
     def add_energy(self, number):

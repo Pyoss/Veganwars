@@ -50,8 +50,8 @@ class Status(standart_actions.GameObject):
                 self.handle_dict[button] = action
         return buttons
 
-    def handle(self, call):
-        self.handle_dict[call.data.split('_')[-1]]()
+    def handle(self, call_data):
+        self.handle_dict[call_data[-1]]()
 
     def act(self, action=None):
         if not self.passive:
@@ -425,7 +425,8 @@ class Prone(Status):
         Status.__init__(self, actor)
 
         self.additional_buttons_actions = [('free', self.finish,
-                                                localization.LangTuple('buttons', 'get_up'))]
+                                            localization.LangTuple('buttons', 'get_up'))]
+        self.handle_dict['free'] = self.finish
 
     def reapply(self, parent):
         pass

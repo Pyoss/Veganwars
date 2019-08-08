@@ -127,7 +127,7 @@ class ActionQueue:
 
 
 class Fight:
-    def __init__(self, chat_id=None, test=False):
+    def __init__(self, chat_id=None):
         self.turn = 1
         self.id = str(engine.rand_id())
         self.chat_id = [] if chat_id is None else [chat_id]
@@ -137,7 +137,7 @@ class Fight:
         self.lang = self.langs[0]
         self.dead = {}
         self.teams = []
-        self.public = False
+        self.public = True
         self.first_turn = None
         self.listeners = list()
         self.action_queue = ActionQueue()
@@ -182,32 +182,38 @@ class Fight:
             self.listeners.append(controller)
         return unit
 
-    def add_ai(self, unit, name, unit_dict=None, **kwargs):
+    def add_ai(self, unit, name, unit_dict=None, controller=None, **kwargs):
         if isinstance(unit, tuple):
             unit = unit[0]
-        controller = unit.control_class(self)
+        if controller is None:
+            controller = unit.control_class(self)
+        else:
+            controller = controller(self)
         unit = unit(name, controller=controller, fight=self, unit_dict=unit_dict, **kwargs)
         if unit.name is None:
-            unit.form_ai_name()
-            unit.named = False
+            if unit.controller.name is None:
+                unit.form_ai_name()
+                unit.named = False
+            else:
+                unit.name = unit.controller.name
         if unit.weapon is None:
             unit.weapon = weapons.weapon_dict[unit.default_weapon](unit)
         self.units_dict[unit.id] = unit
         self.units.append(unit)
         return unit
 
-    def add_unit(self, delta, name, unit_dict=None):
+    def add_unit(self, delta, name, unit_dict=None, controller=None):
         if isinstance(delta, int):
             return self.add_player(delta, name, unit_dict=unit_dict)
         else:
-            return self.add_ai(delta, name, unit_dict=unit_dict)
+            return self.add_ai(delta, name, unit_dict=unit_dict, controller=controller)
 
     def form_teams(self, team_dicts):
         # [team={chat_id:(name, unit_dict)} or team={(ai_class.name, id):(name/None, unit_dict)}]
         self.teams = []
         for team in team_dicts:
             self.teams.append(Team(*[self.add_unit(key, value['name'],
-                                               unit_dict=value) for key, value in team.items()
+                                               unit_dict=value, controller=value['controller']) for key, value in team.items()
                                  if key if key != 'marker'], team_marker=team['marker'] if 'marker' in team else None))
         for team in self.teams:
             for actor in team.units:
@@ -284,6 +290,7 @@ class Fight:
         for unit in self.active_actors():
             unit.get_action()
         self.wait_action()
+        time.sleep(2)
 
     def wait_action(self):
         x = 0

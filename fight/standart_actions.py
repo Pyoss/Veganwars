@@ -470,7 +470,7 @@ class StatusAction(Action):
         Action.act(self)
 
     def activate(self):
-        self.status.handle(self.call)
+        self.status.handle(self.call.data.split('_') if self.call is not None else self.info)
 
 
 class Item(Action):
@@ -634,7 +634,8 @@ class GameObject:
                                                                       'info').translate(self.unit.controller.lang))
 
     def activate(self, action):
-        pass
+        self.on_cd()
+
 
     def name_lang_tuple(self):
         return localization.LangTuple(self.table_row, 'name')
@@ -722,7 +723,6 @@ class InstantObject(GameObject):
         self.unit.fight.action_queue.append(action)
         for action_type in action.action_type:
             self.unit.action.append(action_type)
-        self.on_cd()
         self.ask_action()
 
 

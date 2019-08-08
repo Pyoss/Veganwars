@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import random
-from fight.standart_actions import MoveBack, MoveForward, SpecialWeaponAction, Item, MeleeReload, Ability, SpecialWeaponOption, Attack
+from fight.standart_actions import MoveBack, MoveForward, SpecialWeaponAction, Item, MeleeReload, Ability, SpecialWeaponOption, Attack, Skip, StatusAction
 from operator import attrgetter
 import engine
-
 
 
 def get_lowest_hp(team):
@@ -35,6 +34,7 @@ def get_largest_opponent_team(actor, game):
 
 class Ai:
     ai = True
+    name = None
 
     def __init__(self, fight):
         self.number = 0
@@ -45,6 +45,7 @@ class Ai:
         self.difficulty = 0
         self.unit = None
         self.talked = False
+        self.stage = 0
 
     def form_actions(self):
         pass
@@ -61,6 +62,13 @@ class Ai:
             if not action.item.available():
                 return False
         self.action_dict[action] = chance
+
+    @staticmethod
+    def check_available(unt, ability_name):
+        if any(ability.name == ability_name for ability in unt.abilities):
+            return next(ability for ability in unt.abilities if ability.name == ability_name).available()
+        else:
+            return False
 
     def action_ability(self, name, chance, *args, target=None):
         info = ['fgt', str(self.fight), str(self.unit), 'ability', name]
@@ -162,6 +170,90 @@ class StandardMeleeAi(Ai):
             return 'losing'
         else:
             return 'competing'
+
+    def nessesary_actions(self):
+        if 'prone' in self.unit.statuses:
+            info = ['fgt', str(self.fight), str(self.unit), 'status_action', 'prone', 'free']
+            self.add_action(StatusAction, 1, info=info)
+            return True
+        return False
+
+
+class ZilchAi(Ai):
+    name = 'Гоблин Зилча'
+
+    def find_target(self):
+        self.unit.target = random.choice(self.unit.weapon.targets()) if self.unit.weapon.targets() else None
+
+    def form_actions(self):
+        self.clear_actions()
+        self.find_target()
+        if StandardMeleeAi.nessesary_actions(self):
+            return
+        if self.fight.turn == 1:
+            self.reload(5)
+            return
+        self.move_forward(1 if not self.unit.weapon.targets() else 0)
+        if self.unit.target is not None:
+            if self.unit.energy <=1:
+                self.reload(1)
+            elif self.unit.energy >= self.unit.target.energy:
+                self.attack(self.unit.energy)
+            else:
+                self.action_ability('dodge', 100)
+                self.reload(1)
+
+
+class PasyukAi(Ai):
+    name = 'Гоблин Пасюка'
+
+    def find_target(self):
+        self.unit.target = random.choice(self.unit.weapon.targets()) if self.unit.weapon.targets() else None
+
+    def form_actions(self):
+        self.clear_actions()
+        self.find_target()
+        if StandardMeleeAi.nessesary_actions(self):
+            return
+        if self.fight.turn == 1:
+            self.reload(5)
+            return
+        if self.unit.target is None:
+            self.move_forward(1 if not self.unit.weapon.targets() else 0)
+            return
+        self.action_ability('dodge', self.unit.target.energy if self.unit.target.energy > 2 else 0)
+        self.attack(self.unit.energy if self.unit.target is not None else 0)
+        if self.unit.energy > 4 and self.unit.target.energy < 4 and self.check_available(self.unit.target, 'dodge'):
+            self.add_action(Skip, 5)
+        self.reload(5 if self.unit.energy < 2 else 0)
+
+
+class AsgaidAi(Ai):
+    name = 'Гоблин Асгард'
+
+    def find_target(self):
+        self.unit.target = random.choice(self.unit.weapon.targets()) if self.unit.weapon.targets() else None
+
+    def form_actions(self):
+        self.clear_actions()
+        self.find_target()
+        if StandardMeleeAi.nessesary_actions(self):
+            return
+        if self.fight.turn == 1:
+            self.reload(5)
+            return
+        if self.unit.target is None:
+            self.move_forward(1)
+            return
+        if self.stage == 0 or self.stage == 1:
+            self.attack(1)
+        elif self.stage == 2:
+            self.action_ability('dodge', 1)
+        elif self.stage == 3:
+            self.reload(1)
+        self.stage += 1
+        if self.stage == 4:
+            self.stage = 0
 
 class TechAi(Ai):
 

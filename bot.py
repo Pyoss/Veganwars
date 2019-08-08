@@ -16,6 +16,12 @@ units.fill_unit_dict()
 bot = telebot.TeleBot(config.token, threaded=False)
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 
+x = '178.128.60.15:3128'
+telebot.apihelper.proxy = {
+'http': 'http://{}'.format(x),
+'https': 'http://{}'.format(x)
+}
+
 
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
@@ -135,14 +141,19 @@ def start(message):
 @bot.message_handler(commands=['test_fight'])
 def start(message):
     from fight.unit_files import human, red_oak, bloodbug, ogre, goblin_shaman, goblin
-    my_unit = human.Human(message.from_user.first_name)
-    my_unit.weapon = weapons.Hatchet()
-    my_unit.armor = [armors.Shield()]
-    enemy_class = goblin_shaman.GoblinShaman
+    from fight import ai
+    my_unit_class = human.Human
+    my_unit = my_unit_class().to_dict()
+    enemy_class = goblin.Goblin
     enemy = enemy_class()
     bot_methods.send_image(chat_id=message.chat.id, message='111', image=open(enemy.image, 'rb'))
-    fight_main.thread_fight([{message.chat.id: my_unit.to_dict()},
-                             {(enemy_class, 1): enemy.to_dict()}], chat_id=message.chat.id)
+    dict_1 = enemy.to_dict()
+    dict_1['controller'] = ai.ZilchAi
+    dict_2 = enemy.to_dict()
+    dict_2['controller'] = ai.PasyukAi
+    team_1 = {message.from_user.id: my_unit}
+    team_2 = {(enemy_class, 3): dict_2}
+    fight_main.thread_fight([team_1, team_2], chat_id=message.chat.id)
 
 
 @bot.message_handler(commands=['join_chat'])

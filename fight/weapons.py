@@ -834,6 +834,17 @@ class RedOakAncor(OneHanded, Weapon):
     melee = False
 
 
+class DragonTail(OneHanded, Weapon):
+    name = 'dragon-tail'
+    types = ['unique', 'natural']
+    natural = True
+    accuracy = 3
+    dice_num = 4
+    energy_cost = 2
+    damage_cap = 6
+    melee = False
+
+
 class Cock(OneHanded, Weapon):
     name = 'cock'
     types = ['natural']
