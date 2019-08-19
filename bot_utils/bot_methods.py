@@ -8,8 +8,8 @@ import threading
 types = telebot.types
 bot = telebot.TeleBot(config.token)
 admin_bot = telebot.TeleBot('777849028:AAFKdy8OJcLn37H7A8bJVsSCTSB-5S37zf4')
-admin_mode = True
-images = False
+admin_mode = False
+images = True
 
 
 # Переопределение метода отправки сообщения (защита от ошибок)

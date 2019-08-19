@@ -6,6 +6,7 @@ from bot_utils.bot_methods import send_message, edit_message, delete_message, ge
 from sql_alchemy import Pyossession
 from fight import units, standart_actions
 from adventures import dungeon_main
+from locales.localization import LangTuple
 import engine
 import dynamic_dicts
 from chat_wars.chat_war import current_war, AttackAction
@@ -157,7 +158,7 @@ class Chat(sql_alchemy.SqlChat):
     def construction_lvl(self):
         return sum([value for key, value in self.get_buildings().items()])
 
-    def print_receipts(self):
+    def show_chat_stats(self, lang):
         receipts = self.get_receipts()
         message = ''
         for key in receipts:
@@ -167,9 +168,15 @@ class Chat(sql_alchemy.SqlChat):
             else:
                 value = str(receipts[key])
             message += name + ' - ' + value + '\n'
-        self.send_message(message)
+        used_items = engine.ChatContainer(base_dict=self.get_free_armory())
+        lang_tuple = LangTuple('chatmanagement', 'chat_stats', format_dict={'resources': str(self.resources),
+                                                                             'items': used_items.to_string(lang,
+                                                                                                           marked=True,
+                                                                                                           emoted=True)})
+        self.send_message(lang_tuple.translate(lang))
 
     def print_items(self):
+
         used_items = engine.ChatContainer(base_dict=self.get_free_armory())
         string = 'Свободные предметы:'
         string += used_items.to_string('rus', marked=True, emoted=True)
@@ -206,13 +213,17 @@ class User(sql_alchemy.SqlUser):
     def send_equipment_choice(self, lobby_id, chat_id, equipment_type, message_id=None):
         message = self.form_equipment_message(lobby_id, equipment_type)
         buttons = self.create_choice_equipment(lobby_id, chat_id, equipment_type)
-        for button in self.choice_button(lobby_id, equipment_type):
-            buttons.append(button)
-        keyboard = keyboards.form_keyboard(*buttons)
-        if message_id is None:
-            send_message(self.user_id, message, reply_markup=keyboard)
+        if buttons:
+            for button in self.choice_button(lobby_id, equipment_type):
+                buttons.append(button)
+            keyboard = keyboards.form_keyboard(*buttons)
+            if message_id is None:
+                send_message(self.user_id, message, reply_markup=keyboard)
+            else:
+                edit_message(chat_id=self.user_id, message_id=message_id, message_text=message, reply_markup=keyboard)
+            return True
         else:
-            edit_message(chat_id=self.user_id, message_id=message_id, message_text=message, reply_markup=keyboard)
+            return False
 
 
     def form_equipment_message(self, lobby_id, equipment_type):
@@ -241,29 +252,28 @@ class User(sql_alchemy.SqlUser):
         send_message(self.user_id, 'Вы получаете {} опыта'.format(experience))
         sql_alchemy.SqlUser.add_experience(self, experience)
 
-    def get_unit_dict(self, name=None):
-        class_dict = self.get_class()
-        abilities_list = self.get_abilities()
-        unit_dict = units.units_dict[class_dict['unit']](name=name).to_dict()
-        for ability in abilities_list:
-            if not any(ablty['name'] == ability['name'] for ablty in unit_dict['abilities']):
-                unit_dict['abilities'].append(ability)
+    def get_fight_unit_dict(self, name=None):
+        unit_dict = self.get_unit_dict()
+        unit_dict = units.units_dict[unit_dict['unit']](name=name, unit_dict=unit_dict).to_dict()
         return unit_dict
 
     def add_ability(self, ability):
         ability_list = self.get_abilities()
         ability_list.append(ability.to_dict())
+        if 'on_lvl' in ability.core_types:
+            ability.gain(self)
         self.set_abilities(ability_list)
 
     def get_possible_abilities_amount(self):
         experience = self.experience
         ability_number = len(self.get_abilities())
-        experience_list = (10, 50)
+        experience_list = (10, 20, 40, 70, 100)
         i = 0
         for exp in experience_list:
             if experience >= exp:
                 i += 1
         i -= ability_number
+        print(i)
         return i if i > 0 else False
 
     def get_experience_to_lvl(self):
@@ -272,7 +282,6 @@ class User(sql_alchemy.SqlUser):
             if self.experience < item:
                 return item
         return 10000
-
 
 
 class ChatHandler:
@@ -302,8 +311,10 @@ def add_chat(chat_id, name, creator):
     chat = pyossession.get_chat(chat_id)
     chat.add_user(creator)
 
+
 def add_user(user_id):
     pyossession.create_user(user_id)
+
 
 def get_chats():
     return pyossession.get_chats()

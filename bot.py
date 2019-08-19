@@ -16,11 +16,6 @@ units.fill_unit_dict()
 bot = telebot.TeleBot(config.token, threaded=False)
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 
-x = '178.128.60.15:3128'
-telebot.apihelper.proxy = {
-'http': 'http://{}'.format(x),
-'https': 'http://{}'.format(x)
-}
 
 
 start_time = time.time()
@@ -38,6 +33,12 @@ bot.locked = False
 def start(message):
     pass
 
+
+@bot.message_handler(commands=['map'])
+def start(message):
+    from adventures import maps
+    dung = chat_lobbies.Dungeon(message.chat.id, maps.Forest)
+    dung.send_lobby()
 
 @bot.message_handler(commands=['lock'])
 def start(message):
@@ -104,7 +105,7 @@ def game(message):
         if data[1] in dynamic_dicts.lobby_list:
             chat_main.add_user(message.from_user.id)
             user = chat_menu.get_user(message.from_user.id)
-            unit_dict = user.get_unit_dict(name=message.from_user.first_name)
+            unit_dict = user.get_fight_unit_dict(name=message.from_user.first_name)
             dynamic_dicts.lobby_list[data[1]].player_join(message.from_user.id, unit_dict=unit_dict)
             bot_methods.send_message(message.from_user.id, 'Вы успешно присоединились.')
 
@@ -121,15 +122,6 @@ def start(message):
         game_dict[message.chat.id].ask_start()
 
 
-@bot.message_handler(commands=['map'])
-def start(message):
-    chat = chat_main.pyossession.get_chat(message.chat.id)
-    chat.clear_used_items()
-    from adventures import maps
-    dung = chat_lobbies.Dungeon(message.chat.id, maps.Forest)
-    dung.send_lobby()
-
-
 @bot.message_handler(commands=['pvp'])
 def start(message):
     chat = chat_main.pyossession.get_chat(message.chat.id)
@@ -140,19 +132,15 @@ def start(message):
 
 @bot.message_handler(commands=['test_fight'])
 def start(message):
-    from fight.unit_files import human, red_oak, bloodbug, ogre, goblin_shaman, goblin
+    from fight.unit_files import human, red_oak, bloodbug, ogre, goblin_shaman, goblin, dragon, worm
     from fight import ai
-    my_unit_class = human.Human
-    my_unit = my_unit_class().to_dict()
-    enemy_class = goblin.Goblin
-    enemy = enemy_class()
-    bot_methods.send_image(chat_id=message.chat.id, message='111', image=open(enemy.image, 'rb'))
-    dict_1 = enemy.to_dict()
-    dict_1['controller'] = ai.ZilchAi
-    dict_2 = enemy.to_dict()
-    dict_2['controller'] = ai.PasyukAi
-    team_1 = {message.from_user.id: my_unit}
-    team_2 = {(enemy_class, 3): dict_2}
+    dct = chat_main.get_user(message.from_user.id).get_fight_unit_dict(name=message.from_user.first_name)
+    dct['weapon'] = weapons.Axe().to_dict()
+    dct['armor'] = [armors.Shield().to_dict()]
+    enemy_3_class = goblin.Goblin
+    enemy_3 = enemy_3_class()
+    team_1 = {message.from_user.id: dct}
+    team_2 = {(enemy_3_class, 1): enemy_3.to_dict(), (enemy_3_class, 2): enemy_3.to_dict()}
     fight_main.thread_fight([team_1, team_2], chat_id=message.chat.id)
 
 
@@ -174,14 +162,10 @@ def start(message):
     user_menu.user_action_dict['main'](user, message.from_user.id).func()
 
 
-@bot.message_handler(commands=['test'])
+@bot.message_handler(commands=['reset'])
 def start(message):
-    smile_text = message.text.split()[-1]
-    print(smile_text)
-    output = (smile_text
-              .encode('raw_unicode_escape')
-              )
-    bot_methods.send_message(message.chat.id, output)
+    user = chat_main.get_user(message.from_user.id)
+    user.reset_abilities()
 
 
 @bot.message_handler(commands=['test_add_chat'])
@@ -198,38 +182,10 @@ def start(message):
         chat.ask_attack(message.from_user.id)
 
 
-@bot.message_handler(commands=['show_resources'])
+@bot.message_handler(commands=['chat_stats'])
 def start(message):
         chat = chat_main.get_chat(message.chat.id)
-        chat.print_resources()
-
-
-@bot.message_handler(commands=['add_resources'])
-def start(message):
-        chat = chat_main.get_chat(message.chat.id)
-        chat.add_resources(500)
-
-
-@bot.message_handler(commands=['show_items'])
-def start(message):
-        chat = chat_main.get_chat(message.chat.id)
-        chat.print_items()
-
-
-@bot.message_handler(commands=['resources'])
-def start(message):
-    try:
-        resources = int(message.text.split()[1])
-        chat = chat_main.get_chat(message.chat.id)
-        chat.add_resources(resources)
-    except:
-        return False
-
-
-@bot.message_handler(commands=['show_receipts'])
-def start(message):
-        chat = chat_main.get_chat(message.chat.id)
-        chat.print_receipts()
+        chat.show_chat_stats('rus')
 
 
 @bot.message_handler(func=lambda message: True, commands=['show_items'])
@@ -247,11 +203,6 @@ def start(message):
 @bot.message_handler(commands=['next_step'])
 def start(message):
         chat_main.current_war.next_step(message.chat.id)
-
-
-@bot.message_handler(content_types=['photo'])
-def start(message):
-    bot_methods.err(message.photo[0].file_id)
 
 
 @bot.callback_query_handler(func=lambda call: call)

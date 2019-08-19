@@ -100,6 +100,7 @@ emote_dict = {
     'random_em': u'\U0001f3b2',
     'fiery_em': '🤯',
     'magic_em': '✨',
+    'dragon_em': '🐲',
 
     # Мобы
     "dog_em": u'\U0001F436',

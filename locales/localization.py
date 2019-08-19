@@ -59,6 +59,8 @@ class LangTuple:
         try:
             tuple_string = text_generation.generate_unique_text(string_data[self.string])
             return self.format(tuple_string, lang)
+        except KeyError:
+            bot_methods.err(str((self.string, self.table, self.row)))
         except TypeError:
             bot_methods.err(str((self.string, self.table, self.row)))
 
@@ -254,6 +256,7 @@ class FightString(StringArray):
                 else:
                     return '\n' + string_tuple.act().translate(language) + '\n'
             return string_tuple.translate(language)
+
         text = ' '.join([parse(string_tuple, lang) for string_tuple in self.tuples])
         text = text.replace('\n ', '\n')
         self.result_dict[lang] = text

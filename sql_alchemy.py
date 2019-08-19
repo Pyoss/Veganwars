@@ -35,8 +35,7 @@ users_table = Table('users', metadata,
                     Column('user_id', Integer, unique=True),
                     Column('attacked', Integer, default=0),
                     Column('experience', String),
-                    Column('gameclass', String),
-                    Column('abilities', String))
+                    Column('unit_dict', String))
 
 # Занесение таблицы в базу данных с помощью metadata через engine
 metadata.create_all(engn)
@@ -189,12 +188,11 @@ class SqlChat(object):
 class SqlUser(object):
     pyosession = None
 
-    def __init__(self, user_id, attacked=0, experience=0, gameclass='{"unit":"human"}', abilities='[]'):
+    def __init__(self, user_id, attacked=0, experience=0, unit_dict='{"unit":"human"}'):
         self.user_id = user_id
         self.attacked = attacked
         self.experience = experience
-        self.gameclass = gameclass
-        self.abilities = abilities
+        self.unit_dict = unit_dict
 
     def __repr__(self):
         return "<User('%s')>" % (self.user_id)
@@ -207,19 +205,25 @@ class SqlUser(object):
         self.experience += experience
         session.commit()
 
-    def get_class(self):
-        return json.loads(self.gameclass)
+    def get_unit_dict(self):
+        return json.loads(self.unit_dict)
 
-    def set_class(self, gameclass_dict):
-        self.gameclass = json.dumps(gameclass_dict)
+    def set_unit_dict(self, unit_dict):
+        self.unit_dict = json.dumps(unit_dict)
         session.commit()
 
     def get_abilities(self):
-        return json.loads(self.abilities)
+        return json.loads(self.unit_dict)['abilities']
 
     def set_abilities(self, abilities):
-        self.abilities = json.dumps(abilities)
+        unit_dict = self.get_unit_dict()
+        unit_dict['abilities'] = abilities
+        self.set_unit_dict(unit_dict)
         session.commit()
+
+    def reset_abilities(self):
+        self.set_unit_dict({"unit": "human", "abilities": []})
+
 
 
 class Pyossession:

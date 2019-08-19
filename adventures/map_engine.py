@@ -274,10 +274,14 @@ class Location:
         bot_methods.err(call.data)
         data = call.data.split('_')
         action = data[3]
-        if action == 'map':
-            bot_methods.bot.edit_message_reply_markup(chat_id=call.from_user.id, message_id=call.message.message_id)
-            for member in self.dungeon.party.members:
-                member.occupied = False
+        for tpl in self.get_button_list():
+            if str(tpl[0]) == action:
+                tpl[1](call)
+
+    def to_map(self, call):
+        bot_methods.bot.edit_message_reply_markup(chat_id=call.from_user.id, message_id=call.message.message_id)
+        for member in self.dungeon.party.members:
+            member.occupied = False
         self.dungeon.update_map(new=True)
 
     # Возвращает эмодзи карты
@@ -325,12 +329,13 @@ class Location:
     # Функция, запускающаяся при входе в комнату. Именно сюда планируется пихать события.
     def enter(self):
         lang_tuple = self.get_greet_tuple()
-        self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True, short_member_ui=True)
+        self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True,
+                                        short_member_ui=True, reply_markup_func=self.get_action_keyboard)
 
     def get_action_keyboard(self, member):
         buttons = self.get_button_list()
-        buttons = [(self.get_button_tuples(member.lang)[str(button[0])], button[1]) for button in buttons]
-        keyboard = form_keyboard(*[self.create_button(button[0], member, 'location', button[1],
+        buttons = [(self.get_button_tuples(member.lang)[str(button[0])], str(button[0])) for button in buttons]
+        keyboard = form_keyboard(*[self.create_button(button[0], member, 'location', str(button[1]),
                                                       named=True) for button in buttons])
         return keyboard
 
@@ -349,7 +354,7 @@ class Location:
                                         reply_markup_func=self.get_action_keyboard)
 
     def get_button_list(self):
-        return [('Назад', 'map')]
+        return [('Назад', self.to_map)]
 
     def on_enter(self, new_map=False):
         self.dungeon.update_map(new=new_map)

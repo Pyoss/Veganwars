@@ -3,6 +3,7 @@ from bot_utils.bot_methods import answer_callback_query
 from fight.abilities import ability_dict
 from chat_wars.chat_main import get_user
 from chat_wars.chat_menu import MenuPage, MenuAction, CloseMenu
+from locales.localization import LangTuple
 import sys, inspect
 
 
@@ -31,16 +32,19 @@ class UserMainMenu(UserPage):
     rus_name = 'Главное Меню'
 
     def get_menu_string(self):
-        return 'Управление персонажем\n' \
-               'Текущий опыт: {}/{}\n'.format(self.user.experience, self.user.get_experience_to_lvl())
+        abilities = self.user.get_abilities()
+        ability_names = [ability().name_lang_tuple().translate('rus') for ability in
+                         [ability_dict[abl['name']] for abl in abilities]]
+        ability_names = ', '.join(ability_names)
+        return LangTuple('chatmanagement', 'player_menu', format_dict={'experience': self.user.experience,
+                                                                       'abilities': ability_names}).translate('rus')
 
     def form_actions(self):
-        self.children_actions = [
-            UserSettings(self.user, self.user_id),
-            CloseMenu(self.user, self.user_id)
-        ]
+        self.children_actions = []
         if self.user.get_possible_abilities_amount():
             self.children_actions.append(LVLUP(self.user, self.user_id))
+        self.children_actions.append(UserSettings(self.user, self.user_id))
+        self.children_actions.append(CloseMenu(self.user, self.user_id))
 
 
 class LVLUP(UserPage):
@@ -53,13 +57,14 @@ class LVLUP(UserPage):
 
     def form_actions(self):
         self.children_actions = []
-        for ability in possible_abilities:
+        for ability in get_possible_abilities(self.user.experience, self.user.get_abilities()):
             self.children_actions.append(UserAbilityMenu(self.user, self.user_id, ability=ability()))
 
 
 class UserSettings(UserPage):
     name = 'settings'
     rus_name = 'Настройки'
+    parent_menu = UserMainMenu
 
     def get_menu_string(self):
         return 'Настройки'
@@ -129,6 +134,8 @@ class UserGetAbility(UserAction):
                 answer_callback_query(self.call, 'Вы приобретаете способность "{}"'.format(self.ability.name_lang_tuple().translate('rus')))
             else:
                 answer_callback_query(self.call, 'У вас уже есть эта способность!'.format(self.ability.name_lang_tuple().translate('rus')))
+            UserMainMenu(self.user, self.user_id, call=self.call).send_page()
+
 
         else:
             answer_callback_query(self.call, 'что-то пошло не так')
@@ -137,10 +144,18 @@ class UserGetAbility(UserAction):
         return UserButton('Взять', 'rus', self.name, self.ability.name, named=True)
 
 
-
 # --------------------------- классы -------------------------- #
 
-possible_abilities = [ability_dict['dodge']]
+def get_possible_abilities(experience, user_abilities_dicts):
+    abilities = []
+    for ability in ability_dict.values():
+        if all(prerequisite in [dct['name'] for dct in user_abilities_dicts] for prerequisite in ability.prerequisites)\
+                and not any(dct['name'] == ability.name for dct in user_abilities_dicts):
+        # if 0 not in ability.prerequisites:
+            abilities.append(ability)
+    return abilities
+
+
 user_action_dict = {value.name: value for key, value
               in dict(inspect.getmembers(sys.modules[__name__], inspect.isclass)).items()
               if value.name is not None}

@@ -16,7 +16,7 @@ class OneHanded:
     weight = 1
     accuracy = 3
     dice_num = 3
-    energy_cost = 2
+    default_energy_cost = 2
     special_energy_cost = 2
     damage = 0
     damage_cap = 5
@@ -38,7 +38,8 @@ class TwoHanded:
     accuracy = 2
     weight = 3
     damage_cap = 10
-    energy_cost = 3
+    default_energy_cost = 3
+    special_energy_cost = 3
     image_pose = 'two-handed'
     handle = (0, 0)
     file = './files/images/target.png'
@@ -65,13 +66,18 @@ class Weapon(standart_actions.GameObject):
     db_string = 'weapon'
     order = 5
     # Типы особого действия (если есть)
-    special_types = []
+    types = []
     image_pose = 'two-handed'
+    dice_num = 0
+    accuracy = 0
+    weight = 0
+    damage_cap = 0
+    energy_cost = 0
+    damage = 0
 
     def __init__(self, unit=None, obj_dict=None):
-        self.improved = 0
         standart_actions.GameObject.__init__(self, unit=unit, obj_dict=obj_dict)
-        self.damage += self.improved
+        self.improved = None
 
     def string(self, string_code, format_dict=None, order=0):
         format_dict = {} if None else format_dict
@@ -121,7 +127,7 @@ class Weapon(standart_actions.GameObject):
         return self.unit.get_melee_targets() if self.melee else self.unit.targets()
 
     def get_action(self):
-        if not self.special_types and len(self.targets()) == 1:
+        if 'options' not in self.types and len(self.targets()) == 1:
             self.unit.target = self.targets()[0]
             attack = standart_actions.Attack(unit=self.unit, fight=self.unit.fight)
             attack.act()
@@ -223,6 +229,40 @@ class Weapon(standart_actions.GameObject):
     def error_text(self):
         if not self.ready():
             return 'Оружие еще не готово'
+
+
+class WeaponWithEffect(Weapon):
+    default_effect_chance = 10
+    types = ['effect']
+
+    def __init__(self, unit=None, obj_dict=None):
+        Weapon.__init__(self, unit=unit, obj_dict=obj_dict)
+        self.effect_chance = self.default_effect_chance
+
+    def get_effect_chance(self):
+        return self.effect_chance
+
+    def on_hit(self, attack_action):
+        if self.effect_applicable(attack_action) and engine.roll_chance(
+                self.get_effect_chance()):
+            self.effect_resolve(attack_action)
+
+    def effect_applicable(self, attack_action):
+        return True
+
+    def effect_resolve(self, attack_action):
+        pass
+
+    def info_dict(self):
+        return {'effect_chance': self.get_effect_chance}
+
+    def get_menu_string(self, short_menu=False, target=None):
+        if not short_menu:
+            return localization.LangTuple(self.table_row, 'weapon_menu_1' ,
+                                          format_dict={'chance': self.get_hit_chance(), 'effect_chance': self.get_effect_chance()})
+        else:
+            return localization.LangTuple(self.table_row, 'short_menu',
+                                          format_dict={'chance': self.get_hit_chance(), 'target': target, 'effect_chance': self.get_effect_chance()})
 
 
 class SpecialActionWeapon(Weapon):
@@ -362,39 +402,20 @@ class Sword(SpecialOptionWeapon):
 
 
 # Оружие, проверенное на работоспособность с системой данжей
-class Knife(OneHanded, Weapon):
+class Knife(OneHanded, WeaponWithEffect):
     name = 'knife'
-    bleed_chance_modifier = 5
     handle = (15, 10)
     file = './files/images/knife.png'
+    default_effect_chance = 10
 
-    def __init__(self, unit=None, obj_dict=None):
-        OneHanded.__init__(self)
-        Weapon.__init__(self, unit=unit, obj_dict=obj_dict)
-        self.bleed_applied_turn = 0
+    def effect_applicable(self, attack_action):
+        if 'alive' in attack_action.target.types:
+            return True
+        return False
 
-    def on_hit(self, attack_action):
-        if attack_action.dmg_done and engine.roll_chance(
-                self.get_bleed_chance()) and 'alive' in attack_action.target.types:
-            statuses.Bleeding(attack_action.unit.target)
-            attack_action.to_emotes(emoji_utils.emote_dict['bleeding_em'])
-            self.bleed_applied_turn = self.unit.fight.turn
-
-    def info_dict(self):
-        return {'bleed_chance': self.bleed_chance_modifier}
-
-    def get_menu_string(self, short_menu=False, target=None):
-        if not short_menu:
-            return localization.LangTuple(self.table_row, 'weapon_menu_1' ,
-                                          format_dict={'chance': self.get_hit_chance(), 'bleed_chance': self.get_bleed_chance()})
-        else:
-            return localization.LangTuple(self.table_row, 'short_menu',
-                                          format_dict={'chance': self.get_hit_chance(), 'target': target, 'bleed_chance': self.get_bleed_chance()})
-
-    def get_bleed_chance(self):
-        chance = (self.unit.fight.turn - self.bleed_applied_turn)\
-               * (self.bleed_chance_modifier + self.unit.get_speed())
-        return chance if chance < 100 else 100
+    def effect_resolve(self, attack_action):
+        statuses.Bleeding(attack_action.unit.target)
+        attack_action.to_emotes(emoji_utils.emote_dict['bleeding_em'])
 
 
 class Spear(OneHanded, SpecialActionWeapon):
@@ -452,45 +473,26 @@ class Cleaver(TwoHanded, Weapon):
     file = './files/images/cleaver.png'
 
 
-class Hatchet(OneHanded, Weapon):
+class Hatchet(OneHanded, WeaponWithEffect):
     name = 'hatchet'
-    cripple_chance_modifier = 5
+    default_effect_chance = 5
 
     # -------------------------
     handle = (40, 30)
     file = './files/images/hatchet.png'
 
-    def __init__(self, unit=None, obj_dict=None):
-        OneHanded.__init__(self)
-        Weapon.__init__(self, unit=unit, obj_dict=obj_dict)
-
     def on_hit(self, attack_action):
-        if attack_action.dmg_done and engine.roll_chance(self.get_cripple_chance()):
+        if attack_action.dmg_done and engine.roll_chance(self.get_effect_chance()):
             if 'alive' in attack_action.target.types:
-                statuses.Crippled(attack_action.unit.target)
+                statuses.Crippled(attack_action.target)
                 attack_action.to_emotes(emoji_utils.emote_dict['crippled_em'])
             else:
                 attack_action.dmg_done += 1
 
-    def info_dict(self):
-        return {'bleed_chance': self.cripple_chance_modifier}
-
-    def get_menu_string(self, short_menu=False, target=None):
-        if not short_menu:
-            return localization.LangTuple(self.table_row, 'weapon_menu_1' ,
-                                          format_dict={'chance': self.get_hit_chance(), 'cripple_chance': self.get_cripple_chance()})
-        else:
-            return localization.LangTuple(self.table_row, 'short_menu',
-                                          format_dict={'chance': self.get_hit_chance(), 'target': target, 'cripple_chance': self.get_cripple_chance()})
-
-    def get_cripple_chance(self):
-        chance = (self.cripple_chance_modifier + self.unit.get_speed())*3
-        return chance if chance < 100 else 100
-
 
 class Axe(TwoHanded, Hatchet):
     name = 'axe'
-    cripple_chance_modifier = 10
+    default_effect_chance = 10
 
     # -------------------------
     handle = (40, 270)
@@ -543,7 +545,6 @@ class Bow(OneHanded, SpecialActionWeapon):
                                           format_dict={'chance': self.get_hit_chance()})
 
     def special_available(self, target=None):
-        print('Натяжение лука:{}'.format(self.drown))
         return False if self.drown > 1 else True
 
     def activate_special_action(self, target=None):
@@ -798,9 +799,8 @@ class BaseballBat(OneHanded, Weapon):
         return {'stun_chance': self.stun_chance}
 
 
-class BearClaw(BaseballBat):
+class BearClaw(OneHanded, Weapon):
     name = 'bear-claw'
-    stun_chance = 70
     types = ['natural']
     natural = True
 
@@ -838,10 +838,6 @@ class DragonTail(OneHanded, Weapon):
     name = 'dragon-tail'
     types = ['unique', 'natural']
     natural = True
-    accuracy = 3
-    dice_num = 4
-    energy_cost = 2
-    damage_cap = 6
     melee = False
 
 

@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import random
-from fight.standart_actions import MoveBack, MoveForward, SpecialWeaponAction, Item, MeleeReload, Ability, SpecialWeaponOption, Attack, Skip, StatusAction
+from fight.standart_actions import MoveBack, MoveForward, SpecialWeaponAction, Item, MeleeReload, Ability,\
+    SpecialWeaponOption, Attack, Skip, StatusAction, Armor
 from operator import attrgetter
 import engine
 
@@ -58,7 +59,10 @@ class Ai:
         if 'ability' in action.types:
             if not action.ability.available():
                 return False
-        if 'item' in action.types:
+        elif 'armor' in action.types:
+            if not action.armor.available():
+                return False
+        elif 'item' in action.types:
             if not action.item.available():
                 return False
         self.action_dict[action] = chance
@@ -77,6 +81,15 @@ class Ai:
         if args:
             info = [*info, *args]
         self.add_action(Ability, chance,
+                        info=info)
+
+    def action_armor(self, name, chance, *args, target=None):
+        info = ['fgt', str(self.fight), str(self.unit), 'armor', name]
+        if target is not None:
+            info.append(str(target))
+        if args:
+            info = [*info, *args]
+        self.add_action(Armor, chance,
                         info=info)
 
     def add_spell(self, sigils, chance, target=None):
@@ -223,7 +236,7 @@ class PasyukAi(Ai):
             return
         self.action_ability('dodge', self.unit.target.energy if self.unit.target.energy > 2 else 0)
         self.attack(self.unit.energy if self.unit.target is not None else 0)
-        if self.unit.energy > 4 and self.unit.target.energy < 4 and self.check_available(self.unit.target, 'dodge'):
+        if self.unit.energy > 4 and self.unit.target.energy < 2 and self.check_available(self.unit.target, 'dodge'):
             self.add_action(Skip, 5)
         self.reload(5 if self.unit.energy < 2 else 0)
 
@@ -254,6 +267,7 @@ class AsgaidAi(Ai):
         self.stage += 1
         if self.stage == 4:
             self.stage = 0
+
 
 class TechAi(Ai):
 

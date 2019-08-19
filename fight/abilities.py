@@ -3,6 +3,7 @@
 from fight import standart_actions, statuses, items, weapons, spells
 from locales import emoji_utils, localization
 from bot_utils import keyboards
+import math
 import random
 import engine
 import inspect
@@ -12,7 +13,8 @@ import sys
 class Ability(standart_actions.GameObject):
     core_types = ['ability']
     db_string = 'abilities'
-    prerequisites = {}
+    action_type = ['ability']
+    prerequisites = []
 
     def __init__(self, unit=None, obj_dict=None):
         standart_actions.GameObject.__init__(self, unit=unit, obj_dict=obj_dict)
@@ -43,6 +45,8 @@ class Ability(standart_actions.GameObject):
     def available(self):
         if not self.ready():
             return False
+        elif self.energy_cost > self.unit.energy:
+            return False
         return True
 
 
@@ -54,6 +58,12 @@ class InstantAbility(standart_actions.InstantObject, Ability):
 class TargetAbility(standart_actions.TargetObject, Ability):
     core_types = ['ability', 'target']
     db_string = 'abilities'
+
+    def available(self):
+        if not self.targets():
+            return False
+        else:
+            return Ability.available(self)
 
 
 class OptionAbility(standart_actions.SpecialObject, Ability):
@@ -85,6 +95,26 @@ class Passive(Ability):
         self.unit.fight.action_queue.append(self)
 
 
+class OnLvl(Passive):
+    core_types = ['ability', 'on_lvl']
+    active = False
+    stats = {}
+
+    def act(self, action=None):
+        pass
+
+    def gain(self, user):
+        unit_dict = user.get_unit_dict()
+        for key in self.stats:
+            if key not in unit_dict:
+                start_value = user.get_fight_unit_dict()[key]
+            else:
+                start_value = unit_dict[key]
+            start_value += self.stats[key]
+            unit_dict[key] = start_value
+            user.set_unit_dict(unit_dict)
+
+
 class OnHit(Ability):
     core_types = ['ability', 'on_hit']
     active = False
@@ -105,7 +135,7 @@ class ReceiveHit(Ability):
 #  в начале хода и уменьшает в конце
 class Dodge(InstantAbility):
     name = 'dodge'
-    types = ['dodge']
+    types = ['dodge', 'move']
     order = 1
     cd = 2
 
@@ -140,6 +170,7 @@ class SpellCaster(OptionAbility):
     start_sigils = [emoji_utils.emote_dict['self_em'], emoji_utils.emote_dict['strength_em'], emoji_utils.emote_dict['palm_em']]
     buff_sigils = [emoji_utils.emote_dict['wind_em'], emoji_utils.emote_dict['earth_em'], emoji_utils.emote_dict['random_em']]
     end_sigils = [emoji_utils.emote_dict['spark_em'], emoji_utils.emote_dict['ice_em'], emoji_utils.emote_dict['ignite_em']]
+    prerequisites = [0]
 
     def act(self, action):
         if self.check_final(action.info):
@@ -227,238 +258,322 @@ class SpellCaster(OptionAbility):
             return 'У вас недостаточно энергии'
 
 
-
-
-################################# НИЖЕ НИЧЕГО НЕ ПРОВЕРЕНО #######################################
-# Способность Садист: прибавляет энергию, если у текущей цели отнялись жизни.
-class Sadist(Passive):
-    name = 'sadist'
+class Assassin(Passive):
+    name = 'assassin'
     order = 41
-
-    def __init__(self, actor):
-        Passive.__init__(self, actor)
-        self.hp = 0
-
-    def act(self, action=None):
-        standart_actions.Custom(self.set_hp, order=40, actor=self.actor)
-        self.actor.fight.action_queue.append(self)
+    prerequisites = ['dodge']
 
     def activate(self, action=None):
-        if self.hp > 0:
-            if self.hp > self.actor.target.hp:
-                if self.actor.wasted_energy > 0:
-                    self.actor.wasted_energy -= 1
-                else:
-                    self.actor.energy += 1
-                self.string('use', format_dict={'actor': self.actor.name})
-        self.hp = 0
-
-    def set_hp(self):
-        if self.actor.target is not None:
-            self.hp = self.actor.target.hp
+        if 'effect' in self.unit.weapon.types:
+            if 'attack' not in self.unit.action:
+                self.unit.weapon.effect_chance += 20
+            else:
+                self.unit.weapon.effect_chance = self.unit.weapon.default_effect_chance
+            print(self.unit.weapon.effect_chance)
 
 
-# Способность Гипноз: меняет текущую цель указанного игрока на одного из противников использующего.
-class Hypnotize(TargetAbility):
-    name = 'hypnotize'
+class Charge(Passive):
+    name = 'charge'
+    order = 41
+
+    def activate(self, action=None):
+        if 'forward' in self.unit.action:
+            statuses.Running(self.unit, 1)
+
+
+class Push(TargetAbility):
+    name = 'push'
     order = 1
     cd = 4
+    default_energy_cost = 2
+    prerequisites = ['cleave', 'sturdy']
 
     def targets(self):
-        return self.actor.targets()
+        return [target for target in self.unit.melee_targets if 'massive' not in target.types]
 
     def activate(self, action):
-        if action.target.target is not None:
-            new_target = random.choice(self.actor.targets())
-            action.target.target = new_target
-            self.string('use', format_dict={'actor': self.actor.name, 'target': action.target.name,
-                                            'new_target': new_target.name})
+        self.string('use', format_dict={'target': action.target.name, 'actor': self.unit.name})
+        statuses.Buff(action.target, 'melee_accuracy', -6, 1)
+        statuses.Buff(action.target, 'range_accuracy', -6, 1)
+        action.target.move_back()
+
+
+class Heavy(OnLvl):
+    name = 'heavy'
+    stats = {'speed': 4}
+
+
+class Slow(OnLvl):
+    name = 'slow'
+    stats = {'max_recovery': -2, 'max_energy': 2}
+    prerequisites = ['second-breath']
+
+
+class Sturdy(OnLvl):
+    name = 'sturdy'
+    stats = {'max_hp': 1, 'toughness': 3}
+    prerequisites = ['charge', 'heavy']
+
+
+class Armorer(StartAbility):
+    name = 'armorer'
+    prerequisites = ['sturdy']
+
+    def start_act(self):
+        for armor in self.unit.armor:
+            armor.armor *= 2
+            armor.current_coverage *= 2
+            print(armor.current_coverage)
+
+
+class ShieldBlock(TargetAbility):
+    name = 'block'
+    order = 1
+    cd = 4
+    default_energy_cost = 2
+    prerequisites = ['heavy']
+
+    def targets(self):
+        return self.unit.melee_targets
+
+    def activate(self, action):
+        if 'attack' not in action.target.action:
+            self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target.name})
         else:
-            self.string('fail', format_dict={'actor': self.actor.name, 'target': action.target.name})
-        self.actor.wasted_energy += 3
+            for actn in self.unit.fight.action_queue.action_list:
+                if actn.unit == action.target and 'attack' in actn.action_type:
+                    dmg = actn.weapon.get_damage(action.unit)
+                    self.unit.fight.action_queue.remove(actn)
+                    action.target.waste_energy(action.target.weapon.energy_cost)
+                    self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name, 'damage': dmg})
+                    armor = next(armor for armor in self.unit.armor if 'shield' in armor.types)
+                    armor.armor -= dmg
+                    if armor.armor <= 0:
+                        armor.destroy()
 
     def available(self):
-        return True if self.actor.energy >= 3 else False
+        if not any('shield' in armor.types for armor in self.unit.armor):
+            return False
+        elif next(armor for armor in self.unit.armor if 'shield' in armor.types).armor <= 0:
+            return False
+        return TargetAbility.available(self)
 
 
-# Способность Бицепс: Добавляет 25% вероятность нанести удвоенный урон при стандартной атаке
-class Muscle(OnHit):
-    name = 'muscle'
-    types = ['not_range']
+class Cleave(InstantAbility):
+    name = 'cleave'
+    types = ['attack']
+    order = 5
+    cd = 4
+    default_energy_cost = 2
+    prerequisites = ['charge']
+
+    def __init__(self, unit=None, obj_dict=None):
+        InstantAbility.__init__(self, unit=unit, obj_dict=obj_dict)
+        self.windup = False
+        self.windup_turn = -1
+
+    def name_lang_tuple(self):
+        if not self.windup or self.windup_turn < self.unit.fight.turn - 1:
+            return localization.LangTuple(self.table_row, 'button')
+        else:
+            return localization.LangTuple(self.table_row, 'name')
+
+    def activate(self, action):
+        if not self.windup or self.windup_turn < self.unit.fight.turn - 1:
+            self.string('special', format_dict={'actor': self.unit.name, 'weapon': self.unit.weapon.name_lang_tuple()})
+            self.windup = True
+            self.windup_turn = self.unit.fight.turn
+            self.unit.waste_energy(2)
+        else:
+            self.unit.waste_energy(self.unit.weapon.energy_cost)
+            self.windup = False
+            targets = [target for target in self.unit.melee_targets if 'dodge' not in target.action]
+            if targets:
+                damage = engine.aoe_split(self.unit.weapon.dice_num + self.unit.weapon.damage + self.unit.damage,
+                                          len(targets))
+                self.string('use', format_dict={'actor': self.unit.name, 'damage': damage,
+                                                'targets': ', '.join([target.name for target in targets])})
+
+                for target in targets:
+                    attack_action = standart_actions.Attack(self.unit, self.unit.fight, stringed=False)
+                    attack_action.activate(target=target, waste=0, dmg=damage)
+            else:
+                self.string('fail', format_dict={'actor': self.unit.name})
+
+    def available(self):
+        if 'two-handed' not in self.unit.weapon.types:
+            return False
+        return InstantAbility.available(self)
+
+
+class Provoke(TargetAbility):
+    name = 'provoke'
+    order = 5
+    cd = 4
+    default_energy_cost = 1
+    prerequisites = ['charge', 'dodge']
+
+    def targets(self):
+        return self.unit.targets()
+
+    def activate(self, action):
+        statuses.CustomPassive(action.target, types=['on_hit'], name='provoke_stop',
+                               delay=6, func=self.stop_provoke, option=action.unit)
+        statuses.PermaStatus(action.target, 1, 6, self.provoke, name='provoke', emoji='😡', args=[action.target])
+        self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
+
+    @staticmethod
+    def provoke(target):
+        target.waste_energy(2)
+        Provoke(target).string('special', format_dict={'actor': target.name})
+
+    @staticmethod
+    def stop_provoke(action, options):
+        if action.target == options:
+            action.unit.statuses['provoke'].finish()
+            action.unit.statuses['provoke_stop'].finish()
+
+
+class SecondBreath(Passive):
+    name = 'second-breath'
+    order = 60
+    prerequisites = ['heavy', 'dodge']
+
+    def __init__(self, unit=None, obj_dict=None):
+        Passive.__init__(self, unit=unit, obj_dict=obj_dict)
+        self.used = False
+
+    def activate(self, action=None):
+        if not self.used:
+            if self.unit.energy <= 0:
+                self.string('use', format_dict={'actor': self.unit.name})
+                self.unit.energy = self.unit.max_energy
+                self.used = True
+
+
+class ShieldSmash(TargetAbility):
+    name = 'shield-smash'
+    order = 3
+    cd = 2
+    prerequisites = ['block', 'second-breath']
+
+    def targets(self):
+        return self.unit.melee_targets
+
+    def get_energy_cost(self):
+        if self.unit is not None:
+            return next(armor for armor in self.unit.armor if 'shield' in armor.types).energy_cost
+        else:
+            return self.default_energy_cost
+
+    def activate(self, action):
+        target = action.target
+        attack = standart_actions.Attack(self.unit, self.unit.fight)
+        shield = next(armor for armor in self.unit.armor if 'shield' in armor.types)
+        attack.activate(target=target, weapon=shield)
+        self.unit.waste_energy(shield.energy_cost)
+        shield.current_coverage = 100
+        statuses.CustomStatus(self.unit, 0, 1, self.stop_shield, args=[shield])
+
+    @staticmethod
+    def stop_shield(shield):
+        shield.current_coverage = shield.get_coverage()
+
+    def available(self):
+        if not any('shield' in armor.types for armor in self.unit.armor):
+            return False
+        elif next(armor for armor in self.unit.armor if 'shield' in armor.types).armor <= 0:
+            return False
+        return TargetAbility.available(self)
+
+
+class Jump(TargetAbility):
+    name = 'jump'
+    order = 10
+    prerequisites = ['provoke']
+
+    def get_energy_cost(self):
+        if self.unit is not None:
+            return self.unit.weapon.energy_cost
+        else:
+            return self.default_energy_cost
+
+    def targets(self):
+        return [target for target in self.unit.targets() if target not in self.unit.melee_targets]
+
+    def activate(self, action):
+        self.unit.move_forward()
+        self.string('use', format_dict={'actor': self.unit.name})
+        attack = standart_actions.Attack(self.unit, self.unit.fight)
+        attack.activate(target=action.target)
+
+
+class Trip(TargetAbility):
+    name = 'trip'
+    order = 5
+    prerequisites = ['provoke', 'assassin']
+
+    def targets(self):
+        return self.unit.melee_targets
+
+    def activate(self, action):
+        if 'move' in action.target.action:
+            self.string('use', format_dict={'actor': self.unit.name, 'target': action.target})
+            statuses.Prone(action.target)
+        else:
+            self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target})
+
+
+class JumpBack(InstantAbility):
+    name = 'jump-back'
+    types = ['dodge', 'move']
+    order = 1
+    cd = 5
+    prerequisites = ['second-breath', 'assassin']
+
+    def activate(self, action):
+        InstantAbility.activate(self, action)
+        self.string('use', format_dict={'actor': self.unit.name})
+        statuses.Buff(self.unit, 'evasion', 6, 1)
+        self.unit.move_back()
+
+    def available(self):
+        if not self.ready():
+            return False
+        if 'running' in self.unit.statuses:
+            return False
+        if self.unit.rooted:
+            return False
+        return True
+
+
+class Execute(OnHit):
+    name = 'execute'
+    prerequisites = ['provoke', 'cleave']
 
     def act(self, action):
-        if engine.roll_chance(25) and action.weapon.melee:
+        print(action.target.max_hp)
+        print(math.ceil(action.target.max_hp/4))
+        if action.target.hp <= math.ceil(action.target.max_hp/4):
             action.dmg_done *= 2
             action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
 
 
-# Способность Двужильность: жизни и стойкость в начале игры увеличены.
-class Sturdy(StartAbility):
-    types = ['build']
-    name = 'sturdy'
-
-    def build_act(self):
-        self.actor.hp += 1
-        self.actor.max_hp += 1
-        self.actor.toughness += 3
-
-
-# Способность Неторопливый: максимальная энергия увеличена, а скорость ее восстановления - уменьшена.
-class Slow(StartAbility):
-    name = 'slow'
-
-    def start_act(self):
-        self.actor.energy += 2
-        self.actor.max_energy += 2
-        self.actor.recovery_energy -= 2
-
-
-# Способность Неторопливый: максимальная энергия увеличена, а скорость ее восстановления - уменьшена.
-class Fat(StartAbility):
-    name = 'fat'
-
-    def start_act(self):
-        self.actor.add_energy(-1)
-
-    def build_act(self):
-        self.actor.max_hp += 2
-        self.actor.hp += 2
-
-
-# Способность Запасливый: На 2 предмета больше в начале игры. Не можете уворачиваться.
-class Items(BuildAbility):
-    name = 'items'
-
-    def build_act(self):
-        item = random.sample(set([item for item in items.items_list if not any(item == it for it in self.actor.items)]),
-                             2)
-        for i in item:
-            self.actor.items.append(i(self.actor))
-        for ability in self.actor.abilities:
-            if ability.name == 'dodge':
-                self.actor.abilities.remove(ability)
-
-
-# Способность Подрывник: Вы получаете динамит. Этот предмет не тратит хода, и наносит 5 урона всем
-# игрокам через несколько ходов.
-class Demoman(StartAbility):
-    name = 'demoman'
-
-    def build_act(self):
-        self.actor.items.append(items.Dynamite(self.actor))
-
-
-# Способность Прицел: увеличивает точность дальнего оружия на 2.
-class Target(StartAbility):
-    name = 'target'
-    types = ['not_melee']
-
-    def start_act(self):
-        self.unit.range_accuracy += 2
-
-
-# Способность Бронежилет: с 30% вероятностью снижает на 1 получаемые повреждения от атак.
-class West(StartAbility):
-    name = 'west'
-
-    def start_act(self):
-        self.actor.armor[self.name] = (1, 30)
-
-
-class Revenge(Passive):
-    name = 'revenge'
-    types = ['not_solo']
-    order = 41
-
-    def __init__(self, actor):
-        Passive.__init__(self, actor)
-        self.dead_teammates = []
-
-    def activate(self, action=None):
-        if not self.actor.alive():
-            return False
-        for actor in self.actor.team.actors:
-            if not actor.alive() and actor not in self.dead_teammates:
-                self.string('use', format_dict={'actor': self.actor.name, 'dead': actor.name})
-                self.actor.hp += 1
-                self.actor.damage += 2
-                self.dead_teammates.append(actor)
-
-
-# Способность Пироман: увеличивает наносимый урон на один за каждого горящего человека в бою.
-class Pyromaniac(Passive):
-    name = 'pyromaniac'
-    order = 41
-
-    def __init__(self, actor):
-        Passive.__init__(self, actor)
-        self.bonus_damage = 0
-
-    def activate(self, action=None):
-        global_stacks = sum([actor.statuses['burning'].stacks
-                             for actor in self.actor.fight.actors if 'burning' in actor.statuses and actor.alive()])
-        self.bonus_damage = global_stacks
-        if self.bonus_damage:
-            self.string('use', format_dict={'actor': self.actor.name, 'bonus_damage': self.bonus_damage})
-            self.actor.damage += self.bonus_damage
-            statuses.CustomStatus(self.actor, delay=1, func=self.delete_bonus, order=40, name='pyromaniac_delay')
-
-    def delete_bonus(self):
-        self.actor.damage -= self.bonus_damage
-        self.bonus_damage = 0
-
-
-# Способность Наркоман: Точность уменьшена.
-# При использовании любых препаратов точность и наносимый урон увеличивается на 1.
-class Junkie(Passive):
-    name = 'junkie'
-    types = ['start']
-    order = 1
-
-    def start_act(self):
-        self.actor.melee_accuracy -= 1
-        self.actor.range_accuracy -= 1
-
-    def build_act(self):
-        self.actor.items.append(random.choice([item for item in [value for key, value in items.items_dict.items()
-                                                                 if 'drug' in value.types]])(self.actor))
-
-    def activate(self, action=None):
-        if any('drug' in action.types for action in self.actor.actions()):
-            self.activate_bonus()
-
-    def activate_bonus(self):
-        statuses.Buff(self.actor, 'melee_accuracy', 2, 1)
-        statuses.Buff(self.actor, 'range_accuracy', 2, 1)
-        statuses.Buff(self.actor, 'damage', 1, 1)
-        self.string('use', format_dict={'actor': self.actor.name})
-
-
-# Способность Вор: Вы можете попытаться забрать используемый противником предмет.
-class Thief(TargetAbility):
-    name = 'thief'
-    order = 1
-    cd = 1
+class KnockBack(TargetAbility):
+    name = 'knock-back'
+    order = 5
+    default_energy_cost = 2
+    prerequisites = ['sturdy', 'shield-block']
 
     def targets(self):
-        return self.actor.targets()
+        return self.unit.melee_targets
 
     def activate(self, action):
-        items_to_steal = [action for action in action.target.actions() if 'item' in action.types]
-        if items_to_steal:
-            stopped_action = random.choice(items_to_steal)
-            self.actor.fight.action_queue.action_list.remove(stopped_action)
-            item = stopped_action.item
-            self.actor.items.append(item)
-            item.actor = self.actor
-            self.string('use', format_dict={'actor': self.actor.name, 'target': action.target.name,
-                                            'item': item.name_lang_tuple()})
+        if action.target.energy < action.unit.energy + random.randint(1, 2):
+            self.string('use', format_dict={'actor': action.unit.name, 'target': action.target.name})
+            statuses.Prone(action.target)
         else:
-            self.string('fail', format_dict={'actor': self.actor.name, 'target': action.target.name})
-        self.actor.waste_energy(1)
-
-    def available(self):
-        return True if self.actor.energy >= 1 else False
+            self.string('fail', format_dict={'actor': action.unit.name, 'target': action.target.name})
 
 
 # Способность Вор: Вы можете попытаться забрать используемый противником предмет.
@@ -466,6 +581,7 @@ class Thrower(TargetAbility):
     name = 'thrower'
     cd = 3
     order = 0
+    prerequisites = [0]
 
     def __init__(self, actor):
         TargetAbility.__init__(self, actor)
@@ -535,6 +651,7 @@ class Thrower(TargetAbility):
 class Zombie(Passive):
     name = 'zombie'
     order = 41
+    prerequisites = [0]
 
     def __init__(self, actor):
         self.activated = False
@@ -554,13 +671,42 @@ class Zombie(Passive):
         self.actor.hp_delta -= 10
 
 
+# ################################ НИЖЕ НИЧЕГО НЕ ПРОВЕРЕНО #######################################
+# Способность Садист: прибавляет энергию, если у текущей цели отнялись жизни.
+
+class Sadist(Passive):
+    name = 'sadist'
+    order = 41
+    prerequisites = [0]
+
+    def act(self, action=None):
+        standart_actions.Custom(self.set_hp, order=40, actor=self.actor)
+        self.actor.fight.action_queue.append(self)
+
+    def activate(self, action=None):
+        if self.hp > 0:
+            if self.hp > self.actor.target.hp:
+                if self.actor.wasted_energy > 0:
+                    self.actor.wasted_energy -= 1
+                else:
+                    self.actor.energy += 1
+                self.string('use', format_dict={'actor': self.actor.name})
+        self.hp = 0
+
+    def set_hp(self):
+        if self.actor.target is not None:
+            self.hp = self.actor.target.hp
+
+
 # Способность Берсерк: Ваша начальная энергия уменьшается на 2.
 #  Вы получаете дополнительную энергию за каждую недостающую жизнь.
 #  Вы наносите бонусный урон, пока у вас остается только 1 жизнь.
+
 class Berserk(Passive):
     name = 'berserk'
     types = ['start', 'on_hit']
     order = 42
+    prerequisites = [0]
 
     def __init__(self, actor):
         Passive.__init__(self, actor)
@@ -604,27 +750,11 @@ class Berserk(Passive):
             self.bonus_damage = False
 
 
-class IgniteTorch(InstantAbility):
-    name = 'ignite-torch'
-    types = ['tech']
-    order = 1
-
-    def available(self):
-        if self.actor.weapon.__class__.name == 'torch':
-            if not self.actor.weapon.burning:
-                return True
-        return False
-
-    def activate(self, action):
-        self.actor.weapon.burning = True
-        self.actor.weapon.start_fire_turn = self.actor.fight.turn
-        self.actor.weapon.string('special_hit', format_dict={'actor': self.actor.name})
-
-
 class WeaponMaster(InstantAbility):
     name = 'weapon-master'
     types = ['optional_start']
     full = False
+    prerequisites = [0]
 
     def __init__(self, actor):
         self.turn_used = 0
@@ -667,6 +797,7 @@ class WeaponMaster(InstantAbility):
 class Arsenal(StartAbility):
     name = 'arsenal'
     types = ['optional_start']
+    prerequisites = [0]
 
     def ask_start_option(self):
         buttons = []
@@ -693,6 +824,7 @@ class Munchkin(Passive):
     name = 'munchkin'
     types = ['start', 'unique']
     order = 0
+    prerequisites = [0]
 
     def __init__(self, actor):
         Passive.__init__(self, actor)
@@ -725,28 +857,11 @@ class Munchkin(Passive):
             self.i = 0
 
 
-class JumpBack(InstantAbility):
-    name = 'jump-back'
-    types = ['start']
-    full = True
-    order = 1
-    cd = 4
-
-    def start_act(self):
-        for ability in self.unit.abilities:
-            if ability.name == 'dodge':
-                self.unit.abilities.remove(ability)
-
-    def activate(self, action):
-        self.string('use', format_dict={'actor': self.unit.name})
-        statuses.Buff(self.unit, 'evasion', 6, 1)
-        self.unit.move_back()
-
-
 class Doctor(TargetAbility):
     name = 'doctor'
     order = 10
     cd = 5
+    prerequisites = [0]
 
     def build_act(self):
         self.actor.max_hp -= 1
@@ -766,6 +881,7 @@ class HoundMaster(InstantAbility):
     name = 'houndmaster'
     order = 1
     full = True
+    prerequisites = [0]
 
     def __init__(self, actor):
         InstantAbility.__init__(self, actor)
@@ -798,6 +914,7 @@ class RatGeneral(Passive):
     name = 'rat-general-call'
     types = ['start', 'unique']
     order = 50
+    prerequisites = [0]
 
     def __init__(self, actor):
         Passive.__init__(self, actor)
@@ -829,6 +946,7 @@ class RatGeneral(Passive):
 class RatInquisitor(InstantAbility):
     name = 'rat-inquisitor-burn'
     order = 5
+    prerequisites = [0]
 
     def activate(self, action):
         targets = self.actor.targets()
@@ -840,6 +958,7 @@ class RatInquisitor(InstantAbility):
 class Skeleton(Passive):
     name = 'skeleton'
     order = 41
+    prerequisites = [0]
 
     def activate(self, action=None):
         if self.actor.hp <= 0 and self.actor.armor:
@@ -847,6 +966,7 @@ class Skeleton(Passive):
 
 
 class Bite(TargetAbility):
+    prerequisites = [0]
     def targets(self):
         return [target for target in self.actor.melee_targets() if 'bleeding' in target.statuses]
 
@@ -868,6 +988,7 @@ class Bite(TargetAbility):
 
 class Cannibal(TargetAbility):
     name = 'cannibal'
+    prerequisites = [0]
 
     def targets(self):
         allies = [target for target in self.unit.get_allies()]
@@ -893,6 +1014,7 @@ class Cannibal(TargetAbility):
 
 class CorpseEater(TargetAbility):
     name = 'corpse-eater'
+    prerequisites = [0]
 
     def targets(self):
         return [key for key in self.unit.fight.dead if 'alive' in key.types and self.unit.fight.dead[key]]
@@ -915,6 +1037,7 @@ class CorpseEater(TargetAbility):
 
 class WeaponSnatcher(TargetAbility):
     name = 'weapon-snatcher'
+    prerequisites = [0]
 
     def targets(self):
         return [target for target in self.unit.melee_targets]
@@ -938,6 +1061,7 @@ class WeaponSnatcher(TargetAbility):
 class Witch(TargetAbility):
     name = 'curse'
     cd = 3
+    prerequisites = [0]
 
     def targets(self):
         return self.unit.targets()
@@ -951,21 +1075,13 @@ class Witch(TargetAbility):
 
 class Necromancer(InstantAbility):
     name = 'necromancer'
+    prerequisites = [0]
 
     def activate(self, action):
         self.unit.waste_energy(5)
         self.unit.change_hp(-1)
         self.string('use', format_dict={'actor': self.unit.name})
         self.unit.summon_unit(Skeleton)
-
-
-class Spermonster(ReceiveHit):
-    name = 'spermonster'
-
-    def act(self, action):
-        if engine.roll_chance(60) and action.weapon.melee:
-            self.unit.damage += 1
-            self.string('use', format_dict={'actor': self.unit.name}, order=21)
 
 ability_dict = {value.name: value for key, value
                 in dict(inspect.getmembers(sys.modules[__name__], inspect.isclass)).items()

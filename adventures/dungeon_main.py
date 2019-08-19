@@ -118,7 +118,8 @@ class Party:
         for member in self.members:
             if member != self.leader:
                 member.send_message(form_message(*args, sh_m_ui=short_member_ui, memb=member),
-                                    reply_markup=reply_markup_func(member) if reply_markup_func is not None else None if not leader_reply else None, image=image)
+                                    reply_markup=reply_markup_func(member) if reply_markup_func is not None else None if
+                                    not leader_reply else None, image=image)
 
     def edit_message(self, text, reply_markup=None):
         for member in self.members:

@@ -2,6 +2,7 @@ import random
 
 chat_wars_activated = False
 
+
 class TestChat:
 
     def __init__(self, resources, income):

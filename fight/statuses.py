@@ -111,8 +111,8 @@ class CustomStatus(Status):
 class CustomPassive(Status):
     order = 60
 
-    def __init__(self, unit, types=None, delay=1, **kwargs):
-        self.name = 'custom_' + str(id(self))
+    def __init__(self, unit, types=None, name=None, delay=1, **kwargs):
+        self.name = 'custom_' + str(id(self)) if name is None else name
         Status.__init__(self, unit, acting=True,  **kwargs)
         self.delay = delay
         self.types = [] if types is None else types
@@ -179,7 +179,7 @@ class Running(OnHitStatus):
     def act(self, action=None):
         if action is not None:
             if action.weapon.melee and action.dmg_done > 0:
-                action.dmg_done += 1
+                action.dmg_done += 2
                 action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
         else:
             self.unit.fight.edit_queue(self)
@@ -200,7 +200,6 @@ class Flying(ReceiveHitStatus):
 
     def menu_string(self):
         return '💨'
-
 
 
 class Buff:
@@ -324,8 +323,10 @@ class Burning(Status):
                     self.finish()
                     return False
             if self.stacks:
-                self.unit.dmg_received += self.stacks
+                self.unit.receive_damage(self.stacks)
                 self.string('damage', format_dict={'actor': self.unit.name, 'damage_dealt': self.stacks})
+                self.unit.death_lang_tuple = {'source': self,
+                                              'target': None}
             self.stacks -= 1
             if self.stacks < 1:
                 self.finish()
@@ -422,6 +423,8 @@ class Prone(Status):
             actor.disarmed.append('prone')
         if 'prone' not in actor.rooted:
             actor.rooted.append('prone')
+        setattr(actor, 'evasion', getattr(actor, 'evasion') - 5)
+        self.unit.boost_attribute('evasion', - 5)
         Status.__init__(self, actor)
 
         self.additional_buttons_actions = [('free', self.finish,
@@ -435,6 +438,8 @@ class Prone(Status):
         pass
 
     def finish(self):
+        setattr(self.unit, 'evasion', getattr(self.unit, 'evasion') + 5)
+        self.unit.boosted_attributes['evasion'] += 5
         self.unit.string('get_up', format_dict={'actor': self.unit.name})
         self.unit.disarmed.remove('prone')
         self.unit.rooted.remove('prone')

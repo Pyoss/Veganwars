@@ -44,7 +44,6 @@ class OgreAi(StandardMeleeAi):
             self.unit.announce(self.unit.to_string('skill_1'))
 
 
-
 class Ogre(StandardCreature):
     unit_name = 'ogre'
     control_class = OgreAi

@@ -108,6 +108,9 @@ class ActionQueue:
     def append(self, action):
         self.action_list.append(action)
 
+    def remove(self, action):
+        self.action_list.remove(action)
+
     def run_queue_section(self, order_limit):
         while self.action_list:
             if self.action_list[-1].order <= order_limit:
@@ -281,6 +284,9 @@ class Fight:
             unit.get_targets()
 
     def activate_statuses_and_passives(self):
+        if self.turn == 1:
+            for unit in self.units:
+                unit.start_abilities()
         for unit in self.alive_units():
             unit.activate_passives()
         for unit in self.units:
@@ -290,7 +296,6 @@ class Fight:
         for unit in self.active_actors():
             unit.get_action()
         self.wait_action()
-        time.sleep(2)
 
     def wait_action(self):
         x = 0

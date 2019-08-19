@@ -152,16 +152,17 @@ class BaseAttack(Action):
         if emote not in self.special_emotes:
             self.special_emotes.append(emote)
 
-    def attack(self, waste=None):
+    def attack(self, waste=None, dmg=None):
         self.weapon.before_hit(self)
         # Вычисление нанесенного урона и трата энергии
-        self.dmg_done = self.weapon.get_damage(self.target)
+        self.dmg_done = self.weapon.get_damage(self.target) if dmg is None else dmg
         if waste is None:
             self.unit.waste_energy(self.weapon.energy_cost)
         else:
             self.unit.waste_energy(waste)
         # Применение способностей и особых свойств оружия
-        self.dmg_done += self.unit.damage if self.dmg_done else 0
+        if not dmg and self.dmg_done != 0:
+            self.dmg_done += self.unit.damage
         self.unit.on_hit(self)
         self.target.receive_hit(self)
         self.weapon.on_hit(self)
@@ -181,9 +182,8 @@ class BaseAttack(Action):
                            ''.join(self.special_emotes)}
             self.attack_tuple = localization.LangTuple(self.weapon.table_row, action, attack_dict)
             self.fight.string_tuple.row(self.attack_tuple)
-            self.target.death_lang_tuple = {'tuple': self.attack_tuple,
-                                            'weapon': self.weapon,
-                                            'target': self.target}
+            self.target.death_lang_tuple = {'source': self.weapon,
+                                            'target': self.unit.name}
         else:
             self.armor_string()
 
@@ -247,15 +247,16 @@ class Suicide(Action):
 class Attack(BaseAttack):
     name = 'attack'
 
-    def activate(self, target=None, weapon=None, waste=None):
+    def activate(self, target=None, weapon=None, waste=None, dmg=None):
         self.weapon = weapon if weapon is not None else self.weapon
         # Определение цели
         self.target = self.unit.target if target is None else target
-        self.attack(waste=waste)
+        self.attack(waste=waste, dmg=dmg)
         self.on_attack()
         # Добавление описания в строку отчета
         if self.stringed:
             self.string(self.str)
+        return self.dmg_done
 
 
 class Skip(Action):
@@ -320,7 +321,7 @@ class MoveForward(Action):
 class MoveBack(Action):
     name = 'move-back'
     action_type = ['move', 'back']
-    order = 1
+    order = 7
 
     def activate(self):
         self.fight.string_tuple += localization.LangTuple('fight', 'move_back', {'actor': self.unit.name})
@@ -364,7 +365,7 @@ class WeaponActions(MenuAction):
     types = ['keyboard']
 
     def act(self):
-        if self.unit.weapon.special_types or len(self.unit.weapon.targets()) != 1:
+        if 'option' not in self.unit.weapon.types or len(self.unit.weapon.targets()) != 1:
             self.unit.active = True
         self.activate()
 
@@ -600,8 +601,9 @@ class GameObject:
     keyboard_button = keyboards.ObjectButton
     effect = False
     one_time = True
-    actions_type = []
+    action_type = []
     price = 100
+    default_energy_cost = 0
     emote = emoji_utils.emote_dict['question_em']
 
     def __init__(self, unit=None, obj_dict=None):
@@ -610,9 +612,13 @@ class GameObject:
         self.get_table_row()
         self.types = [*self.core_types, *self.types]
         self.ready_turn = 0
+        self.energy_cost = self.get_energy_cost()
         self.id = str(engine.rand_id())
         if obj_dict is not None:
             self.from_dict(obj_dict)
+
+    def get_energy_cost(self):
+        return self.default_energy_cost
 
     def from_dict(self, obj_dict):
         for key, value in obj_dict.items():
@@ -635,7 +641,6 @@ class GameObject:
 
     def activate(self, action):
         self.on_cd()
-
 
     def name_lang_tuple(self):
         return localization.LangTuple(self.table_row, 'name')
@@ -689,6 +694,8 @@ class GameObject:
                 return True
             else:
                 return False
+        elif not self.active:
+            return False
         return True
 
     def ask_start_option(self):
@@ -744,6 +751,8 @@ class TargetObject(GameObject):
             for action_type in action.action_type:
                 self.unit.action.append(action_type)
             self.on_cd()
+            if self.energy_cost > 0:
+                self.unit.waste_energy(self.energy_cost)
             self.ask_action()
         else:
             self.ask_options()
@@ -775,6 +784,8 @@ class SpecialObject(GameObject):
             for action_type in action.action_type:
                 self.unit.action.append(action_type)
             self.on_cd()
+            if self.energy_cost > 0:
+                self.unit.waste_energy(self.energy_cost)
             self.ask_action()
         else:
             self.ask_options()

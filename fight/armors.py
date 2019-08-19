@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from fight import standart_actions
+from fight import standart_actions, weapons
 from locales import localization, emoji_utils
 from bot_utils import keyboards
 import sys
@@ -25,8 +25,12 @@ class Armor(standart_actions.GameObject):
         standart_actions.GameObject.__init__(self, unit)
         self.armor = self.max_armor if not damage_left else damage_left
         self.improved = 0
+        self.current_coverage = self.get_coverage()
         self.armor += self.improved
         self.rating += self.improved
+
+    def get_coverage(self):
+        return self.coverage
 
     def try_placement(self, unit_dict):
         if any(armor_dict[armor['name']].placement == self.placement for armor in unit_dict['armor']):
@@ -102,6 +106,16 @@ class Helmet(Armor):
         }
 
 
+class DragonHide(Armor):
+    name = 'dragon_hide'
+    placement = 'head'
+    max_armor = 10
+    rating = 10
+    coverage = 80
+    destructable = True
+    real = True
+
+
 class Mask(Armor):
     name = 'mask'
     placement = 'head'
@@ -142,9 +156,9 @@ class SteamPunk_Mask(Armor):
         }
 
 
-class Shield(Armor):
+class Shield(Armor, weapons.OneHanded, weapons.Weapon):
     name = 'shield'
-    types = ['usable']
+    types = ['usable', 'shield']
     placement = 'arm'
     max_armor = 5
     rating = 5
@@ -153,6 +167,7 @@ class Shield(Armor):
     destructable = True
     weight = 2
     real = True
+    default_energy_cost = 2
 
     def get_image_dict(self):
         return {

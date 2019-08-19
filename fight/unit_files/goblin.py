@@ -45,6 +45,8 @@ class GoblinAi(StandardMeleeAi):
     def default_weapon_actions(self):
         self.clear_actions()
         self.find_target()
+        if StandardMeleeAi.nessesary_actions(self):
+            return
         self.move_forward(3 if not self.unit.weapon.targets() else 0)
         self.attack(self.unit.energy if self.unit.target is not None else 0)
         self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
@@ -92,7 +94,7 @@ class Goblin(StandardCreature):
 
     danger = 7
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         StandardCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 4
@@ -100,7 +102,7 @@ class Goblin(StandardCreature):
         self.hp = 4
         self.abilities = [abilities.WeaponSnatcher(self), abilities.Dodge(self)]
         self.weapon = engine.get_random_with_chances(
-            ((weapons.Fist, 2),)
+            ((weapons.Spear, 2),)
         )(self)
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
@@ -121,6 +123,5 @@ class Goblin(StandardCreature):
         if self.stole:
             self.loot_chances['weapon'] = 100
         return StandardCreature.generate_loot(self)
-
 
 units_dict[Goblin.unit_name] = Goblin

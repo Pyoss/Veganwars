@@ -66,14 +66,16 @@ class Lobby:
 
     def run_next_step(self, user_id, message_id=None):
         user = pyossession.get_user(user_id=user_id)
-
+        print(self[user_id]['equipment_choice'])
         if self[user_id]['equipment_choice']:
-            next_step = self[user_id]['equipment_choice'][-1]
-            user.send_equipment_choice(self.id, self.chat_id, next_step, message_id=message_id)
+            if not user.send_equipment_choice(self.id, self.chat_id,
+                                              self[user_id]['equipment_choice'][-1], message_id=message_id):
+                self[user_id]['equipment_choice'].pop()
+                self.run_next_step(user_id, message_id=message_id)
         else:
-            self.get_ready(user_id, message_id=message_id)
+            self.get_ready_message(user_id, message_id=message_id)
 
-    def get_ready(self, user_id, message_id):
+    def get_ready_message(self, user_id, message_id):
         bot_methods.edit_message(user_id, message_id, 'Вы готовы.')
 
     def get_image(self, user_id):
@@ -172,22 +174,12 @@ class Lobby1x1(Lobby):
         self.teams = [{}, {}]
 
     def run(self):
-        player_1 = list(self.teams[0].keys())[0]
-        player_2 = list(self.teams[1].keys())[0]
         path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
-        bot_methods.send_image(image_generator.create_dungeon_image(path,
-                                                                    (self.get_image(player_1),
-                                                                     self.get_image(player_2))),
-                               self.chat_id)
+        for team in self.teams:
+            bot_methods.send_image(image_generator.create_dungeon_image(path,
+                                                                        (self.get_image(key) for key in team)),
+                                   self.chat_id)
         result = self.run_fight(*[{chat_id: team[chat_id]['unit_dict'] for chat_id in team} for team in self.teams])
-
-    def join_forbidden(self, user_id):
-        if Lobby.join_forbidden(self, user_id):
-            return True
-
-        elif len(self.teams[0]) + len(self.teams[1]) > 1:
-            return True
-        return False
 
 
 class StartChecker:

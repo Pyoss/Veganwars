@@ -54,6 +54,7 @@ class Unit:
         self.spell_damage = 0
         self.energy = 0
         self.speed = 9
+        self.max_recovery = 5
         self.weapon = weapons.Fist(self)
         self.weapons = []
         self.abilities = []
@@ -100,18 +101,22 @@ class Unit:
         for key, value in unit_dict.items():
             if key is not 'controller':
                 setattr(self, key, value)
-        if unit_dict['weapon'] is not None:
-            self.weapon = weapons.weapon_dict[unit_dict['weapon']['name']](self, obj_dict=unit_dict['weapon'])
-        else:
+        if 'weapon' not in unit_dict or unit_dict['weapon'] is None:
             self.weapon = weapons.weapon_dict[self.default_weapon](self)
+        else:
+            self.weapon = weapons.weapon_dict[unit_dict['weapon']['name']](self, obj_dict=unit_dict['weapon'])
         self.weapons = []
         self.statuses = {}
-        self.abilities = [abilities.ability_dict[ability['name']](self, obj_dict=ability) for ability in unit_dict['abilities']]
-        self.items = engine.Container(base_dict=unit_dict['inventory']).fight_list(self)
-        self.inventory = engine.Container(base_dict=unit_dict['inventory']).inv_list(self)
-        self.armor = [armors.armor_dict[armor['name']](self, obj_dict=armor) for armor in unit_dict['armor']]
-        for status in unit_dict['statuses']:
-            standart_actions.object_dict[status['name']](self, obj_dict=status)
+        if 'abilities' in unit_dict:
+            self.abilities = [abilities.ability_dict[ability['name']](self, obj_dict=ability) for ability in unit_dict['abilities']]
+        if 'inventory' in unit_dict:
+            self.items = engine.Container(base_dict=unit_dict['inventory']).fight_list(self)
+            self.inventory = engine.Container(base_dict=unit_dict['inventory']).inv_list(self)
+        if 'armor' in unit_dict:
+            self.armor = [armors.armor_dict[armor['name']](self, obj_dict=armor) for armor in unit_dict['armor']]
+        if 'statuses' in unit_dict:
+            for status in unit_dict['statuses']:
+                standart_actions.object_dict[status['name']](self, obj_dict=status)
 
     def get_additional_actions(self):
         actions = [(1, MoveForward(self)),
@@ -375,12 +380,11 @@ class Unit:
             if unit not in self.melee_targets:
                 unit.melee_targets.append(self)
                 self.melee_targets.append(unit)
-        statuses.Running(self, 1)
 
     # ------------------------- Активация способностей -------------------
 
     def activate_statuses(self, sp_type=None, action=None):
-        for k, v in self.statuses.items():
+        for k, v in list(self.statuses.items()):
             if sp_type is not None:
                 if sp_type in v.types and self.alive():
                     v.act(action=action)
@@ -408,8 +412,10 @@ class Unit:
         if action.dmg_done > 0:
             self.activate_statuses('receive_hit', action=action)
         if action.dmg_done > 0:
-            armor_data = self.activate_armor(action.dmg_done)
+            armor_data = self.activate_armor(action)
             if armor_data[0] >= action.dmg_done:
+                if not action.stringed:
+                    armor_data[1].string('use', format_dict={'actor': self.name, 'dmg': action.dmg_done})
                 action.dmg_done = 0
                 action.armored = armor_data[1]
             self.activate_abilities('receive_hit', action)
@@ -470,17 +476,17 @@ class Unit:
     def alive(self):
         pass
 
-    def activate_armor(self, dmg_done):
+    def activate_armor(self, action):
         if not self.armor:
             return 0, None
-        armor = list(self.armor)
+        armor = list(armor for armor in self.armor if armor.armor > 0 and armor.rating >= action.dmg_done)
         armor.sort(key=lambda x: x.rating)
         blocked_damage = 0
         acted_piece = None
         for piece in armor:
-            chance = piece.coverage
+            chance = piece.current_coverage
             if engine.roll_chance(chance):
-                blocked_damage = piece.block(dmg_done)
+                blocked_damage = piece.block(action.dmg_done)
                 acted_piece = piece
                 break
         return blocked_damage, acted_piece
@@ -499,34 +505,19 @@ class Unit:
             if self.death_lang_tuple is None:
                 self.fight.string_tuple.row(LangTuple('fight', 'death', format_dict={'actor': self.name}))
             else:
-                death_tuple = self.get_death_effect_tuple
+                death_tuple = self.get_death_effect_tuple(self.death_lang_tuple)
                 if death_tuple is not None:
-                    self.fight.string_tuple.row(self.get_death_effect_tuple(self.death_lang_tuple))
+                    self.fight.string_tuple.row(death_tuple)
                 else:
                     self.fight.string_tuple.row(LangTuple('fight', 'death', format_dict={'actor': self.name}))
             return True
         return False
 
-    def add_death_effect(self):
-        print(self.death_lang_tuple)
-        if self.death_lang_tuple is not None:
-            death_tuple = self.get_death_effect_tuple(self.death_lang_tuple)
-            print(death_tuple)
-            if death_tuple is None:
-                return False
-            for n, tpl in enumerate(self.fight.string_tuple.tuples):
-                print('Дано')
-                print(tpl)
-                print('Надо')
-                print(self.death_lang_tuple)
-                if tpl == self.death_lang_tuple['tuple']:
-                    self.fight.string_tuple.tuples[n] = death_tuple
-
     def get_death_effect_tuple(self, attack_tuple):
-        format_dict = attack_tuple['tuple'].format_dict
-        attack_weapon = attack_tuple['weapon']
+        format_dict = {'target': self.name, 'actor': attack_tuple['target']}
+        source = attack_tuple['source']
         if 'alive' in self.types:
-            lang_tuple = attack_weapon.lang_tuple('finish_animal')
+            lang_tuple = source.lang_tuple('finish_animal')
             lang_tuple.format_dict = format_dict
             return lang_tuple
     # ---------------------------- Служебные методы ------------------------------
@@ -669,6 +660,8 @@ class StandardCreature(Unit):
             'max_energy': self.max_energy,
             'melee_accuracy': self.melee_accuracy,
             'range_accuracy': self.range_accuracy,
+            'speed': self.speed,
+            'max_recovery': self.max_recovery,
             'spell_damage': self.spell_damage,
             'evasion': self.evasion,
             'damage': self.damage,
@@ -694,7 +687,7 @@ class StandardCreature(Unit):
 
     def recovery(self):
         speed = self.get_speed() if self.get_speed() > 2 and 'exhausted' not in self.statuses else 2
-        recovery_speed = speed if speed < self.max_energy else self.max_energy
+        recovery_speed = speed if speed < self.max_recovery else self.max_recovery
 
         self.energy += recovery_speed
         self.weapon.recovery()
@@ -722,7 +715,7 @@ class StandardCreature(Unit):
                                                             'items': item_list})
 
     def menu_string(self):
-        if len(self.weapon.targets()) != 1 or self.weapon.special_types:
+        if len(self.weapon.targets()) != 1 or 'option' in self.weapon.types:
             return LangTuple('unit_' + self.unit_name, 'player_menu',
                              format_dict={'actor': self.name, 'hp': self.hp,
                                           'energy': self.energy, 'weapon': LangTuple('weapon_'
@@ -784,7 +777,7 @@ units_dict = {}
 
 def fill_unit_dict():
     from fight.unit_files import skeleton, goblin, human, lich, rat,\
-        bloodbug, snail, worm, zombie, goblin_bomber, red_oak, ogre, goblin_shaman
+        bloodbug, snail, worm, zombie, goblin_bomber, red_oak, ogre, goblin_shaman, dragon
 
 
 

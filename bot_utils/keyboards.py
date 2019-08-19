@@ -332,7 +332,7 @@ def get_item_buttons(unit):
 
 
 def form_second_row(unit):
-    ability_list = [ability for ability in unit.abilities if ability.active]
+    ability_list = [ability for ability in unit.abilities if ability.available()]
     if len(get_item_buttons(unit)) + len(ability_list) < 3:
         button_list = [*get_item_buttons(unit), *[ability.button() for ability in ability_list]]
     else:

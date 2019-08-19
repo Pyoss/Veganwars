@@ -253,10 +253,8 @@ class ChatContainer(Container):
 
 
 def aoe_split(damage, victim_number):
-    damage_list = [0]*victim_number
-    for n in range(damage):
-        damage_list[(random.randint(0, len(damage_list)))-1] += 1
-    return damage_list
+    aoe_damage = math.floor(damage/victim_number)
+    return aoe_damage
 
 
 def throw_dice(cap: int):

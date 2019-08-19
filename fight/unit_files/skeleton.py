@@ -103,6 +103,7 @@ class Skeleton(Unit):
             'abilities': [ability.to_dict() for ability in self.abilities],
             'items': [item.to_dict() for item in self.items],
             'armor': [armor.to_dict() for armor in self.armor],
+            'statuses': [],
             'weapon': self.weapon.to_dict(),
             'inventory': engine.Container(base_list=[*[item.to_dict() for item in self.items], *[item.to_dict() for item in self.inventory]]).base_dict
         }

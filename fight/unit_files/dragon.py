@@ -3,7 +3,7 @@ from fight.units import StandardCreature, units_dict, Tech
 from fight.ai import Ai
 from fight.standart_actions import *
 from bot_utils.keyboards import *
-from fight import weapons, statuses
+from fight import weapons, statuses, armors
 from locales.localization import LangTuple
 from PIL import Image
 import random
@@ -18,17 +18,31 @@ class DragonAi(Ai):
     def form_actions(self):
         self.clear_actions()
         self.find_target()
-        if self.unit.breathing:
+        if self.unit.breathing + 1 == self.fight.turn:
             self.action_ability('fire_breath', 8)
+            self.unit.breathing = 0
             return
-        if len(self.unit.melee_targets) > 0:
+        if len(self.unit.melee_targets) > 0 and not self.unit.acted:
             self.action_ability('wing_clap', self.unit.energy*len(self.unit.melee_targets))
-        else:
-            self.action_ability('tare_air', 5)
+        elif self.unit.breathing != self.fight.turn:
+            self.action_ability('take_air', self.unit.energy)
         self.attack(self.unit.energy if self.unit.target is not None else 0)
+        self.action_ability('tail_whip', self.unit.energy)
         self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
-        if self.unit.target and self.unit.energy > 3:
-            self.make_action(Attack, )
+
+    def get_action(self, edit=False):
+        action = Ai.get_action(self, edit=edit)
+        self.unit.acted = True
+        if action.name == 'ability':
+            if action.ability.name == 'wing_clap':
+                return
+            if action.ability.name == 'take_air':
+                self.unit.breathing = self.fight.turn
+        if self.unit.energy > 2 and self.unit.hp < self.unit.max_hp/2:
+            Ai.get_action(self, edit=edit)
+            if action.name == 'ability':
+                if action.ability.name == 'take_air':
+                    self.unit.breathing = self.fight.turn
 
 
 class Dragon(StandardCreature):
@@ -36,22 +50,28 @@ class Dragon(StandardCreature):
     control_class = DragonAi
     emote = emote_dict['dragon_em']
     types = ['dragon']
-    image = './files/images/units/dragon.jpg'
+    image = './files/images/units/sword_goblin.png'
     danger = 20
+    body_height = 'standard'
     default_loot = [('living_branch', (1, 90))]
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None):
+    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
         StandardCreature.__init__(self, name, controller, fight=fight, unit_dict=unit_dict)
         self.max_hp = 7
         self.hp = 7
         self.energy = 9
         self.max_energy = 9
+        self.damage = 2
+        self.toughness = 8
         self.tail = weapons.DragonTail(self)
-        self.weapon = weapons.Claws(self)
+        self.weapon = weapons.BearClaw(self)
+        self.default_weapon = 'bear-claw'
         self.melee_accuracy = 0
         self.range_accuracy = 0
         self.weapons = []
-        self.breathing = False
+        self.armor = [armors.DragonHide(self)]
+        self.breathing = -1
+        self.acted = False
         self.new_ability(ability_name='fire_breath', ability_func=self.fire_breath,
                          ability_type='instant',
                          name_tuple=self.to_string('button_1'),
@@ -62,27 +82,25 @@ class Dragon(StandardCreature):
                          cooldown=3)
         self.new_ability(ability_name='take_air', ability_func=self.take_air,
                          ability_type='instant',
-                         name_tuple=self.to_string('button_1'))
-        self.new_ability(ability_name='tale_whip', ability_func=self.tail_whip,
+                         name_tuple=self.to_string('button_1'), ability_order=10)
+        self.new_ability(ability_name='tail_whip', ability_func=self.tail_whip,
                          ability_type='instant',
                          name_tuple=self.to_string('button_1'))
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
 
-    def get_image(self):
-        if self.weapon.name == 'bow':
-            image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\skeleton_archer.png'
-        else:
-            image = self.image
-        return Image.open(image), 'standard', (0, 0)
-
     def recovery(self):
-        speed = self.get_speed() if self.get_speed() > 2 and 'exhausted' not in self.statuses else 2
-        recovery_speed = speed if speed < self.max_energy else self.max_energy
+        self.acted = False
+        return StandardCreature.recovery(self)
 
-        self.energy += recovery_speed
-        self.weapon.recovery()
-        return recovery_speed
+    def get_image(self):
+        if self.weapon.name == 'knife':
+            image = random.choice(('./files/images/units/knife_goblin.png',))
+        elif self.weapon.name == 'harpoon':
+            image = './files/images/units/harpoon_goblin.png'
+        else:
+            image = './files/images/units/fist_goblin.png'
+        return Image.open(image), self.body_height, (0, 0)
 
     def recovery_speed(self):
         speed = self.get_speed() if self.get_speed() > 2 and 'exhausted' not in self.statuses else 2
@@ -92,14 +110,19 @@ class Dragon(StandardCreature):
     @staticmethod
     def fire_breath(ability, action):
         unit = action.unit
+        unit.waste_energy(2)
         damage = random.randint(8, 10)
-        for target in unit.targets():
+        target = random.choice(unit.targets())
+        if 'dodge' in target.action:
+            unit.string('skill_4', format_dict={'actor': unit.name, 'target': target.name})
+        else:
             statuses.Burning(target, stacks=damage)
-        unit.string('skill_1', format_dict={'actor': unit.name})
+            unit.string('skill_1', format_dict={'actor': unit.name, 'target': target.name})
 
     @staticmethod
     def wing_clap(ability, action):
         unit = action.unit
+        unit.waste_energy(2)
         targets = unit.melee_targets
         for target in targets:
             target.move_back()
@@ -109,6 +132,7 @@ class Dragon(StandardCreature):
     @staticmethod
     def tail_whip(ability, action):
         unit = action.unit
+        unit.waste_energy(2)
         unit.controller.find_target()
         target = random.choice(unit.targets())
         x = Attack(unit, unit.fight)
