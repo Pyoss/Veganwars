@@ -380,6 +380,7 @@ class Unit:
             if unit not in self.melee_targets:
                 unit.melee_targets.append(self)
                 self.melee_targets.append(unit)
+        statuses.Running(self, 1)
 
     # ------------------------- Активация способностей -------------------
 
