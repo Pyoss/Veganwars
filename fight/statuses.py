@@ -178,7 +178,8 @@ class Running(OnHitStatus):
 
     def act(self, action=None):
         if action is not None:
-            if action.weapon.melee and action.dmg_done > 0:
+            if action.weapon.melee and action.dmg_done > 0 and any(ability.name == 'charge'
+                                                                   for ability in self.unit.abilities):
                 action.dmg_done += 2
                 action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
         else:

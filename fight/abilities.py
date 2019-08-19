@@ -274,11 +274,6 @@ class Assassin(Passive):
 
 class Charge(Passive):
     name = 'charge'
-    order = 41
-
-    def activate(self, action=None):
-        if 'forward' in self.unit.action:
-            statuses.Running(self.unit, 1)
 
 
 class Push(TargetAbility):

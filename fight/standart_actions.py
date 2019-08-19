@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from bot_utils import keyboards, bot_methods
 from locales import localization, emoji_utils
+from fight.statuses import Running
 import inspect
 import sys
 import engine
@@ -311,6 +312,7 @@ class MoveForward(Action):
     def activate(self):
         self.fight.string_tuple += localization.LangTuple('fight', 'move', {'actor': self.unit.name})
         self.unit.move_forward()
+        Running(self.unit, 1)
 
     def available(self):
         if self.unit.rooted:
