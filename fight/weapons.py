@@ -717,6 +717,7 @@ class Fence(SpecialOptionWeapon):
         return keyboards.form_keyboard(*self.options_keyboard(),
                                        keyboards.MenuButton(self.unit, 'back'), row_width=3)
 
+
 class Shovel(OneHanded, Weapon):
     name = 'shovel'
     confuse_chance = 45
