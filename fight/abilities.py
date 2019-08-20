@@ -508,10 +508,10 @@ class Trip(TargetAbility):
 
     def activate(self, action):
         if 'move' in action.target.action:
-            self.string('use', format_dict={'actor': self.unit.name, 'target': action.target})
+            self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
             statuses.Prone(action.target)
         else:
-            self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target})
+            self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target.name})
 
 
 class JumpBack(InstantAbility):
