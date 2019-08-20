@@ -269,6 +269,7 @@ class Assassin(Passive):
                 self.unit.weapon.effect_chance *= 3
             else:
                 self.unit.weapon.effect_chance = self.unit.weapon.default_effect_chance
+            print('Вероятность особой атаки')
             print(self.unit.weapon.effect_chance)
 
 
@@ -544,8 +545,6 @@ class Execute(OnHit):
     prerequisites = ['provoke', 'cleave']
 
     def act(self, action):
-        print(action.target.max_hp)
-        print(math.ceil(action.target.max_hp/4))
         if action.target.hp <= math.ceil(action.target.max_hp/4):
             action.dmg_done *= 2
             action.to_emotes(emoji_utils.emote_dict['exclaim_em'])

@@ -115,7 +115,6 @@ class ActionQueue:
         while self.action_list:
             if self.action_list[-1].order <= order_limit:
                 action = self.action_list.pop()
-                print(action.name)
                 action.activate()
             else:
                 break
