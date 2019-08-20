@@ -283,7 +283,7 @@ class Charge(Passive):
 class Push(TargetAbility):
     name = 'push'
     order = 1
-    cd = 1
+    cd = 2
     default_energy_cost = 1
     prerequisites = ['cleave', 'sturdy']
 
@@ -292,10 +292,15 @@ class Push(TargetAbility):
 
     def activate(self, action):
         self.on_cd()
-        self.string('use', format_dict={'target': action.target.name, 'actor': self.unit.name})
-        statuses.Buff(action.target, 'melee_accuracy', -6, 1)
-        statuses.Buff(action.target, 'range_accuracy', -6, 1)
-        action.target.move_back()
+        if 'dodge' in action.target.action:
+            self.string('fail', format_dict={'target': action.target.name, 'actor': self.unit.name})
+        elif 'shield' in action.target.action:
+            self.string('special', format_dict={'target': action.target.name, 'actor': self.unit.name})
+        else:
+            self.string('use', format_dict={'target': action.target.name, 'actor': self.unit.name})
+            statuses.Buff(action.target, 'melee_accuracy', -6, 1)
+            statuses.Buff(action.target, 'range_accuracy', -6, 1)
+            action.target.move_back()
 
 
 class Heavy(OnLvl):

@@ -87,6 +87,7 @@ emote_dict = {
     'chains_em': '\u26d3',
     'bag_search_em': '\U0001f9f3',
     'restrict_em': '\U0001f6ab',
+    'push_em': '🦶',
 
     # Магия
     "ignite_em": u'\U0001f525',
