@@ -422,14 +422,13 @@ class Prone(Status):
     effect = False
 
     def __init__(self, actor):
+        Status.__init__(self, actor)
         if 'prone' not in actor.disarmed:
             actor.disarmed.append('prone')
         if 'prone' not in actor.rooted:
             actor.rooted.append('prone')
         setattr(actor, 'evasion', getattr(actor, 'evasion') - 5)
         self.unit.boost_attribute('evasion', - 5)
-        Status.__init__(self, actor)
-
         self.additional_buttons_actions = [('free', self.finish,
                                             localization.LangTuple('buttons', 'get_up'))]
         self.handle_dict['free'] = self.finish
