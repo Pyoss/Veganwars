@@ -36,7 +36,7 @@ class TwoHanded:
     core_types = ['weapon', 'two-handed']
     dice_num = 5
     accuracy = 2
-    weight = 4
+    weight = 3
     damage_cap = 10
     default_energy_cost = 3
     special_energy_cost = 3
