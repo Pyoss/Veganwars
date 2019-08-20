@@ -282,7 +282,7 @@ class Charge(Passive):
 class Push(TargetAbility):
     name = 'push'
     order = 1
-    cd = 4
+    cd = 1
     default_energy_cost = 1
     prerequisites = ['cleave', 'sturdy']
 
@@ -290,6 +290,7 @@ class Push(TargetAbility):
         return [target for target in self.unit.melee_targets if 'massive' not in target.types]
 
     def activate(self, action):
+        self.on_cd()
         self.string('use', format_dict={'target': action.target.name, 'actor': self.unit.name})
         statuses.Buff(action.target, 'melee_accuracy', -6, 1)
         statuses.Buff(action.target, 'range_accuracy', -6, 1)
@@ -450,13 +451,13 @@ class SecondBreath(Passive):
 class ShieldSmash(TargetAbility):
     name = 'shield-smash'
     order = 3
-    cd = 2
     prerequisites = ['block', 'second-breath']
 
     def targets(self):
         return self.unit.melee_targets
 
     def activate(self, action):
+        self.on_cd()
         target = action.target
         attack = standart_actions.Attack(self.unit, self.unit.fight)
         shield = next(armor for armor in self.unit.armor if 'shield' in armor.types)
@@ -507,6 +508,7 @@ class Trip(TargetAbility):
         return self.unit.melee_targets
 
     def activate(self, action):
+        self.on_cd()
         if 'move' in action.target.action:
             self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
             statuses.Prone(action.target)
@@ -559,6 +561,7 @@ class KnockBack(TargetAbility):
         return self.unit.melee_targets
 
     def activate(self, action):
+        self.on_cd()
         if action.target.energy < action.unit.energy + random.randint(1, 2):
             self.string('use', format_dict={'actor': action.unit.name, 'target': action.target.name})
             statuses.Buff(action.target, 'melee_accuracy', -6, 1)
