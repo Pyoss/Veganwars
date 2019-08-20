@@ -283,7 +283,7 @@ class Push(TargetAbility):
     name = 'push'
     order = 1
     cd = 4
-    default_energy_cost = 2
+    default_energy_cost = 1
     prerequisites = ['cleave', 'sturdy']
 
     def targets(self):
@@ -327,7 +327,7 @@ class ShieldBlock(TargetAbility):
     name = 'block'
     order = 1
     cd = 0
-    default_energy_cost = 2
+    default_energy_cost = 1
     prerequisites = ['heavy']
 
     def targets(self):
@@ -385,7 +385,7 @@ class Cleave(InstantAbility):
                 self.unit.waste_energy(self.unit.weapon.energy_cost)
                 targets = [target for target in self.unit.melee_targets if 'dodge' not in target.action]
                 if targets:
-                    damage = engine.aoe_split(self.unit.weapon.dice_num + self.unit.weapon.damage + self.unit.damage,
+                    damage = engine.aoe_split(self.unit.weapon.dice_num + 1 + self.unit.weapon.damage + self.unit.damage,
                                               len(targets))
                     self.string('use', format_dict={'actor': self.unit.name, 'damage': damage,
                                                     'targets': ', '.join([target.name if isinstance(target.name, str) else target.name.translate('rus') for target in targets])})
@@ -551,7 +551,7 @@ class Execute(OnHit):
 
 class KnockBack(TargetAbility):
     name = 'knock-back'
-    order = 5
+    order = 4
     default_energy_cost = 2
     prerequisites = ['sturdy', 'block']
 
@@ -561,6 +561,8 @@ class KnockBack(TargetAbility):
     def activate(self, action):
         if action.target.energy < action.unit.energy + random.randint(1, 2):
             self.string('use', format_dict={'actor': action.unit.name, 'target': action.target.name})
+            statuses.Buff(action.target, 'melee_accuracy', -6, 1)
+            statuses.Buff(action.target, 'range_accuracy', -6, 1)
             statuses.Prone(action.target)
         else:
             self.string('fail', format_dict={'actor': action.unit.name, 'target': action.target.name})
