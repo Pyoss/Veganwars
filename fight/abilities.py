@@ -137,7 +137,7 @@ class Dodge(InstantAbility):
     name = 'dodge'
     types = ['dodge', 'move']
     order = 1
-    cd = 1
+    cd = 2
 
     def activate(self, action):
         InstantAbility.activate(self, action)
@@ -319,9 +319,8 @@ class Armorer(StartAbility):
 
     def start_act(self):
         for armor in self.unit.armor:
-            armor.armor *= 2
-            armor.current_coverage *= 2
-            print(armor.current_coverage)
+            armor.armor += 2
+            armor.current_coverage *= 15
 
 
 class ShieldBlock(TargetAbility):
@@ -336,26 +335,31 @@ class ShieldBlock(TargetAbility):
 
     def activate(self, action):
         self.on_cd()
+        if any('shield' in armor.types for armor in self.unit.armor) and next(armor for armor in self.unit.armor if 'shield' in armor.types).armor <= 0:
+            blocker = next(armor for armor in self.unit.armor if 'shield' in armor.types)
+            max_dmg = 100
+        else:
+            blocker = self.unit.weapon
+            max_dmg = self.unit.weapon.dice_num
+            if 'two-handed' in blocker.types:
+                self.unit.waste_energy(1)
         if 'attack' not in action.target.action:
-            self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target.name})
+            self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target.name,
+                                             'blocker': blocker.name_lang_tuple()})
         else:
             for actn in self.unit.fight.action_queue.action_list:
                 if actn.unit == action.target and 'attack' in actn.action_type:
                     dmg = actn.weapon.get_damage(action.unit)
-                    self.unit.fight.action_queue.remove(actn)
-                    action.target.waste_energy(action.target.weapon.energy_cost)
-                    self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name, 'damage': dmg})
-                    armor = next(armor for armor in self.unit.armor if 'shield' in armor.types)
-                    armor.armor -= dmg
-                    if armor.armor <= 0:
-                        armor.destroy()
-
-    def available(self):
-        if not any('shield' in armor.types for armor in self.unit.armor):
-            return False
-        elif next(armor for armor in self.unit.armor if 'shield' in armor.types).armor <= 0:
-            return False
-        return TargetAbility.available(self)
+                    if dmg <= max_dmg:
+                        action.target.waste_energy(action.target.weapon.energy_cost)
+                        self.unit.fight.action_queue.remove(actn)
+                        self.string('use', format_dict={'actor': self.unit.name,
+                                                        'target': action.target.name,
+                                                        'blocker':  blocker.name_lang_tuple()})
+                    else:
+                        self.string('special', format_dict={'actor': self.unit.name,
+                                                            'target': action.target.name,
+                                                            'blocker':  blocker.name_lang_tuple()})
 
 
 class Cleave(InstantAbility):
@@ -372,7 +376,6 @@ class Cleave(InstantAbility):
     def activate(self, action):
         self.on_cd()
         self.string('special', format_dict={'actor': self.unit.name, 'weapon': self.unit.weapon.name_lang_tuple()})
-        self.unit.waste_energy(2)
         statuses.CustomStatus(self.unit, 4, 1, self.cleave, name='attack_modifier_random')
 
     def cleave(self):
