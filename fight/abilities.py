@@ -566,6 +566,7 @@ class KnockBack(TargetAbility):
             self.string('use', format_dict={'actor': action.unit.name, 'target': action.target.name})
             statuses.Buff(action.target, 'melee_accuracy', -6, 1)
             statuses.Buff(action.target, 'range_accuracy', -6, 1)
+            print(action.target.melee_accuracy)
             statuses.Prone(action.target)
         else:
             self.string('fail', format_dict={'actor': action.unit.name, 'target': action.target.name})
