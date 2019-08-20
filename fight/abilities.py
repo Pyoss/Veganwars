@@ -553,7 +553,7 @@ class KnockBack(TargetAbility):
     name = 'knock-back'
     order = 5
     default_energy_cost = 2
-    prerequisites = ['sturdy', 'shield-block']
+    prerequisites = ['sturdy', 'block']
 
     def targets(self):
         return self.unit.melee_targets
