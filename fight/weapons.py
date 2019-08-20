@@ -13,7 +13,7 @@ class OneHanded:
     core_types = ['weapon', 'one-handed']
     image_pose = 'one-handed'
     handle = (0, 0)
-    weight = 1
+    weight = 2
     accuracy = 3
     dice_num = 3
     default_energy_cost = 2
@@ -36,7 +36,7 @@ class TwoHanded:
     core_types = ['weapon', 'two-handed']
     dice_num = 5
     accuracy = 2
-    weight = 3
+    weight = 4
     damage_cap = 10
     default_energy_cost = 3
     special_energy_cost = 3
@@ -127,7 +127,7 @@ class Weapon(standart_actions.GameObject):
         return self.unit.get_melee_targets() if self.melee else self.unit.targets()
 
     def get_action(self):
-        if 'options' not in self.types and len(self.targets()) == 1:
+        if 'options' not in self.types and len(self.targets()) == 1 or 'attack_modifier_random' in self.unit.statuses:
             self.unit.target = self.targets()[0]
             attack = standart_actions.Attack(unit=self.unit, fight=self.unit.fight)
             attack.act()
@@ -370,35 +370,10 @@ class SpecialAttackWeapon(SpecialTargetWeapon):
 # -------------------------------------
 
 
-class Sword(SpecialOptionWeapon):
+class Sword(OneHanded, Weapon):
     name = 'sword'
     order = 0
     cd = 2
-
-    def activate_special_action(self, option):
-        self.unit.waste_energy(1)
-        self.on_cd()
-        self.string('special_hit', format_dict={'actor': self.unit.name, 'option': option})
-        statuses.CustomPassive(self.unit, types=['receive_hit'], func=self.parry, option=option)
-
-    def parry(self, action, option):
-        if action.dmg_done == int(option):
-            self.string('special_hit_self', format_dict={'actor':self.unit.name, 'target': action.unit.name})
-            action.dmg_done = 0
-            action.stringed = False
-            x = standart_actions.Attack(self.unit, self.unit.fight, order=6)
-            x.activate(target=action.unit, waste=1)
-        elif action.dmg_done == int(option) - 1:
-            action.dmg_done = 0
-            action.stringed = False
-            self.string('special_miss', format_dict={'actor': self.unit.name, 'target': action.unit.name})
-
-    def options(self):
-        return [(str(n+1), str(n+1)) for n in range(3)]
-
-    def target_keyboard(self):
-        return keyboards.form_keyboard(*self.options_keyboard(),
-                                       keyboards.MenuButton(self.unit, 'back'), row_width=3)
 
 
 # Оружие, проверенное на работоспособность с системой данжей
@@ -409,7 +384,7 @@ class Knife(OneHanded, WeaponWithEffect):
     default_effect_chance = 10
 
     def effect_applicable(self, attack_action):
-        if 'alive' in attack_action.target.types:
+        if 'alive' in attack_action.target.types and attack_action.dmg_done > 0:
             return True
         return False
 
@@ -710,6 +685,37 @@ class Harpoon(SpecialOptionWeapon, Knife):
 
 
 # --------------------------------------------------
+
+
+class Fence(SpecialOptionWeapon):
+    name = 'fence'
+    order = 0
+    cd = 2
+
+    def activate_special_action(self, option):
+        self.unit.waste_energy(1)
+        self.on_cd()
+        self.string('special_hit', format_dict={'actor': self.unit.name, 'option': option})
+        statuses.CustomPassive(self.unit, types=['receive_hit'], func=self.parry, option=option)
+
+    def parry(self, action, option):
+        if action.dmg_done == int(option):
+            self.string('special_hit_self', format_dict={'actor':self.unit.name, 'target': action.unit.name})
+            action.dmg_done = 0
+            action.stringed = False
+            x = standart_actions.Attack(self.unit, self.unit.fight, order=6)
+            x.activate(target=action.unit, waste=1)
+        elif action.dmg_done == int(option) - 1:
+            action.dmg_done = 0
+            action.stringed = False
+            self.string('special_miss', format_dict={'actor': self.unit.name, 'target': action.unit.name})
+
+    def options(self):
+        return [(str(n+1), str(n+1)) for n in range(3)]
+
+    def target_keyboard(self):
+        return keyboards.form_keyboard(*self.options_keyboard(),
+                                       keyboards.MenuButton(self.unit, 'back'), row_width=3)
 class Shovel(OneHanded, Weapon):
     name = 'shovel'
     confuse_chance = 45

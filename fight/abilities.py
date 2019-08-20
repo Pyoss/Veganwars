@@ -275,6 +275,9 @@ class Assassin(Passive):
 class Charge(Passive):
     name = 'charge'
 
+    def activate(self, action=None):
+        pass
+
 
 class Push(TargetAbility):
     name = 'push'
@@ -324,7 +327,7 @@ class Armorer(StartAbility):
 class ShieldBlock(TargetAbility):
     name = 'block'
     order = 1
-    cd = 4
+    cd = 0
     default_energy_cost = 2
     prerequisites = ['heavy']
 
@@ -332,6 +335,7 @@ class ShieldBlock(TargetAbility):
         return self.unit.melee_targets
 
     def activate(self, action):
+        self.on_cd()
         if 'attack' not in action.target.action:
             self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target.name})
         else:
@@ -362,38 +366,32 @@ class Cleave(InstantAbility):
     default_energy_cost = 2
     prerequisites = ['charge']
 
-    def __init__(self, unit=None, obj_dict=None):
-        InstantAbility.__init__(self, unit=unit, obj_dict=obj_dict)
-        self.windup = False
-        self.windup_turn = -1
-
     def name_lang_tuple(self):
-        if not self.windup or self.windup_turn < self.unit.fight.turn - 1:
-            return localization.LangTuple(self.table_row, 'button')
-        else:
-            return localization.LangTuple(self.table_row, 'name')
+        return localization.LangTuple(self.table_row, 'button')
 
     def activate(self, action):
-        if not self.windup or self.windup_turn < self.unit.fight.turn - 1:
-            self.string('special', format_dict={'actor': self.unit.name, 'weapon': self.unit.weapon.name_lang_tuple()})
-            self.windup = True
-            self.windup_turn = self.unit.fight.turn
-            self.unit.waste_energy(2)
-        else:
-            self.unit.waste_energy(self.unit.weapon.energy_cost)
-            self.windup = False
-            targets = [target for target in self.unit.melee_targets if 'dodge' not in target.action]
-            if targets:
-                damage = engine.aoe_split(self.unit.weapon.dice_num + self.unit.weapon.damage + self.unit.damage,
-                                          len(targets))
-                self.string('use', format_dict={'actor': self.unit.name, 'damage': damage,
-                                                'targets': ', '.join([target.name for target in targets])})
+        self.on_cd()
+        self.string('special', format_dict={'actor': self.unit.name, 'weapon': self.unit.weapon.name_lang_tuple()})
+        self.unit.waste_energy(2)
+        statuses.CustomStatus(self.unit, 4, 1, self.cleave, name='attack_modifier_random')
 
-                for target in targets:
-                    attack_action = standart_actions.Attack(self.unit, self.unit.fight, stringed=False)
-                    attack_action.activate(target=target, waste=0, dmg=damage)
-            else:
-                self.string('fail', format_dict={'actor': self.unit.name})
+    def cleave(self):
+        for action in self.unit.fight.action_queue.action_list:
+            if action.unit == self.unit and action.name == 'attack':
+                self.unit.fight.action_queue.remove(action)
+                self.unit.waste_energy(self.unit.weapon.energy_cost)
+                targets = [target for target in self.unit.melee_targets if 'dodge' not in target.action]
+                if targets:
+                    damage = engine.aoe_split(self.unit.weapon.dice_num + self.unit.weapon.damage + self.unit.damage,
+                                              len(targets))
+                    self.string('use', format_dict={'actor': self.unit.name, 'damage': damage,
+                                                    'targets': ', '.join([target.name if isinstance(target.name, str) else target.name.translate('rus') for target in targets])})
+
+                    for target in targets:
+                        attack_action = standart_actions.Attack(self.unit, self.unit.fight, stringed=False)
+                        attack_action.activate(target=target, waste=0, dmg=damage)
+                else:
+                    self.string('fail', format_dict={'actor': self.unit.name})
 
     def available(self):
         if 'two-handed' not in self.unit.weapon.types:

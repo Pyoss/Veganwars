@@ -689,11 +689,8 @@ class GameObject:
         self.ready_turn = self.unit.fight.turn + self.unit.speed_penalty() + self.cd
 
     def ready(self):
-        if self.cd:
-            if self.unit.fight.turn >= self.ready_turn:
-                return True
-            else:
-                return False
+        if self.unit.fight.turn < self.ready_turn:
+            return False
         elif not self.active:
             return False
         return True

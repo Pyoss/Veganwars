@@ -253,7 +253,7 @@ class ChatContainer(Container):
 
 
 def aoe_split(damage, victim_number):
-    aoe_damage = math.floor(damage/victim_number)
+    aoe_damage = math.ceil(damage/victim_number)
     return aoe_damage
 
 
