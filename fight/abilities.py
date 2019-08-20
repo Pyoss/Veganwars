@@ -562,7 +562,7 @@ class KnockBack(TargetAbility):
 
     def activate(self, action):
         self.on_cd()
-        if action.target.energy < action.unit.energy + random.randint(1, 2):
+        if action.target.energy < action.unit.energy + random.randint(0, 1):
             self.string('use', format_dict={'actor': action.unit.name, 'target': action.target.name})
             statuses.Buff(action.target, 'melee_accuracy', -6, 1)
             statuses.Buff(action.target, 'range_accuracy', -6, 1)
