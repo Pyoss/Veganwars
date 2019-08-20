@@ -453,12 +453,6 @@ class ShieldSmash(TargetAbility):
     def targets(self):
         return self.unit.melee_targets
 
-    def get_energy_cost(self):
-        if self.unit is not None:
-            return next(armor for armor in self.unit.armor if 'shield' in armor.types).energy_cost
-        else:
-            return self.default_energy_cost
-
     def activate(self, action):
         target = action.target
         attack = standart_actions.Attack(self.unit, self.unit.fight)
