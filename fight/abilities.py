@@ -137,7 +137,7 @@ class Dodge(InstantAbility):
     name = 'dodge'
     types = ['dodge', 'move']
     order = 1
-    cd = 2
+    cd = 1
 
     def activate(self, action):
         InstantAbility.activate(self, action)
