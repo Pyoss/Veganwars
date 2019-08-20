@@ -266,7 +266,7 @@ class Assassin(Passive):
     def activate(self, action=None):
         if 'effect' in self.unit.weapon.types:
             if 'attack' not in self.unit.action:
-                self.unit.weapon.effect_chance += 20
+                self.unit.weapon.effect_chance *= 3
             else:
                 self.unit.weapon.effect_chance = self.unit.weapon.default_effect_chance
             print(self.unit.weapon.effect_chance)

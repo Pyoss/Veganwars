@@ -389,7 +389,7 @@ class Knife(OneHanded, WeaponWithEffect):
         return False
 
     def effect_resolve(self, attack_action):
-        statuses.Bleeding(attack_action.unit.target)
+        statuses.Bleeding(attack_action.target)
         attack_action.to_emotes(emoji_utils.emote_dict['bleeding_em'])
 
 
@@ -716,6 +716,7 @@ class Fence(SpecialOptionWeapon):
     def target_keyboard(self):
         return keyboards.form_keyboard(*self.options_keyboard(),
                                        keyboards.MenuButton(self.unit, 'back'), row_width=3)
+
 class Shovel(OneHanded, Weapon):
     name = 'shovel'
     confuse_chance = 45
