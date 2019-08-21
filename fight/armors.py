@@ -221,6 +221,36 @@ class Shield(Armor, weapons.OneHanded, weapons.Weapon):
         return Armor.try_placement(self, unit_dict)
 
 
+class HeavyShield(Shield):
+    name = 'heavy-shield'
+    types = ['usable', 'shield']
+    placement = 'arm'
+    max_armor = 10
+    rating = 8
+    coverage = 15
+    weight = 5
+    default_energy_cost = 4
+    real = True
+
+    def get_image_dict(self):
+        return {
+         'handle': (106, 240),
+         'placement': 'left_hand',
+         'file': './files/images/heavy_shield.png',
+         'covered': False,
+         'layer': 2
+        }
+
+    def activate(self, action):
+        Shield.activate(self, action)
+        self.unit.waste_energy(1)
+
+    def available(self):
+        if self.armor > 0 and self.unit.energy > 0:
+            return True
+        return False
+
+
 armor_dict = {value.name: value for key, value
                 in dict(inspect.getmembers(sys.modules[__name__], inspect.isclass)).items()
                 if value.name is not None and value.real}

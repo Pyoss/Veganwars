@@ -36,7 +36,7 @@ class TwoHanded:
     core_types = ['weapon', 'two-handed']
     dice_num = 5
     accuracy = 2
-    weight = 3
+    weight = 4
     damage_cap = 10
     default_energy_cost = 3
     special_energy_cost = 3
@@ -372,8 +372,16 @@ class SpecialAttackWeapon(SpecialTargetWeapon):
 
 class Sword(OneHanded, Weapon):
     name = 'sword'
-    order = 0
-    cd = 2
+    weight = 1
+    handle = (10, 5)
+    file = './files/images/sword_2.png'
+
+
+class GreatSword(TwoHanded, Weapon):
+    name = 'great-sword'
+    weight = 2
+    handle = (24, 265)
+    file = './files/images/great_sword.png'
 
 
 # Оружие, проверенное на работоспособность с системой данжей
@@ -575,11 +583,14 @@ class Chain(OneHanded, SpecialActionWeapon):
         return 'Вы уже крутите Цепь.'
 
 
-class Crossbow(TwoHanded, SpecialActionWeapon):
+class Crossbow(OneHanded, SpecialActionWeapon):
     name = 'crossbow'
     order = 5
     damage = 3
     melee = False
+    # -------------------------------------
+    handle = (50, 70)
+    file = './files/images/crossbow.png'
 
     def __init__(self, unit=None, obj_dict=None):
         SpecialActionWeapon.__init__(self, unit=unit, obj_dict=obj_dict)
@@ -597,7 +608,7 @@ class Crossbow(TwoHanded, SpecialActionWeapon):
     def available(self):
         return True
 
-    def get_menu_string(self, sp_string=None):
+    def get_menu_string(self, short_menu=False, target=None):
         if self.loaded:
             return localization.LangTuple(self.table_row, 'weapon_menu_2',
                                           format_dict={'chance': self.get_hit_chance()})
