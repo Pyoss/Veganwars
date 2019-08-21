@@ -16,12 +16,6 @@ units.fill_unit_dict()
 bot = telebot.TeleBot(config.token, threaded=False)
 # Снимаем вебхук перед повторной установкой (избавляет от некоторых проблем)
 
-x = '5.189.177.152:3129'
-telebot.apihelper.proxy = {
-'http': 'http://{}'.format(x),
-'https': 'http://{}'.format(x)
-}
-
 start_time = time.time()
 call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
@@ -144,7 +138,7 @@ def start(message):
     enemy_3_class = ogre.Ogre
     enemy_3 = enemy_3_class()
     team_1 = {message.from_user.id: dct}
-    team_2 = {(enemy_3_class, 1): enemy_3.to_dict()}
+    team_2 = {(enemy_3_class, 1): enemy_3.to_dict(), (enemy_3_class, 2): enemy_3.to_dict()}
     fight_main.thread_fight([team_1, team_2], chat_id=message.chat.id)
 
 
