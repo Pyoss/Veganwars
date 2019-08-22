@@ -328,12 +328,12 @@ class Tough(OnLvl):
 class Slow(OnLvl):
     name = 'slow'
     stats = {'max_recovery': -2, 'max_energy': 2}
-    prerequisites = ['second-breath']
+    prerequisites = ['block']
 
 
 class Sturdy(OnLvl):
     name = 'sturdy'
-    stats = {'max_hp': 1, 'hp': 3}
+    stats = {'max_hp': 1, 'hp': 1}
     prerequisites = ['heavy']
 
 
