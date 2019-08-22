@@ -21,6 +21,11 @@ call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
 types = telebot.types
 
+x = '163.172.152.52:8811'
+telebot.apihelper.proxy = {
+'http': 'http://{}'.format(x),
+'https': 'http://{}'.format(x)
+}
 
 bot.send_message(config.admin_id, 'Инициация бота...')
 bot.locked = False
@@ -133,12 +138,12 @@ def start(message):
     from fight.unit_files import human, red_oak, bloodbug, ogre, goblin_shaman, goblin, dragon, worm
     from fight import ai
     dct = chat_main.get_user(message.from_user.id).get_fight_unit_dict(name=message.from_user.first_name)
-    dct['weapon'] = weapons.Axe().to_dict()
-    dct['armor'] = [armors.Shield().to_dict()]
-    enemy_3_class = ogre.Ogre
+    dct['weapon'] = weapons.Club().to_dict()
+    enemy_3_class = goblin.Goblin
     enemy_3 = enemy_3_class()
     team_1 = {message.from_user.id: dct}
-    team_2 = {(enemy_3_class, 1): enemy_3.to_dict(), (enemy_3_class, 2): enemy_3.to_dict()}
+    enemy_3.armor = []
+    team_2 = {(enemy_3_class, 1): enemy_3.to_dict()}
     fight_main.thread_fight([team_1, team_2], chat_id=message.chat.id)
 
 
