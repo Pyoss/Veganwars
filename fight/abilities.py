@@ -261,7 +261,7 @@ class SpellCaster(OptionAbility):
 class Assassin(Passive):
     name = 'assassin'
     order = 41
-    prerequisites = ['dodge']
+    prerequisites = ['jump-back']
 
     def activate(self, action=None):
         if 'effect' in self.unit.weapon.types:
@@ -271,6 +271,17 @@ class Assassin(Passive):
                 self.unit.weapon.effect_chance = self.unit.weapon.default_effect_chance
             print('Вероятность особой атаки')
             print(self.unit.weapon.effect_chance)
+
+
+class TwoHandedMastery(Passive):
+    name = 'two-handed-mastery'
+    order = 41
+    prerequisites = ['cleave']
+
+    def activate(self, action=None):
+        if 'two-handed' in self.unit.weapon.types:
+            if 'attack' in self.unit.action:
+                self.unit.energy += 1
 
 
 class Charge(Passive):
@@ -285,7 +296,7 @@ class Push(TargetAbility):
     order = 1
     cd = 2
     default_energy_cost = 1
-    prerequisites = ['cleave', 'sturdy']
+    prerequisites = ['cleave']
 
     def targets(self):
         return [target for target in self.unit.melee_targets if 'massive' not in target.types]
@@ -306,6 +317,12 @@ class Push(TargetAbility):
 class Heavy(OnLvl):
     name = 'heavy'
     stats = {'speed': 4}
+    prerequisites = ['charge', 'tough']
+
+
+class Tough(OnLvl):
+    name = 'tough'
+    stats = {'toughness': 3}
 
 
 class Slow(OnLvl):
@@ -316,13 +333,13 @@ class Slow(OnLvl):
 
 class Sturdy(OnLvl):
     name = 'sturdy'
-    stats = {'max_hp': 1, 'toughness': 3}
-    prerequisites = ['charge', 'heavy']
+    stats = {'max_hp': 1, 'hp': 3}
+    prerequisites = ['heavy']
 
 
 class Armorer(StartAbility):
     name = 'armorer'
-    prerequisites = ['sturdy']
+    prerequisites = ['shield-smash', 'slow']
 
     def start_act(self):
         for armor in self.unit.armor:
@@ -330,19 +347,20 @@ class Armorer(StartAbility):
             armor.current_coverage += 15
 
 
-class ShieldBlock(TargetAbility):
+class Block(TargetAbility):
     name = 'block'
     order = 1
     cd = 0
     default_energy_cost = 1
-    prerequisites = ['heavy']
+    prerequisites = ['tough']
 
     def targets(self):
         return self.unit.melee_targets
 
     def activate(self, action):
         self.on_cd()
-        if any('shield' in armor.types for armor in self.unit.armor) and next(armor for armor in self.unit.armor if 'shield' in armor.types).armor <= 0:
+        if any('shield' in armor.types for armor in self.unit.armor) and \
+                        next(armor for armor in self.unit.armor if 'shield' in armor.types).armor > 0:
             blocker = next(armor for armor in self.unit.armor if 'shield' in armor.types)
             max_dmg = 100
         else:
@@ -367,6 +385,34 @@ class ShieldBlock(TargetAbility):
                         self.string('special', format_dict={'actor': self.unit.name,
                                                             'target': action.target.name,
                                                             'blocker':  blocker.name_lang_tuple()})
+
+
+class FastAttack(TargetAbility):
+    name = 'fast-attack'
+    full = False
+    default_energy_cost = 1
+    prerequisites = ['assassin', 'trip']
+
+    def targets(self):
+        return self.unit.melee_targets
+
+    def act(self, action):
+        if len(action.info) > 5:
+            self.act_options(action)
+            for action_type in action.action_type:
+                self.unit.action.append(action_type)
+            self.on_cd()
+            if self.energy_cost > 0:
+                self.unit.waste_energy(self.energy_cost)
+            self.unit.rooted.append('fast-attack')
+            self.ask_action()
+        else:
+            self.ask_options()
+
+    def activate(self, action):
+        self.unit.rooted.remove('fast-attack')
+        attack = standart_actions.Attack(self.unit, self.unit.fight)
+        attack.activate(target=action.target)
 
 
 class Cleave(InstantAbility):
@@ -440,7 +486,7 @@ class Provoke(TargetAbility):
 class SecondBreath(Passive):
     name = 'second-breath'
     order = 60
-    prerequisites = ['heavy', 'dodge']
+    prerequisites = ['tough', 'dodge']
 
     def __init__(self, unit=None, obj_dict=None):
         Passive.__init__(self, unit=unit, obj_dict=obj_dict)
@@ -457,7 +503,7 @@ class SecondBreath(Passive):
 class ShieldSmash(TargetAbility):
     name = 'shield-smash'
     order = 3
-    prerequisites = ['block', 'second-breath']
+    prerequisites = ['block']
 
     def targets(self):
         return self.unit.melee_targets
@@ -508,7 +554,7 @@ class Jump(TargetAbility):
 class Trip(TargetAbility):
     name = 'trip'
     order = 5
-    prerequisites = ['provoke', 'assassin']
+    prerequisites = ['jump-back']
 
     def targets(self):
         return self.unit.melee_targets
@@ -527,7 +573,7 @@ class JumpBack(InstantAbility):
     types = ['dodge', 'move']
     order = 1
     cd = 5
-    prerequisites = ['second-breath', 'assassin']
+    prerequisites = ['dodge']
 
     def activate(self, action):
         InstantAbility.activate(self, action)
@@ -547,7 +593,7 @@ class JumpBack(InstantAbility):
 
 class Execute(OnHit):
     name = 'execute'
-    prerequisites = ['provoke', 'cleave']
+    prerequisites = ['push', 'two-handed-mastery']
 
     def act(self, action):
         if action.target.hp <= math.ceil(action.target.max_hp/4):
@@ -559,7 +605,7 @@ class KnockBack(TargetAbility):
     name = 'knock-back'
     order = 4
     default_energy_cost = 2
-    prerequisites = ['sturdy', 'block']
+    prerequisites = ['second-breath']
 
     def targets(self):
         return self.unit.melee_targets

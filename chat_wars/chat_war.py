@@ -1,6 +1,7 @@
 from fight import fight_main
 from threading import Thread
 from bot_utils.bot_methods import send_message
+from bot_utils import keyboards
 from sql_alchemy import Pyossession
 from dynamic_dicts import occupied_list
 

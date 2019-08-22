@@ -162,24 +162,6 @@ class MoveForward(FightButton):
         return True
 
 
-class PickUpButton(FightButton):
-    name = 'pick-up'
-
-    def __init__(self, unit):
-        self.unit = unit
-        FightButton.__init__(self, 'pick-up', unit, 'pick-up')
-
-    def available(self):
-        if self.unit.lost_weapon:
-            return True
-        return False
-
-    def add_available(self):
-        if self.unit.lost_weapon:
-            return True
-        return False
-
-
 class PutOutButton(FightButton):
     name = 'put-out'
 

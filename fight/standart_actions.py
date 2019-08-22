@@ -143,10 +143,12 @@ class BaseAttack(Action):
         if info is not None:
             self.unit.target = self.fight[info[-1]]
         self.dmg_done = 0
+        self.dmg_blocked = 0
         self.special_emotes = []
         self.target = None
         self.armored = None
         self.attack_tuple = None
+        self.blockable = True
 
     def to_emotes(self, emote):
         if emote not in self.special_emotes:
@@ -206,6 +208,7 @@ class SpecialAttack(BaseAttack):
     def __init__(self, unit, fight, info, order, energy_cost=0):
         BaseAttack.__init__(self, fight=fight, unit=unit, info=info, order=order)
         self.energy_cost = energy_cost
+        self.action_type = self.weapon.special_types
 
     def activate(self, target=None, weapon=None):
         # Определение цели
@@ -266,27 +269,6 @@ class Skip(Action):
     def activate(self):
         # Добавление строки пропуска
         self.fight.string_tuple += localization.LangTuple('fight', 'skip', {'actor': self.unit.name})
-
-
-class PickUpWeapon(Action):
-    name = 'pick-up'
-    action_type = ['tech']
-    order = 1
-
-    def available(self):
-        if self.unit.lost_weapon:
-            return True
-        return False
-
-    def activate(self):
-        weapon = self.unit.pick_up_weapon()
-        self.fight.string_tuple += localization.LangTuple('fight',
-                                                          'pickup',
-                                                          {
-                                                              'actor': self.unit.name,
-                                                              'weapon': weapon.name_lang_tuple()
-                                                          }
-                                                          )
 
 
 class PutOutFire(Action):
@@ -380,12 +362,12 @@ class SpecialWeaponAction(Action):
     def __init__(self, unit, fight, info, call=None):
         Action.__init__(self, unit, fight, info, call=call)
         self.target = fight[info[-1]] if len(info) > 4 else None
-        self.types = self.unit.weapon.special_types
+        self.action_type = self.unit.weapon.special_types
         self.order = self.unit.weapon.order
 
     def activate(self):
         weapon = self.unit.weapon
-        weapon.start_special_action(self.info)
+        weapon.start_special_action(self.info, types=self.types)
 
     def available(self):
         return self.unit.weapon.special_available(target=self.target)
@@ -552,14 +534,14 @@ class Custom:
     order = 0
     full = False
     effect = False
-    action_type = ['attack']
 
-    def __init__(self, func, *args, order=5, to_queue=True, unit=None, **kwargs):
+    def __init__(self, func, *args, order=5, to_queue=True, unit=None, types=None, **kwargs):
         self.func = func
         self.args = args
         self.kwargs = kwargs
         self.order = order
         self.unit = unit
+        self.action_type = [] if types is None else types
         if to_queue:
             self.unit.fight.edit_queue(self)
 

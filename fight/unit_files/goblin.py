@@ -39,8 +39,6 @@ class GoblinAi(StandardMeleeAi):
             self.action_ability('weapon-snatcher',
                                 (2 - self.unit.target.energy if self.unit.target.energy < 3 else 0)*5,
                                 target=self.unit.target)
-        elif self.unit.lost_weapon:
-            self.add_action(PickUpWeapon, 5 - self.unit.energy if self.unit.energy < 3 else 0)
 
     def default_weapon_actions(self):
         self.clear_actions()

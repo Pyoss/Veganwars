@@ -159,12 +159,53 @@ class Fight:
         else:
             func(results)
 
+    def fight_loop(self):
+        while self.in_progress():
+            self.fill_active_actors()
+            self.activate_statuses_and_passives()
+            self.get_action()
+            self.execute_queue()
+            self.get_results()
+            self.act_results()
+            self.action_queue.run_post_results()
+            self.kill_units()
+            self.send_string()
+            self.refresh()
+        self.clear()
+        return self.ending()
+
+    def in_progress(self):
+        if len([team for team in self.teams if any(unit.alive() for unit in team.units)]) > 1:
+            return True
+        return False
+
+    def fill_active_actors(self):
+        for unit in self.active_actors():
+            if not unit.controller.ai:
+                unit.done = False
+                unit.active = True
+            unit.get_targets()
+
+    def get_action(self):
+        for unit in self.active_actors():
+            unit.get_action()
+        self.wait_action()
+
+    def execute_queue(self):
+        self.string_tuple.row(LangTuple('fight', 'turn', {'turn_number': self.turn}))
+        self.action_queue.run_actions()
+        self.string_tuple.block('effects')
+        self.action_queue.run_effects()
+
     def send_message(self, *args):
         message = PlayerString(self)
         message.row(*args)
         message.construct()
         for chat_id in self.chat_id:
-            bot_methods.send_message(chat_id, message.result_dict[self.lang])
+            try:
+                bot_methods.send_message(chat_id, message.result_dict[self.lang])
+            except:
+                pass
 
     def unit_talk(self, unit_id, message):
         unit = self.units_dict[unit_id]
@@ -253,36 +294,9 @@ class Fight:
             else:
                 bot_methods.send_image(image, listener.chat_id, text)
 
-    def fight_loop(self):
-        while self.in_progress():
-            self.fill_active_actors()
-            self.activate_statuses_and_passives()
-            self.get_action()
-            self.execute_queue()
-            self.get_results()
-            self.act_results()
-            self.action_queue.run_post_results()
-            self.kill_units()
-            self.send_string()
-            self.refresh()
-        self.clear()
-        return self.ending()
-
     def clear(self):
         for player in self.players():
             player.clear()
-
-    def in_progress(self):
-        if len([team for team in self.teams if any(unit.alive() for unit in team.units)]) > 1:
-            return True
-        return False
-
-    def fill_active_actors(self):
-        for unit in self.active_actors():
-            if not unit.controller.ai:
-                unit.done = False
-                unit.active = True
-            unit.get_targets()
 
     def activate_statuses_and_passives(self):
         if self.turn == 1:
@@ -293,11 +307,6 @@ class Fight:
         for unit in self.units:
             unit.activate_statuses()
 
-    def get_action(self):
-        for unit in self.active_actors():
-            unit.get_action()
-        self.wait_action()
-
     def wait_action(self):
         x = 0
         while not all(unit.done for unit in self.active_actors()) and x < config.turn_time:
@@ -307,12 +316,6 @@ class Fight:
             actor.active = False
         for actor in [unit for unit in self.active_actors() if not unit.done]:
             actor.controller.forced_end_turn()
-
-    def execute_queue(self):
-        self.string_tuple.row(LangTuple('fight', 'turn', {'turn_number': self.turn}))
-        self.action_queue.run_actions()
-        self.string_tuple.block('effects')
-        self.action_queue.run_effects()
 
     # Определение команды, получившей больше всего урона. Отъем жизней.
     def get_results(self):

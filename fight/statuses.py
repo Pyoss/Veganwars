@@ -403,6 +403,7 @@ class Stun(Status):
         if 'stun' not in actor.disabled:
             actor.disabled.append('stun')
             Status.__init__(self, actor)
+            standart_actions.Custom(self.string, 'use', order=30, unit=self.unit, format_dict={'actor': self.unit.name})
 
     def reapply(self, parent):
         pass
@@ -432,6 +433,7 @@ class Prone(Status):
         self.additional_buttons_actions = [('free', self.finish,
                                             localization.LangTuple('buttons', 'get_up'))]
         self.handle_dict['free'] = self.finish
+        standart_actions.Custom(self.string, 'use', order=30, unit=self.unit, format_dict={'actor': self.unit.name})
 
     def reapply(self, parent):
         pass
@@ -449,6 +451,36 @@ class Prone(Status):
 
     def menu_string(self):
         return emoji_utils.emote_dict['prone_em']
+
+
+class LostWeapon(Status):
+    name = 'weapon-loss'
+    order = 60
+    action_order = 20
+    effect = False
+
+    def __init__(self, actor):
+        Status.__init__(self, actor)
+        self.unit.lost_weapon = self.unit.weapon
+        self.unit.weapon = self.unit.default_weapon
+        self.additional_buttons_actions = [('pick-up', self.finish,
+                                            localization.LangTuple('statuses_weapon-loss', 'damage'))]
+        self.handle_dict['pick-up'] = self.finish
+        standart_actions.Custom(self.string, 'use', order=30, unit=self.unit, format_dict={'actor': self.unit.name})
+
+    def reapply(self, parent):
+        pass
+
+    def activate(self, action=None):
+        pass
+
+    def finish(self):
+        self.unit.weapon = self.unit.lost_weapon
+        self.string('end', format_dict={'actor': self.unit.name})
+        Status.finish(self)
+
+    def menu_string(self):
+        return emoji_utils.emote_dict['weapon_loss_em']
 
 
 class Frozen(Status):

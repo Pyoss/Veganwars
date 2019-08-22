@@ -102,7 +102,7 @@ class Unit:
             if key is not 'controller':
                 setattr(self, key, value)
         if 'weapon' not in unit_dict or unit_dict['weapon'] is None:
-            self.weapon = weapons.weapon_dict[self.default_weapon](self)
+            self.weapon = self.default_weapon
         else:
             self.weapon = weapons.weapon_dict[unit_dict['weapon']['name']](self, obj_dict=unit_dict['weapon'])
         self.weapons = []
@@ -121,7 +121,6 @@ class Unit:
     def get_additional_actions(self):
         actions = [(1, MoveForward(self)),
                    (1, MoveBack(self)),
-                   (2, PickUpButton(self)),
                    (2, SkipButton(self)),
                     (3, PutOutButton(self))]
         return actions
@@ -171,41 +170,6 @@ class Unit:
         image = file_manager.my_path + self.image[1:]
         return Image.open(image), self.unit_size, (0, 0)
 
-    def get_unit_image_dict(self):
-        return {
-            'one-handed':
-                {
-                    'file': './files/images/dummy.png',
-                    'right_hand': (30, 320),
-                    'left_hand': (220, 320),
-                    'body_armor': (110, 200),
-                    'head': (111, 30),
-                    'width_padding': 0
-                },
-            'two-handed':
-                {
-                    'file': './files/images/dummy_twohanded.png',
-                    'right_hand': (15, 160),
-                    'left_hand': (307, 320),
-                    'body_armor': (197, 200),
-                    'head': (199, 30),
-                    'width_padding': 60
-                },
-            'covers':
-                {
-                    'hand_one_handed':
-                        {
-                            'file': './files/images/cover_arm.png',
-                            'coordinates': (-3, 108)
-                        },
-                    'scarf':
-                        {
-                            'file': './files/images/cover_scarf.png',
-                            'coordinates': (47 + 87 if self.weapon.image_pose == 'two-handed' else 47, 90)
-                        },
-                }
-        }
-
     def get_hairstyle(self):
         import hairstyles
         return random.choice([hairstyles.Hairstyle_4])()
@@ -226,55 +190,6 @@ class Unit:
             right_padding = pot_right_padding if pot_right_padding > right_padding else right_padding
             top_padding = handle_y - placement_y if handle_y - placement_y > top_padding else top_padding
         return left_padding + width + right_padding, height + top_padding, top_padding, left_padding
-
-    def add_head(self, pil_image, top_padding, left_padding):
-        if not any(armor.placement == 'head' and armor.covering for armor in self.armor):
-            hairstyle = self.get_hairstyle()
-            hairstyle_image = Image.open(hairstyle.path)
-            hairstyle_x, hairstyle_y = hairstyle.padding
-            head_coord_tuple_x, head_coord_tuple_y = self.get_unit_image_dict()[self.weapon.image_pose]['head']
-            pil_image.paste(hairstyle_image, (head_coord_tuple_x - hairstyle_x + left_padding,
-                                              head_coord_tuple_y - hairstyle_y + top_padding),
-                            mask=hairstyle_image)
-            return pil_image
-        else:
-            return pil_image
-
-    def construct_image(self):
-        unit_image_dict = self.get_unit_image_dict()[self.weapon.image_pose]
-        equipment_dicts = []
-        weapon_image_dict = self.weapon.get_image_dict()
-        if weapon_image_dict is not None:
-            equipment_dicts.append(weapon_image_dict)
-        for armor in self.armor:
-            if armor.get_image_dict() is not None:
-                equipment_dicts.append(armor.get_image_dict())
-        base_width, base_height, top_padding, left_padding = self.calculate_base_image_parameters(unit_image_dict,
-                                                                                                  equipment_dicts)
-        base_png = Image.new('RGBA', (base_width, base_height), (255, 0, 0, 0))
-        base_png.paste(Image.open(unit_image_dict['file']), (left_padding, top_padding))
-        base_png = self.add_head(base_png, top_padding, left_padding)
-        print(equipment_dicts)
-        equipment_dicts.sort(key=lambda i: i['layer'], reverse=True)
-        for equipment in equipment_dicts:
-            handle_x, handle_y = equipment['handle']
-            placement = equipment['placement']
-            placement_x, placement_y = unit_image_dict[placement]
-            covered = equipment['covered']
-            equipment_image = Image.open(equipment['file'])
-
-            base_png.paste(equipment_image,
-                           (placement_x - handle_x + left_padding, placement_y - handle_y + top_padding),
-                            mask=equipment_image)
-            if covered == 'hand_two_handed':
-                base_png = self.add_head(base_png, top_padding, left_padding)
-            elif covered:
-                cover_dict = self.get_unit_image_dict()['covers'][covered]
-
-                cover = Image.open(cover_dict['file'])
-                cover_x, cover_y = cover_dict['coordinates']
-                base_png.paste(cover, (cover_x + left_padding, cover_y + top_padding), mask=cover)
-        return base_png, (left_padding + unit_image_dict['width_padding'], top_padding)
 
     def image_as_io(self):
         return image_generator.io_from_PIL(self.construct_image()[0])
@@ -306,22 +221,6 @@ class Unit:
         return self.speed - self.speed_penalty()
 
     # -----------------------  Функции, связанные с оружием -----------------------------
-
-    def equip_weapon(self, weapon):
-        self.weapon = weapon
-
-    def lose_weapon(self):
-        weapon = self.weapon
-        self.lost_weapon.append(weapon)
-        weapon.get_lost()
-        if self.weapon == weapon:
-            self.equip_weapon(standart_actions.object_dict[self.default_weapon](self))
-
-    def pick_up_weapon(self):
-        weapon = self.lost_weapon[0]
-        self.get_weapon(weapon)
-        self.lost_weapon.remove(weapon)
-        return weapon
 
     def change_weapon(self):
         if len(self.weapons) > 1:
@@ -412,11 +311,12 @@ class Unit:
         # Применение брони
         if action.dmg_done > 0:
             self.activate_statuses('receive_hit', action=action)
-        if action.dmg_done > 0:
+        if action.dmg_done > 0 and action.blockable:
             armor_data = self.activate_armor(action)
             if armor_data[0] >= action.dmg_done:
                 if not action.stringed:
                     armor_data[1].string('use', format_dict={'actor': self.name, 'dmg': action.dmg_done})
+                action.dmg_blocked = action.dmg_done
                 action.dmg_done = 0
                 action.armored = armor_data[1]
             self.activate_abilities('receive_hit', action)
@@ -641,7 +541,7 @@ class StandardCreature(Unit):
         self.range_accuracy = 0
         self.evasion = 0
         self.damage = 0
-        self.default_weapon = 'fist'
+        self.default_weapon = weapons.Fist(self)
         self.weapons = []
         self.abilities = []
         self.items = []

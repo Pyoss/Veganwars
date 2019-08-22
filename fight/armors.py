@@ -28,6 +28,7 @@ class Armor(standart_actions.GameObject):
         self.current_coverage = self.get_coverage()
         self.armor += self.improved
         self.rating += self.improved
+        self.destroyed = False
 
     def get_coverage(self):
         return self.coverage
@@ -48,7 +49,9 @@ class Armor(standart_actions.GameObject):
     def dent(self, value):
         self.armor -= value
         if self.armor < 1:
-            self.destroy()
+            if not self.destroyed:
+                self.destroy()
+                self.destroyed = True
 
     def destroy(self):
         standart_actions.AddString(localization.LangTuple('armor_' + self.name, 'destroyed',
@@ -66,6 +69,9 @@ class Armor(standart_actions.GameObject):
     def available(self):
         return False
 
+    def get_image_dict(self):
+        return None
+
 
 class Breastplate(Armor):
     name = 'breastplate'
@@ -77,22 +83,35 @@ class Breastplate(Armor):
     destructable = True
     real = True
 
-    def get_image_dict(self):
-        return {
-         'handle': (55, 90),
-         'placement': 'body_armor',
-         'file': './files/images/breastplate.png',
-         'covered': 'scarf',
-         'layer': 3
-        }
+
+class Cuirass(Armor):
+    name = 'cuirass'
+    placement = 'body'
+    max_armor = 7
+    weight = 3
+    rating = 5
+    coverage = 40
+    destructable = True
+    real = True
+
+
+class Leather(Armor):
+    name = 'leather'
+    placement = 'body'
+    max_armor = 10
+    weight = 1
+    rating = 1
+    coverage = 20
+    destructable = True
+    real = True
 
 
 class Helmet(Armor):
     name = 'helmet'
     placement = 'head'
-    max_armor = 5
+    max_armor = 7
     rating = 5
-    coverage = 10
+    coverage = 5
     destructable = True
     real = True
 
@@ -100,7 +119,27 @@ class Helmet(Armor):
         return {
          'handle': (26, 30),
          'placement': 'head',
-         'file': './files/images/helmet.png',
+         'file': './files/images/armor_heads/{}/cover_head.png'.format(self.name),
+         'covered': False,
+         'layer': 0
+        }
+
+
+class HeavyHelmet(Armor):
+    name = 'heavy-helmet'
+    placement = 'head'
+    max_armor = 7
+    rating = 10
+    coverage = 15
+    weight = 2
+    destructable = True
+    real = True
+
+    def get_image_dict(self):
+        return {
+         'handle': (26, 37),
+         'placement': 'head',
+         'file': './files/images/armor_heads/common/{}/cover_head.png'.format(self.name),
          'covered': False,
          'layer': 0
         }
@@ -173,7 +212,7 @@ class Shield(Armor, weapons.OneHanded, weapons.Weapon):
         return {
          'handle': (66, 160),
          'placement': 'left_hand',
-         'file': './files/images/shield_2.png',
+         'file': './files/images/weapons/shield_2.png',
          'covered': False,
          'layer': 2
         }
@@ -183,10 +222,12 @@ class Shield(Armor, weapons.OneHanded, weapons.Weapon):
         if not self.armor:
             return False
         if unit.dmg_received > 0:
-            if unit.dmg_received > self.armor:
+            if unit.dmg_received > self.armor and not self.destroyed:
                 blocked_dmg = self.armor
                 unit.dmg_received -= self.armor
                 self.armor = 0
+            elif self.destroyed:
+                blocked_dmg = 0
             else:
                 blocked_dmg = unit.dmg_received
                 self.armor -= unit.dmg_received
@@ -236,7 +277,7 @@ class HeavyShield(Shield):
         return {
          'handle': (106, 240),
          'placement': 'left_hand',
-         'file': './files/images/heavy_shield.png',
+         'file': './files/images/weapons/heavy_shield.png',
          'covered': False,
          'layer': 2
         }

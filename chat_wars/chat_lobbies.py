@@ -328,6 +328,13 @@ class AttackLobby(Lobby):
         self.chat = chat
         self.text = 'Нападение на чат {}'.format(self.target_chat_name)
 
+    def join_forbidden(self, user_id):
+        if Lobby.join_forbidden(self, user_id):
+            return True
+        if self.attack_action.defender_lobby is not None and user_id in self.attack_action.defender_lobby.team:
+            return True
+        return False
+
     def run_next_step(self, user_id, message_id=None):
         if not self.defence_send:
             DefenceLobby(self.attack_action, self).send_lobby()
@@ -360,6 +367,14 @@ class DefenceLobby(Lobby):
         self.attack_action.attack_ready = True
         if self.attack_action.attack_ready:
             self.attack_action.start()
+
+    def join_forbidden(self, user_id):
+        if Lobby.join_forbidden(self, user_id):
+            return True
+        if user_id in self.attack_action.attacker_lobby.team:
+            return True
+        return False
+
 
     def to_team(self):
         team_dict = {chat_id: self.team[chat_id]['unit_dict'] for chat_id in self.team}

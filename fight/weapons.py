@@ -38,7 +38,7 @@ class TwoHanded:
     accuracy = 2
     weight = 4
     damage_cap = 10
-    default_energy_cost = 3
+    default_energy_cost = 4
     special_energy_cost = 3
     image_pose = 'two-handed'
     handle = (0, 0)
@@ -78,6 +78,7 @@ class Weapon(standart_actions.GameObject):
     def __init__(self, unit=None, obj_dict=None):
         standart_actions.GameObject.__init__(self, unit=unit, obj_dict=obj_dict)
         self.improved = None
+        self.file = './files/images/weapons/{}.png'.format(self.name)
 
     def string(self, string_code, format_dict=None, order=0):
         format_dict = {} if None else format_dict
@@ -173,7 +174,7 @@ class Weapon(standart_actions.GameObject):
     def activate_special_action(self, target):
         pass
 
-    def start_special_action(self, info):
+    def start_special_action(self, info, types=None):
         pass
 
     def special_available(self, target):
@@ -273,8 +274,8 @@ class SpecialActionWeapon(Weapon):
         keyboard.add(self.special_button(target=None))
         self.create_menu(keyboard)
 
-    def start_special_action(self, info):
-        standart_actions.Custom(self.activate_special_action, order=self.order, unit=self.unit)
+    def start_special_action(self, info, types=None):
+        standart_actions.Custom(self.activate_special_action, order=self.order, unit=self.unit, types=types)
 
     def special_available(self, target):
         return self.ready()
@@ -344,21 +345,24 @@ class SpecialTargetWeapon(Weapon):
                 self.special_available(target=target) else keyboard.add(keyboards.AttackButton(self.unit, target))
         self.create_menu(keyboard)
 
-    def start_special_action(self, info):
+    def start_special_action(self, info, types=None):
         target = self.unit.fight[info[-1]]
         standart_actions.Custom(self.activate_special_action, target,
-                                order=self.order, unit=self.unit)
+                                order=self.order, unit=self.unit, types=types)
 
     def activate_special_action(self, target):
         Weapon.activate_special_action(self, target=target)
 
 
 class SpecialAttackWeapon(SpecialTargetWeapon):
-    def start_special_action(self, info):
+    special_energy_cost = 2
+
+    def start_special_action(self, info, types=None):
         self.unit.target = self.unit.fight[info[-1]]
         if self.special_available(target=self.unit.target):
             self.unit.fight.edit_queue(standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
-                                                                      info=info, order=self.order, energy_cost=self.special_energy_cost))
+                                                                      info=info, order=self.order,
+                                                                      energy_cost=self.special_energy_cost))
         else:
             self.unit.fight.edit_queue(standart_actions.Attack(unit=self.unit, fight=self.unit.fight,
                                                                info=info))
@@ -374,21 +378,18 @@ class Sword(OneHanded, Weapon):
     name = 'sword'
     weight = 1
     handle = (10, 5)
-    file = './files/images/sword_2.png'
 
 
 class GreatSword(TwoHanded, Weapon):
     name = 'great-sword'
     weight = 2
     handle = (24, 265)
-    file = './files/images/great_sword.png'
 
 
 # Оружие, проверенное на работоспособность с системой данжей
 class Knife(OneHanded, WeaponWithEffect):
     name = 'knife'
     handle = (15, 10)
-    file = './files/images/knife.png'
     default_effect_chance = 10
 
     def effect_applicable(self, attack_action):
@@ -407,7 +408,6 @@ class Spear(OneHanded, SpecialActionWeapon):
     handle = (73, 121)
     special_energy_cost = 1
     cd = 1
-    file = './files/images/spear.png'
 
     def activate_special_action(self, target=None):
         self.on_cd()
@@ -453,7 +453,6 @@ class Cleaver(TwoHanded, Weapon):
 
     # -------------------------
     handle = (50, 270)
-    file = './files/images/cleaver.png'
 
 
 class Hatchet(OneHanded, WeaponWithEffect):
@@ -462,7 +461,6 @@ class Hatchet(OneHanded, WeaponWithEffect):
 
     # -------------------------
     handle = (40, 30)
-    file = './files/images/hatchet.png'
 
     def on_hit(self, attack_action):
         if attack_action.dmg_done and engine.roll_chance(self.get_effect_chance()):
@@ -479,7 +477,6 @@ class Axe(TwoHanded, Hatchet):
 
     # -------------------------
     handle = (40, 270)
-    file = './files/images/axe.png'
 
 
 class Halberd(TwoHanded, Spear):
@@ -487,7 +484,6 @@ class Halberd(TwoHanded, Spear):
 
     # -------------------------
     handle = (40, 270)
-    file = './files/images/halberd.png'
 
 
 class Bow(OneHanded, SpecialActionWeapon):
@@ -498,7 +494,6 @@ class Bow(OneHanded, SpecialActionWeapon):
     draw_damage = 2
     draw_accuracy = 1
     handle = (137, 315)
-    file = './files/images/great_bow.png'
 
     def __init__(self, unit=None, obj_dict=None):
         SpecialActionWeapon.__init__(self, unit=unit, obj_dict=obj_dict)
@@ -518,7 +513,7 @@ class Bow(OneHanded, SpecialActionWeapon):
             self.accuracy -= self.drown
         self.drown = 0
 
-    def get_menu_string(self):
+    def get_menu_string(self, short_menu=False, target=None):
         if self.drown and self.draw_turn + 1 == self.unit.fight.turn:
             return localization.LangTuple(self.table_row, 'weapon_menu_2',
                                           format_dict={'chance': self.get_hit_chance(),
@@ -555,7 +550,6 @@ class Chain(OneHanded, SpecialActionWeapon):
     range_option = True
     # -------------------------------------
     handle = (40, 30)
-    file = './files/images/chain.png'
 
     def __init__(self, unit=None, obj_dict=None):
         SpecialActionWeapon.__init__(self, unit=unit, obj_dict=obj_dict)
@@ -590,7 +584,6 @@ class Crossbow(OneHanded, SpecialActionWeapon):
     melee = False
     # -------------------------------------
     handle = (50, 70)
-    file = './files/images/crossbow.png'
 
     def __init__(self, unit=None, obj_dict=None):
         SpecialActionWeapon.__init__(self, unit=unit, obj_dict=obj_dict)
@@ -631,12 +624,14 @@ class SledgeHammer(TwoHanded, SpecialAttackWeapon):
     name = 'sledgehammer'
     order = 9
     special_energy_cost = 4
+    special_types = ['attack']
+    handle = (40, 220)
 
     def modify_attack(self, action):
         if action.dmg_done:
             action.dmg_done += self.unit.target.max_energy - self.unit.target.energy + self.unit.target.wasted_energy
 
-    def start_special_action(self, info):
+    def start_special_action(self, info, types=None):
         self.unit.target = self.unit.fight[info[-1]]
         if self.special_available(target=self.unit.target):
             self.unit.fight.edit_queue(standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
@@ -655,10 +650,12 @@ class Harpoon(SpecialOptionWeapon, Knife):
     name = 'harpoon'
     order = 9
     special_energy_cost = 4
-    bleed_chance = 100
+    default_effect_chance = 10
     range_option = True
+    special_types = ['attack']
+    handle = (70, 60)
 
-    def start_special_action(self, info):
+    def start_special_action(self, info, types=None):
         if len(info) > 4:
             self.melee = False
             self.unit.target = self.unit.fight[info[-1]]
@@ -672,11 +669,16 @@ class Harpoon(SpecialOptionWeapon, Knife):
         attack = standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
                                        info=None, order=self.order, energy_cost=self.special_energy_cost)
         attack.activate()
-        self.unit.lose_weapon()
+        statuses.LostWeapon(self.unit)
 
-    def get_menu_string(self, sp_string=None):
+    def get_menu_string(self, short_menu=False, target=None):
         return localization.LangTuple(self.table_row, 'weapon_menu_1',
                                       format_dict={'chance': self.get_hit_chance()})
+
+    def on_hit(self, attack_action):
+        if self.effect_applicable(attack_action) and engine.roll_chance(
+                self.get_effect_chance()):
+            self.effect_resolve(attack_action)
 
     def options(self):
         self.melee = False
@@ -684,15 +686,87 @@ class Harpoon(SpecialOptionWeapon, Knife):
         self.melee = True
         return [(unit.name, str(unit)) for unit in targets]
 
-    def on_hit(self, attack_action):
+    def effect_applicable(self, attack_action):
         if not self.melee:
-            if attack_action.dmg_done and engine.roll_chance(
-                    self.bleed_chance
-            ) and 'alive' in attack_action.target.types:
-
-                statuses.Bleeding(attack_action.unit.target)
-                attack_action.to_emotes(emoji_utils.emote_dict['bleeding_em'])
             self.melee = True
+            self.effect_chance = 100
+            if 'alive' in attack_action.target.types and attack_action.dmg_done > 0:
+                return True
+        return False
+
+    def effect_resolve(self, attack_action):
+        self.effect_chance = self.default_effect_chance
+        statuses.Bleeding(attack_action.target)
+        attack_action.to_emotes(emoji_utils.emote_dict['bleeding_em'])
+
+
+class Rapier(OneHanded, SpecialAttackWeapon):
+    name = 'rapier'
+    order = 5
+    special_energy_cost = 2
+    cd = 1
+    special_types = ['pierce', 'attack']
+    handle = (23, 10)
+
+    def before_hit(self, action):
+        if 'pierce' in action.action_type:
+            self.accuracy += 3
+            self.on_cd()
+            action.blockable = False
+            action.to_emotes(emoji_utils.emote_dict['target_em'])
+
+    def on_hit(self, action):
+        if 'pierce' in action.types:
+            self.accuracy -= 3
+
+    def special_available(self, target):
+        return True if self.unit.energy > 1 and self.ready() else False
+
+
+class Stiletto(OneHanded, WeaponWithEffect):
+    name = 'stiletto'
+    order = 5
+    handle = (5, 20)
+
+    def on_hit(self, action):
+        if action.dmg_blocked:
+            self.unit.target.receive_damage(1)
+
+
+class Mace(OneHanded, WeaponWithEffect):
+    name = 'mace'
+    handle = (15, 10)
+    default_effect_chance = 10
+
+    def effect_applicable(self, attack_action):
+        if attack_action.dmg_blocked or attack_action.dmg_done > 0:
+            self.effect_chance += 10*attack_action.dmg_blocked
+            if engine.roll_chance(self.effect_chance):
+                return True
+        return False
+
+    def effect_resolve(self, attack_action):
+        self.effect_chance -= 10*attack_action.dmg_blocked
+        statuses.Stun(attack_action.target)
+        attack_action.to_emotes(emoji_utils.emote_dict['stun_em'])
+
+
+class Club(TwoHanded, WeaponWithEffect):
+    name = 'club'
+    handle = (40, 240)
+    default_effect_chance = 10
+
+    def effect_applicable(self, attack_action):
+        if attack_action.dmg_blocked or attack_action.dmg_done > 0:
+            self.effect_chance += 10*attack_action.dmg_blocked
+            if engine.roll_chance(self.effect_chance):
+                return True
+        return False
+
+    def effect_resolve(self, attack_action):
+        self.effect_chance -= 10*attack_action.dmg_blocked
+        statuses.Prone(attack_action.target)
+        attack_action.to_emotes(emoji_utils.emote_dict['prone_em'])
 
 
 # --------------------------------------------------
@@ -762,26 +836,6 @@ class Revolver(OneHanded, Weapon):
     damage = 2
     energy = 3
     melee = False
-
-
-class Mace(OneHanded, Weapon):
-    name = 'mace'
-
-    def __init__(self, actor):
-        Weapon.__init__(self, actor)
-        self.combo_turn = 0
-        self.damage_stacked = 0
-
-    def on_hit(self, attack_action):
-        if attack_action.dmg_done and self.combo_turn == self.unit.fight.turn:
-            attack_action.dmg_done += self.damage_stacked
-            attack_action.to_emotes(emoji_utils.emote_dict['mace_em'])
-        if self.combo_turn == self.unit.fight.turn:
-            if self.damage_stacked < 3:
-                self.damage_stacked += 1
-        else:
-            self.damage_stacked = 1
-        self.combo_turn = self.unit.fight.turn + 1
 
 
 class Knuckles(OneHanded, Weapon):
