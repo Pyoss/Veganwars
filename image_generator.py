@@ -133,10 +133,10 @@ if __name__ == '__main__':
     from fight import weapons, armors
     unit = Human()
     unit.weapon = weapons.Club()
-    unit.armor = [armors.Leather()]
+    unit.armor = [armors.Leather(), armors.HeavyHelmet()]
     unit1 = Goblin()
     constructor = ImageConstructor(ImageBackground(Image.open('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\Duel.png')),
-                                                   (unit.get_image(197216910),))
+                                                   (unit.get_image(441399484),))
     image = constructor.create_image()
 
     image.save('test.png', 'PNG')
