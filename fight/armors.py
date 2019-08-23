@@ -139,7 +139,7 @@ class HeavyHelmet(Armor):
         if user_id is not None and user_id in config.special_units:
             file = './files/images/armor_heads/{}/{}/cover_head.png'.\
                     format(config.special_units[user_id], self.name)
-            handle = str(open('./files/images/armor_heads/{}/naked/cover_head_coord.txt'.format(config.special_units[user_id], self.name)).read()).split()
+            handle = str(open('./files/images/armor_heads/{}/{}/cover_head_coord.txt'.format(config.special_units[user_id], self.name)).read()).split()
         else:
             file = './files/images/armor_heads/common/{}/cover_head.png'.format(self.name)
             handle = (26, 37)
