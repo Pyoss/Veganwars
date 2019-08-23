@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from fight import standart_actions, weapons
 from locales import localization, emoji_utils
-from bot_utils import keyboards
+from bot_utils import keyboards, config
 import sys
 import inspect
 
@@ -136,10 +136,18 @@ class HeavyHelmet(Armor):
     real = True
 
     def get_image_dict(self):
+        if self.unit.controller.chat_id in config.special_units:
+            file = './files/images/armor_head/{}/{}/cover_head.png'.\
+                    format(config.special_units[self.unit.controller.chat_id], self.name)
+            handle = str(open('./files/images/armor_head/{}/{}/cover_head_coord.txt'.
+                         format(config.special_units[self.controller.chat_id], self.name))).split()
+        else:
+            file = './files/images/armor_heads/common/{}/cover_head.png'.format(self.name)
+            handle = (26, 37)
         return {
-         'handle': (26, 37),
+         'handle': handle,
          'placement': 'head',
-         'file': './files/images/armor_heads/common/{}/cover_head.png'.format(self.name),
+         'file': file,
          'covered': False,
          'layer': 0
         }

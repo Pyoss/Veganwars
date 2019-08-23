@@ -294,7 +294,7 @@ class Charge(Passive):
 class Push(TargetAbility):
     name = 'push'
     order = 1
-    cd = 2
+    cd = 3
     default_energy_cost = 1
     prerequisites = ['cleave']
 
@@ -350,7 +350,7 @@ class Armorer(StartAbility):
 class Block(TargetAbility):
     name = 'block'
     order = 1
-    cd = 0
+    cd = 1
     default_energy_cost = 1
     prerequisites = ['tough']
 
@@ -391,6 +391,7 @@ class FastAttack(TargetAbility):
     name = 'fast-attack'
     full = False
     default_energy_cost = 1
+    cd = 2
     prerequisites = ['assassin', 'trip']
 
     def targets(self):
@@ -419,7 +420,7 @@ class Cleave(InstantAbility):
     name = 'cleave'
     types = ['attack']
     order = 5
-    cd = 4
+    cd = 2
     default_energy_cost = 2
     prerequisites = ['charge']
 
@@ -458,7 +459,7 @@ class Cleave(InstantAbility):
 class Provoke(TargetAbility):
     name = 'provoke'
     order = 5
-    cd = 4
+    cd = 2
     default_energy_cost = 1
     prerequisites = ['charge', 'dodge']
 
@@ -533,6 +534,7 @@ class ShieldSmash(TargetAbility):
 class Jump(TargetAbility):
     name = 'jump'
     order = 10
+    cd = 1
     prerequisites = ['provoke']
 
     def get_energy_cost(self):
@@ -604,6 +606,7 @@ class Execute(OnHit):
 class KnockBack(TargetAbility):
     name = 'knock-back'
     order = 4
+    cd = 2
     default_energy_cost = 2
     prerequisites = ['second-breath']
 
@@ -620,101 +623,6 @@ class KnockBack(TargetAbility):
             statuses.Prone(action.target)
         else:
             self.string('fail', format_dict={'actor': action.unit.name, 'target': action.target.name})
-
-
-# Способность Вор: Вы можете попытаться забрать используемый противником предмет.
-class Thrower(TargetAbility):
-    name = 'thrower'
-    cd = 3
-    order = 0
-    prerequisites = [0]
-
-    def __init__(self, actor):
-        TargetAbility.__init__(self, actor)
-        self.energy = 2
-        self.stun_chance = 35
-
-    def targets(self):
-        return self.actor.targets()
-
-    def act_options(self, action):
-        TargetAbility.act_options(self, action)
-        self.actor.target = action.target
-
-    def activate(self, action):
-        class ThrowAttack(standart_actions.BaseAttack):
-            def __init__(new):
-                standart_actions.BaseAttack.__init__(new, self.actor, self.actor.fight, None)
-                new.target = self.actor.target
-
-            def activate(new):
-                new.weapon = self.actor.weapon
-                # Определение цели
-                new.attack()
-                new.on_attack()
-                # Добавление описания в строку отчета
-                new.string('')
-                self.actor.lose_weapon()
-
-            def string(new, hit_string):
-                atk_action = 'use' if new.dmg_done > 0 else 'fail'
-                if hit_string != '':
-                    atk_action = hit_string + '_' + atk_action
-                attack_dict = {'actor': self.actor.name, 'target': new.target.name,
-                               'damage': new.dmg_done if not new.special_emotes else str(new.dmg_done) +
-                               ''.join(new.special_emotes),
-                               'weapon': localization.LangTuple(new.weapon.table_row,
-                                                                'name' if not new.weapon.melee else 'with_name')}
-                attack_tuple = localization.LangTuple(self.table_row, atk_action, attack_dict)
-                new.fight.string_tuple.row(attack_tuple)
-
-            def attack(new):
-                # Вычисление нанесенного урона и трата энергии
-                new.dmg_done = self.actor.weapon.get_damage(new.target)\
-                    if self.actor.weapon.melee else weapons.Weapon(self.actor).get_damage(new.target)
-                new.actor.waste_energy(self.energy)
-                # Применение способностей и особых свойств оружия
-                new.dmg_done += new.actor.damage + 1 if new.dmg_done else 0
-                if self.actor.weapon.melee:
-                    self.actor.on_hit(new)
-                    self.actor.weapon.on_hit(new)
-                new.target.receive_hit(new)
-
-            def on_attack(new):
-                standart_actions.BaseAttack.on_attack(new)
-                if engine.roll_chance(self.stun_chance) and new.dmg_done:
-                    new.to_emotes(emoji_utils.emote_dict['stun_em'])
-                    statuses.Stun(new.target)
-
-        self.actor.fight.edit_queue(ThrowAttack())
-
-    def available(self):
-        return True if 'natural' not in self.actor.weapon.types and self.actor.energy > 3\
-                       or not self.actor.weapon.melee else False
-
-
-# Способность Зомби: После получения смертельного урона замораживает хдоровье на 1 и планирует смерть через 2 хода.
-class Zombie(Passive):
-    name = 'zombie'
-    order = 41
-    prerequisites = [0]
-
-    def __init__(self, actor):
-        self.activated = False
-        self.stopped = False
-        Passive.__init__(self, actor)
-
-    def activate(self, action=None):
-        if self.actor.hp <= 0 and not self.stopped:
-            self.actor.hp = 1
-            if not self.activated:
-                self.activated = True
-                self.string('use', format_dict={'actor': self.actor.name})
-                statuses.CustomStatus(actor=self.actor, delay=2, order=40, func=self.stop)
-
-    def stop(self):
-        self.stopped = True
-        self.actor.hp_delta -= 10
 
 
 # ################################ НИЖЕ НИЧЕГО НЕ ПРОВЕРЕНО #######################################

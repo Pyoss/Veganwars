@@ -1,6 +1,7 @@
 from fight.units import StandardCreature, units_dict
 from fight import abilities
 from PIL import Image
+from bot_utils import config
 
 
 class Human(StandardCreature):
@@ -44,22 +45,31 @@ class Human(StandardCreature):
                 }
         }
 
-    def add_head(self, pil_image, top_padding, left_padding):
+    def add_head(self, equipment_dicts):
         if not any(armor.placement == 'head' and armor.covering for armor in self.armor):
-            hairstyle = self.get_hairstyle()
-            hairstyle_image = Image.open(hairstyle.path)
-            hairstyle_x, hairstyle_y = hairstyle.padding
-            head_coord_tuple_x, head_coord_tuple_y = self.get_unit_image_dict()[self.weapon.image_pose]['head']
-            pil_image.paste(hairstyle_image, (head_coord_tuple_x - hairstyle_x + left_padding,
-                                              head_coord_tuple_y - hairstyle_y + top_padding),
-                            mask=hairstyle_image)
-            return pil_image
-        else:
-            return pil_image
+            if self.controller is not None and self.controller.chat_id in config.special_units:
+                hairstyle_image = './files/images/armor_heads/{}/naked/cover_head.png'.format(config.special_units[self.controller.chat_id])
+                hairstyle_x, hairstyle_y = str(open('./files/images/armor_heads/{}/naked/cover_head_coord.txt'.format(config.special_units[self.controller.chat_id])).read()).split()
+                hairstyle_x, hairstyle_y = int(hairstyle_x), int(hairstyle_y)
+            else:
+                hairstyle = self.get_hairstyle()
+                hairstyle_image = hairstyle.path
+                hairstyle_x, hairstyle_y = hairstyle.padding
+
+            image_dict = {
+             'handle': (hairstyle_x, hairstyle_y),
+             'placement': 'head',
+             'file': hairstyle_image,
+             'covered': False,
+             'layer': -1
+            }
+            equipment_dicts.append(image_dict)
+        return equipment_dicts
 
     def construct_image(self):
         unit_image_dict = self.get_unit_image_dict()[self.weapon.image_pose]
         equipment_dicts = []
+        equipment_dicts = self.add_head(equipment_dicts)
         weapon_image_dict = self.weapon.get_image_dict()
         if weapon_image_dict is not None:
             equipment_dicts.append(weapon_image_dict)
@@ -70,7 +80,6 @@ class Human(StandardCreature):
                                                                                                   equipment_dicts)
         base_png = Image.new('RGBA', (base_width, base_height), (255, 0, 0, 0))
         base_png.paste(Image.open(unit_image_dict['file']), (left_padding, top_padding))
-        base_png = self.add_head(base_png, top_padding, left_padding)
         print(equipment_dicts)
         equipment_dicts.sort(key=lambda i: i['layer'], reverse=True)
         for equipment in equipment_dicts:
@@ -83,9 +92,7 @@ class Human(StandardCreature):
             base_png.paste(equipment_image,
                            (placement_x - handle_x + left_padding, placement_y - handle_y + top_padding),
                             mask=equipment_image)
-            if covered == 'hand_two_handed':
-                base_png = self.add_head(base_png, top_padding, left_padding)
-            elif covered:
+            if covered:
                 cover_dict = self.get_unit_image_dict()['covers'][covered]
 
                 cover = Image.open(cover_dict['file'])

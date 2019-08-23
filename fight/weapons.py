@@ -49,7 +49,7 @@ class TwoHanded:
          'handle': self.handle,
          'placement': 'right_hand',
          'file': self.file,
-         'covered': 'hand_two_handed',
+         'covered': False,
          'layer': 1
         }
 

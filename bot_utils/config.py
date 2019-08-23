@@ -6,3 +6,5 @@ main_chat_id = -1001290009216
 test_ability = []
 test_items = []
 test_weapon = []
+
+special_units = {197216910: 'Pasyuk'}
