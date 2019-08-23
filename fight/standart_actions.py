@@ -364,6 +364,7 @@ class SpecialWeaponAction(Action):
         self.target = fight[info[-1]] if len(info) > 4 else None
         self.action_type = self.unit.weapon.special_types
         self.order = self.unit.weapon.order
+        self.weapon = self.unit.weapon
 
     def activate(self):
         weapon = self.unit.weapon
