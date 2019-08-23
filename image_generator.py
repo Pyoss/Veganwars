@@ -136,7 +136,7 @@ if __name__ == '__main__':
     unit.armor = [armors.Leather()]
     unit1 = Goblin()
     constructor = ImageConstructor(ImageBackground(Image.open('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\Duel.png')),
-                                                   (unit.get_image(),))
+                                                   (unit.get_image(197216910),))
     image = constructor.create_image()
 
     image.save('test.png', 'PNG')

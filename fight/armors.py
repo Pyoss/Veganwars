@@ -69,7 +69,7 @@ class Armor(standart_actions.GameObject):
     def available(self):
         return False
 
-    def get_image_dict(self):
+    def get_image_dict(self, user_id=None):
         return None
 
 
@@ -115,7 +115,7 @@ class Helmet(Armor):
     destructable = True
     real = True
 
-    def get_image_dict(self):
+    def get_image_dict(self, user_id=None):
         return {
          'handle': (26, 30),
          'placement': 'head',
@@ -135,12 +135,12 @@ class HeavyHelmet(Armor):
     destructable = True
     real = True
 
-    def get_image_dict(self):
-        if self.unit.controller.chat_id in config.special_units:
+    def get_image_dict(self, user_id=None):
+        if user_id is not None and user_id in config.special_units:
             file = './files/images/armor_head/{}/{}/cover_head.png'.\
-                    format(config.special_units[self.unit.controller.chat_id], self.name)
+                    format(config.special_units[user_id], self.name)
             handle = str(open('./files/images/armor_head/{}/{}/cover_head_coord.txt'.
-                         format(config.special_units[self.controller.chat_id], self.name))).split()
+                         format(config.special_units[user_id], self.name))).split()
         else:
             file = './files/images/armor_heads/common/{}/cover_head.png'.format(self.name)
             handle = (26, 37)
@@ -173,7 +173,7 @@ class Mask(Armor):
     real = True
     weight = 0
 
-    def get_image_dict(self):
+    def get_image_dict(self, user_id=None):
         return {
          'handle': (49, 70),
          'placement': 'head',
@@ -193,7 +193,7 @@ class SteamPunk_Mask(Armor):
     real = True
     weight = 0
 
-    def get_image_dict(self):
+    def get_image_dict(self, user_id=None):
         return {
          'handle': (33, 35),
          'placement': 'head',
@@ -216,7 +216,7 @@ class Shield(Armor, weapons.OneHanded, weapons.Weapon):
     real = True
     default_energy_cost = 2
 
-    def get_image_dict(self):
+    def get_image_dict(self, user_id=None):
         return {
          'handle': (66, 160),
          'placement': 'left_hand',
@@ -281,7 +281,7 @@ class HeavyShield(Shield):
     default_energy_cost = 4
     real = True
 
-    def get_image_dict(self):
+    def get_image_dict(self, user_id=None):
         return {
          'handle': (106, 240),
          'placement': 'left_hand',

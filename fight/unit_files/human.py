@@ -45,11 +45,11 @@ class Human(StandardCreature):
                 }
         }
 
-    def add_head(self, equipment_dicts):
+    def add_head(self, equipment_dicts, user_id):
         if not any(armor.placement == 'head' and armor.covering for armor in self.armor):
-            if self.controller is not None and self.controller.chat_id in config.special_units:
-                hairstyle_image = './files/images/armor_heads/{}/naked/cover_head.png'.format(config.special_units[self.controller.chat_id])
-                hairstyle_x, hairstyle_y = str(open('./files/images/armor_heads/{}/naked/cover_head_coord.txt'.format(config.special_units[self.controller.chat_id])).read()).split()
+            if user_id is not None and user_id in config.special_units:
+                hairstyle_image = './files/images/armor_heads/{}/naked/cover_head.png'.format(config.special_units[user_id])
+                hairstyle_x, hairstyle_y = str(open('./files/images/armor_heads/{}/naked/cover_head_coord.txt'.format(config.special_units[user_id])).read()).split()
                 hairstyle_x, hairstyle_y = int(hairstyle_x), int(hairstyle_y)
             else:
                 hairstyle = self.get_hairstyle()
@@ -66,16 +66,16 @@ class Human(StandardCreature):
             equipment_dicts.append(image_dict)
         return equipment_dicts
 
-    def construct_image(self):
+    def construct_image(self, user_id=None):
         unit_image_dict = self.get_unit_image_dict()[self.weapon.image_pose]
         equipment_dicts = []
-        equipment_dicts = self.add_head(equipment_dicts)
+        equipment_dicts = self.add_head(equipment_dicts, user_id)
         weapon_image_dict = self.weapon.get_image_dict()
         if weapon_image_dict is not None:
             equipment_dicts.append(weapon_image_dict)
         for armor in self.armor:
-            if armor.get_image_dict() is not None:
-                equipment_dicts.append(armor.get_image_dict())
+            if armor.get_image_dict(user_id) is not None:
+                equipment_dicts.append(armor.get_image_dict(user_id))
         base_width, base_height, top_padding, left_padding = self.calculate_base_image_parameters(unit_image_dict,
                                                                                                   equipment_dicts)
         base_png = Image.new('RGBA', (base_width, base_height), (255, 0, 0, 0))
@@ -100,8 +100,8 @@ class Human(StandardCreature):
                 base_png.paste(cover, (cover_x + left_padding, cover_y + top_padding), mask=cover)
         return base_png, (left_padding + unit_image_dict['width_padding'], top_padding)
 
-    def get_image(self):
-        image, padding = self.construct_image()
+    def get_image(self, user_id=None):
+        image, padding = self.construct_image(user_id)
         return image, self.unit_size, padding
 
 

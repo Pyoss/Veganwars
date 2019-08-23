@@ -82,7 +82,7 @@ class Lobby:
         unit_dict = self[user_id]['unit_dict']
         unit_class = units.units_dict[unit_dict['unit_name']]
         unit = unit_class(unit_dict=unit_dict)
-        return unit.get_image()
+        return unit.get_image(user_id)
 
     def run(self):
         pass
