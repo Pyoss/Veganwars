@@ -384,7 +384,7 @@ class ListAbilities(MenuAction):
 
     def activate(self):
         keyboard = keyboards.form_keyboard(*[ability.button() for ability
-                                             in self.unit.abilities],
+                                             in self.unit.abilities if ability.active],
                                            keyboards.MenuButton(self.unit, 'back'))
         self.unit.controller.edit_message(localization.LangTuple('utils', 'abilities'), reply_markup=keyboard)
 

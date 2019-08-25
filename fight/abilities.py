@@ -826,7 +826,7 @@ class CounterAttack(Passive):
     def activate(self, action=None):
         if any(unit.target == self.unit and 'attack' in unit.action for unit in self.unit.targets()) and self.unit.dmg_received == 0:
             if 'shield' in self.unit.action or 'dodge' in self.unit.action or 'defense' in self.unit.action:
-                self.string('use', format_dict={'actor': self.unit.name})
+                standart_actions.Custom(self.string, 'use', order=60, format_dict={'actor': self.unit.name})
                 self.activated_round = self.unit.fight.turn + 1
 
 
