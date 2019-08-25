@@ -342,6 +342,10 @@ class AttackLobby(Lobby):
         Lobby.run_next_step(self, user_id, message_id=message_id)
 
     def run(self):
+        path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
+        bot_methods.send_image(image_generator.create_dungeon_image(path,
+                                                                    (self.get_image(key) for key in self.team)),
+                               self.attack_action.defender_lobby.chat_id)
         self.attack_action.attack_ready = True
         if self.attack_action.defense_ready:
             self.attack_action.start()
@@ -364,6 +368,10 @@ class DefenceLobby(Lobby):
         self.text = 'Защита от чата {}'.format(attack_lobby.chat.name)
 
     def run(self):
+        path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
+        bot_methods.send_image(image_generator.create_dungeon_image(path,
+                                                                    (self.get_image(key) for key in self.team)),
+                               self.attack_action.attacker_lobby.chat_id)
         self.attack_action.attack_ready = True
         if self.attack_action.attack_ready:
             self.attack_action.start()
