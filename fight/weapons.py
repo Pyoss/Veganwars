@@ -434,9 +434,7 @@ class Fist(OneHanded, Weapon):
     name = 'fist'
     types = ['unique', 'natural']
     natural = True
-    accuracy = 2
-    dice_num = 2
-    energy_cost = 2
+    damage_cap = 1
 
     def get_image_dict(self):
         return None
@@ -716,7 +714,7 @@ class Rapier(OneHanded, SpecialAttackWeapon):
             action.to_emotes(emoji_utils.emote_dict['target_em'])
 
     def on_hit(self, action):
-        if 'pierce' in action.types:
+        if 'pierce' in action.action_type:
             self.accuracy -= 3
 
     def special_available(self, target):

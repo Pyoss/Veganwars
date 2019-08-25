@@ -154,8 +154,9 @@ class BaseAttack(Action):
         if emote not in self.special_emotes:
             self.special_emotes.append(emote)
 
-    def attack(self, waste=None, dmg=None):
+    def attack(self, waste=None, dmg=None, special=False):
         self.weapon.before_hit(self)
+        self.unit.activate_abilities('before_hit', action=self)
         # Вычисление нанесенного урона и трата энергии
         self.dmg_done = self.weapon.get_damage(self.target) if dmg is None else dmg
         if waste is None:
@@ -166,6 +167,8 @@ class BaseAttack(Action):
         if not dmg and self.dmg_done != 0:
             self.dmg_done += self.unit.damage
         self.unit.on_hit(self)
+        if special:
+            self.weapon.modify_attack(self)
         self.target.receive_hit(self)
         self.weapon.on_hit(self)
 
@@ -213,25 +216,10 @@ class SpecialAttack(BaseAttack):
     def activate(self, target=None, weapon=None):
         # Определение цели
         self.target = self.unit.target
-        self.attack(energy_cost=self.energy_cost)
+        self.attack(special=True)
         self.on_attack()
         # Добавление описания в строку отчета
         self.string('special')
-
-    def attack(self, energy_cost=None):
-        self.weapon.before_hit(self)
-        # Вычисление нанесенного урона и трата энергии
-        self.dmg_done = self.weapon.get_damage(self.target)
-        if energy_cost is None:
-            self.unit.waste_energy(self.weapon.energy_cost)
-        else:
-            self.unit.waste_energy(energy_cost)
-        # Применение способностей и особых свойств оружия
-        self.dmg_done += self.unit.damage if self.dmg_done else 0
-        self.unit.on_hit(self)
-        self.weapon.modify_attack(self)
-        self.target.receive_hit(self)
-        self.weapon.on_hit(self)
 
 
 class Suicide(Action):
@@ -396,7 +384,7 @@ class ListAbilities(MenuAction):
 
     def activate(self):
         keyboard = keyboards.form_keyboard(*[ability.button() for ability
-                                             in self.unit.abilities if ability.available()],
+                                             in self.unit.abilities],
                                            keyboards.MenuButton(self.unit, 'back'))
         self.unit.controller.edit_message(localization.LangTuple('utils', 'abilities'), reply_markup=keyboard)
 

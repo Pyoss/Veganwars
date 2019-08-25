@@ -191,9 +191,6 @@ class Unit:
             top_padding = handle_y - placement_y if handle_y - placement_y > top_padding else top_padding
         return left_padding + width + right_padding, height + top_padding, top_padding, left_padding
 
-    def image_as_io(self):
-        return image_generator.io_from_PIL(self.construct_image()[0])
-
     # -----------------------  Менеджмент энергии и жизней -----------------------------
 
     def recovery(self):

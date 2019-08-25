@@ -214,6 +214,7 @@ class Shield(Armor, weapons.OneHanded, weapons.Weapon):
     weight = 2
     real = True
     default_energy_cost = 2
+    block_energy_cost = 1
 
     def get_image_dict(self, user_id=None):
         return {
@@ -226,6 +227,7 @@ class Shield(Armor, weapons.OneHanded, weapons.Weapon):
 
     def activate(self, action):
         unit = action.unit
+        self.unit.waste_energy(self.block_energy_cost)
         if not self.armor:
             return False
         if unit.dmg_received > 0:
@@ -278,6 +280,7 @@ class HeavyShield(Shield):
     coverage = 15
     weight = 5
     default_energy_cost = 4
+    block_energy_cost = 1
     real = True
 
     def get_image_dict(self, user_id=None):
@@ -288,10 +291,6 @@ class HeavyShield(Shield):
          'covered': False,
          'layer': 2
         }
-
-    def activate(self, action):
-        Shield.activate(self, action)
-        self.unit.waste_energy(1)
 
     def available(self):
         if self.armor > 0 and self.unit.energy > 0:

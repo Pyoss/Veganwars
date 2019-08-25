@@ -148,8 +148,17 @@ class UserGetAbility(UserAction):
 
 def get_possible_abilities(experience, user_abilities_dicts):
     abilities = []
+    stats_dict = {
+        'strength': 0,
+        'dexterity': 0,
+        'protection': 0,
+        'lvl': 0
+    }
+    for ability in user_abilities_dicts:
+        stats_dict[ability_dict[ability['name']].school] += 1
+        stats_dict['lvl'] += 1
     for ability in ability_dict.values():
-        if all(prerequisite in [dct['name'] for dct in user_abilities_dicts] for prerequisite in ability.prerequisites)\
+        if all(ability.prerequisites[prerequisite] <= stats_dict[prerequisite] for prerequisite in ability.prerequisites)\
                 and not any(dct['name'] == ability.name for dct in user_abilities_dicts):
         # if 0 not in ability.prerequisites:
             abilities.append(ability)
