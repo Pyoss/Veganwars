@@ -344,7 +344,7 @@ class AttackLobby(Lobby):
     def run(self):
         path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
         image = image_generator.create_dungeon_image(path, (self.get_image(key) for key in self.team))
-        caption = ','.join([self[key]['name'] for key in self.team.keys()])
+        caption = ','.join([self[key]['unit_dict']['name'] for key in self.team.keys()])
         bot_methods.send_image(image, self.attack_action.defender_lobby.chat_id, message=caption)
         bot_methods.send_image(image, self.chat_id, message=caption)
         self.attack_action.attack_ready = True
@@ -371,7 +371,7 @@ class DefenceLobby(Lobby):
     def run(self):
         path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
         image = image_generator.create_dungeon_image(path, (self.get_image(key) for key in self.team))
-        caption = ','.join([self[key]['name'] for key in self.team.keys()])
+        caption = ','.join([self[key]['unit_dict']['name'] for key in self.team.keys()])
         bot_methods.send_image(image, self.attack_action.attacker_lobby.chat_id, message=caption)
         bot_methods.send_image(image, self.chat_id, message=caption)
         self.attack_action.attack_ready = True

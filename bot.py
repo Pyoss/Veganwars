@@ -37,6 +37,7 @@ def start(message):
     dung = chat_lobbies.Dungeon(message.chat.id, maps.Forest)
     dung.send_lobby()
 
+
 @bot.message_handler(commands=['lock'])
 def start(message):
     if message.from_user.id == config.admin_id:
