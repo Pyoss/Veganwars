@@ -675,7 +675,7 @@ class Execute(OnHit):
     school = 'strength'
 
     def act(self, action):
-        if action.target.hp <= math.ceil(action.target.max_hp/4):
+        if action.target.hp <= math.ceil(action.target.max_hp/4) and action.dmg_done > 0:
             action.dmg_done *= 2
             action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
 
