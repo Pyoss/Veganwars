@@ -148,8 +148,7 @@ class AttackAction:
                              'Битва выиграна! Вы можете осадить чат {}'.format(self.defender_lobby.name),
                              reply_markup=keyboard)
                 send_message(self.defender_lobby.chat_id,
-                             'Битва проиграна! Вас может осадить чат {}'.format(self.attacker_lobby.name),
-                             reply_markup=keyboard)
+                             'Битва проиграна! Вас может осадить чат {}'.format(self.attacker_lobby.name))
             elif self.mode == 'attack':
                 button = keyboards.Button('Грабить!', callback_data='_'.join(['mngt', str(self.attacker_lobby.chat_id), 'marauder',
                                                                              str(self.defender_lobby.chat_id),
