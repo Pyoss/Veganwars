@@ -287,7 +287,7 @@ class HeavyShield(Shield):
         return {
          'handle': (106, 240),
          'placement': 'left_hand',
-         'file': './files/images/weapons/heavy_shield.png',
+         'file': './files/images/weapons/heavy-shield.png',
          'covered': False,
          'layer': 2
         }
