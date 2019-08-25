@@ -295,6 +295,37 @@ class JumpBack(InstantAbility):
             ability.ready_turn = self.unit.fight.turn + self.unit.speed_penalty() + ability.cd
 
 
+class Biceps(OnHit):
+    name = 'biceps'
+    prerequisites = {'strength': 4}
+    school = 'strength'
+
+    def act(self, action):
+        if self.unit.energy == self.unit.max_energy:
+            action.dmg_done += 2
+            action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
+
+
+class Speedy(Passive):
+    name = 'speedy'
+    types = ['dodge', 'move']
+    order = 1
+    cd = 5
+    prerequisites = {'dexterity': 4}
+    school = 'dexterity'
+
+
+class UndyingSkill(StartAbility):
+    name = 'undying'
+    order = 1
+    cd = 5
+    prerequisites = {'protection': 4}
+    school = 'protection'
+
+    def start_act(self):
+        statuses.Undying(self.unit)
+
+
 class Trip(TargetAbility):
     name = 'trip'
     order = 5

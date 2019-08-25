@@ -39,6 +39,7 @@ emote_dict = {
     "stun_em": emoji.emojize(':cyclone:', use_aliases=True),
     "flying_em": '\U0001f54a',
     "bleeding_em": u'\U00002763',
+    "retreating_em": '😧',
     'afk_em': u'\U0001F4F4',
     'crippled_em': u'\U0001F494',
     'confused_em': u'\U0001F915',
@@ -47,6 +48,7 @@ emote_dict = {
     'running_em': '\U0001f3c3',
     'frozen_em': '\U0001f976',
     'spell_shield_em': '\U0001f535',
+    'undying_em': '😡',
     'prone_em': '⬇️',
 
     # Оружие

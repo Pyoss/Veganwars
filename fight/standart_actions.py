@@ -156,7 +156,7 @@ class BaseAttack(Action):
 
     def attack(self, waste=None, dmg=None, special=False):
         self.weapon.before_hit(self)
-        self.unit.activate_abilities('before_hit', action=self)
+        self.unit.on_hit(self)
         # Вычисление нанесенного урона и трата энергии
         self.dmg_done = self.weapon.get_damage(self.target) if dmg is None else dmg
         if waste is None:

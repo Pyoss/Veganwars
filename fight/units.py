@@ -212,6 +212,8 @@ class Unit:
         weight = self.weapon.weight
         for armor in self.armor:
             weight += armor.weight
+        if any(ability.name == 'speedy' for ability in self.abilities):
+            weight -= 1
         return weight
 
     def get_speed(self):
@@ -267,6 +269,7 @@ class Unit:
             if self in actor.melee_targets:
                 actor.melee_targets.remove(self)
         self.melee_targets = []
+        statuses.Retreating(self, 1)
 
     def move_forward(self):
         units_to_melee = [unit for unit in self.targets() if 'forward' in unit.action]
@@ -293,6 +296,10 @@ class Unit:
         for ability in self.abilities:
             if sp_type in ability.types:
                 ability.act(action=action)
+
+    def before_hit(self, action):
+        self.activate_statuses('before_hit', action=action)
+        self.activate_abilities('before_hit', action=action)
 
     def on_hit(self, action):
         self.activate_statuses('on_hit', action=action)

@@ -154,6 +154,21 @@ class OnHitStatus(Status):
             self.finish()
 
 
+class BeforeHit(Status):
+    core_types = ['status', 'before_hit']
+    db_string = 'statuses'
+    order = 60
+
+    def __init__(self, unit, delay=1, acting=False):
+        self.delay = delay
+        Status.__init__(self, unit, acting=acting)
+
+    def activate(self, action=None):
+        self.delay -= 1
+        if self.delay <= 0:
+            self.finish()
+
+
 class ReceiveHitStatus(Status):
     core_types = ['status', 'receive_hit']
     db_string = 'statuses'
@@ -189,6 +204,31 @@ class Running(OnHitStatus):
 
     def menu_string(self):
         return emoji_utils.emote_dict['running_em']
+
+
+class Retreating(BeforeHit):
+    name = 'retreating'
+    core_types = ['status', 'receive_hit', 'on_hit']
+
+    def __init__(self, unit, delay=1, acting=False):
+        BeforeHit.__init__(self, unit, delay=1, acting=False)
+        self.switch = False
+
+    def act(self, action=None):
+        if action is not None:
+            if not action.weapon.melee:
+                if not self.switch:
+                    self.unit.range_accuracy -= 4
+                    self.switch = True
+                else:
+                    self.unit.range_accuracy += 4
+                    self.switch = False
+
+        else:
+            self.unit.fight.edit_queue(self)
+
+    def menu_string(self):
+        return emoji_utils.emote_dict['retreating_em']
 
 
 class Flying(ReceiveHitStatus):
@@ -252,6 +292,29 @@ class Bleeding(Status):
 
     def menu_string(self):
         return emoji_utils.emote_dict['bleeding_em'] + str(self.strength)
+
+
+class Undying(Status):
+    name = 'undying'
+    order = 39
+
+    def __init__(self, unit):
+        Status.__init__(self, unit)
+        self.ready_turn = 0
+        self.cd = 0
+
+    def activate(self, action=None):
+        hp_delta = self.unit.hp_delta - (bool(self.unit.dmg_received) + self.unit.dmg_received // self.unit.toughness)
+        print(hp_delta)
+        print(self.unit.hp)
+        if hp_delta <= -self.unit.hp and self.ready_turn <= self.unit.fight.turn:
+            self.unit.dmg_received = 0
+            self.unit.hp_delta = -self.unit.hp + 1
+            standart_actions.Custom(self.string, 'use', unit=self.unit, format_dict={'actor': self.unit.name})
+            self.ready_turn = self.unit.fight.turn + self.cd
+
+    def menu_string(self):
+        return emoji_utils.emote_dict['undying_em'] if self.ready_turn <= self.unit.fight.turn else None
 
 
 class Poison(Status):
