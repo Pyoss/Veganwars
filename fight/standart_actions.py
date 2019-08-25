@@ -154,6 +154,10 @@ class BaseAttack(Action):
         if emote not in self.special_emotes:
             self.special_emotes.append(emote)
 
+    def act(self):
+        self.weapon.on_act()
+        Action.act(self)
+
     def attack(self, waste=None, dmg=None, special=False):
         self.weapon.before_hit(self)
         self.unit.on_hit(self)
@@ -640,6 +644,9 @@ class GameObject:
         self.unit.controller.end_turn() if self.full else self.unit.get_action(edit=True)
 
     def start_act(self):
+        pass
+
+    def on_act(self):
         pass
 
     def suit(self):

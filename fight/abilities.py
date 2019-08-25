@@ -340,7 +340,9 @@ class Trip(TargetAbility):
 
     def activate(self, action):
         self.on_cd()
-        if 'move' in action.target.action:
+        if 'massive' in action.target.types:
+            self.string('impossible', format_dict={'target': action.target.name, 'actor': self.unit.name})
+        elif 'move' in action.target.action:
             self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
             statuses.Prone(action.target)
         else:
@@ -408,7 +410,9 @@ class Push(TargetAbility):
 
     def activate(self, action):
         self.on_cd()
-        if 'dodge' in action.target.action:
+        if 'massive' in action.target.types:
+            self.string('impossible', format_dict={'target': action.target.name, 'actor': self.unit.name})
+        elif 'dodge' in action.target.action:
             self.string('fail', format_dict={'target': action.target.name, 'actor': self.unit.name})
         elif 'shield' in action.target.action:
             self.string('special', format_dict={'target': action.target.name, 'actor': self.unit.name})
@@ -505,12 +509,13 @@ class FastAttack(TargetAbility):
     name = 'fast-attack'
     full = False
     default_energy_cost = 1
+    types = ['attack']
     cd = 2
     prerequisites = {'dexterity': 3}
     school = 'dexterity'
 
     def targets(self):
-        return self.unit.melee_targets
+        return self.unit.weapon.targets()
 
     def act(self, action):
         if len(action.info) > 5:
@@ -697,7 +702,9 @@ class KnockBack(TargetAbility):
 
     def activate(self, action):
         self.on_cd()
-        if action.target.energy < action.unit.energy + random.randint(0, 1):
+        if 'massive' in action.target.types:
+            self.string('impossible', format_dict={'target': action.target.name, 'actor': self.unit.name})
+        elif action.target.energy < action.unit.energy + random.randint(0, 1):
             self.string('use', format_dict={'actor': action.unit.name, 'target': action.target.name})
             statuses.Buff(action.target, 'melee_accuracy', -6, 1)
             statuses.Buff(action.target, 'range_accuracy', -6, 1)

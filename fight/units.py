@@ -16,7 +16,7 @@ class Unit:
     unit_name = 'unit'
     unit_size = 'standard'
     emote = '?'
-    types = ['alive']
+    types = ['alive', 'animal']
     summoned = False
     standart_additional = ['move', 'move_back', 'skip']
     experience = 10

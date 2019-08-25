@@ -49,7 +49,7 @@ class Dragon(StandardCreature):
     unit_name = 'dragon'
     control_class = DragonAi
     emote = emote_dict['dragon_em']
-    types = ['dragon']
+    types = ['alive', 'massive']
     image = './files/images/units/sword_goblin.png'
     danger = 20
     body_height = 'standard'

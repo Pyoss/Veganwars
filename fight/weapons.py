@@ -158,7 +158,7 @@ class Weapon(standart_actions.GameObject):
                                           format_dict={'chance': self.get_hit_chance(), 'target': target})
 
     def attack_buttons(self):
-        return [keyboards.AttackButton(self.unit, target) for target in self.targets()]
+        return [keyboards.AttackButton(self.unit, target) for target in self.targets()] if self.available() else []
 
     def special_button(self, target):
         if target is not None:
@@ -356,6 +356,10 @@ class SpecialTargetWeapon(Weapon):
 
 class SpecialAttackWeapon(SpecialTargetWeapon):
     special_energy_cost = 2
+
+    def special_available(self, target):
+        if not self.available():
+            return False
 
     def start_special_action(self, info, types=None):
         self.unit.target = self.unit.fight[info[-1]]
@@ -587,7 +591,7 @@ class Crossbow(OneHanded, SpecialActionWeapon):
         SpecialActionWeapon.__init__(self, unit=unit, obj_dict=obj_dict)
         self.loaded = False
 
-    def on_hit(self, action):
+    def on_act(self):
         self.loaded = False
 
     def targets(self):
@@ -641,7 +645,13 @@ class SledgeHammer(TwoHanded, SpecialAttackWeapon):
                                                                info=info))
 
     def special_available(self, target):
-        return True if self.unit.energy > self.special_energy_cost else False
+        if not self.available():
+            return False
+        elif self.unit.energy < self.special_energy_cost:
+            return False
+        elif not self.ready():
+            return False
+        return True
 
 
 class Harpoon(SpecialOptionWeapon, Knife):
@@ -718,7 +728,13 @@ class Rapier(OneHanded, SpecialAttackWeapon):
             self.accuracy -= 3
 
     def special_available(self, target):
-        return True if self.unit.energy > 1 and self.ready() else False
+        if not self.available():
+            return False
+        elif self.unit.energy < self.special_energy_cost:
+            return False
+        elif not self.ready():
+            return False
+        return True
 
 
 class Stiletto(OneHanded, WeaponWithEffect):
@@ -1097,38 +1113,6 @@ class PoisonedBloodyFangs(OneHanded, Weapon):
                     attack_action.to_emotes(emoji_utils.emote_dict['bleeding_em'])
 
 
-class Pistol(OneHanded, Weapon):
-    name = 'pistol'
-    melee = False
-    accuracy = 3
-    energy = 3
-
-
-class Shotgun(OneHanded, Weapon):
-    name = 'shotgun'
-    melee = False
-    dice_num = 6
-    energy = 4
-    accuracy = 0
-    bonus_damage = 1
-
-    def on_hit(self, attack_action):
-        if self.unit.target in self.unit.melee_targets and attack_action.dmg_done:
-            attack_action.dmg_done += self.bonus_damage
-            attack_action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
-
-    def info_dict(self):
-        return {'bonus_damage': self.bonus_damage}
-
-
-class SawnOff(Shotgun):
-    name = 'sawn-off'
-    melee = False
-    dice_num = 8
-    accuracy = 1
-    energy = 3
-
-
 class Boomerang(OneHanded, SpecialAttackWeapon):
     name = 'boomerang'
     melee = False
@@ -1290,14 +1274,6 @@ class LasGun(OneHanded, Weapon):
             return localization.LangTuple(self.table_row, 'weapon_menu_2',
                                           format_dict={'chance': self.get_hit_chance(),
                                                        'heat': (self.heat - 4) * 5})
-
-
-class ChainSword(Knife):
-    name = 'chainsword'
-    types = ['unique', 'arsenal']
-    energy = 2
-    damage = 1
-    bleed_chance = 100
 
 
 class Target(Fist):

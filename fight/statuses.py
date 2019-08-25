@@ -484,6 +484,8 @@ class Prone(Status):
     effect = False
 
     def __init__(self, actor):
+        if 'animal' not in actor.types:
+            return
         if 'prone' not in actor.disarmed:
             actor.disarmed.append('prone')
         if 'prone' not in actor.rooted:
