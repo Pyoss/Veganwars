@@ -395,6 +395,7 @@ class Heavy(OnLvl):
 class Tough(OnLvl):
     name = 'tough'
     school = 'protection'
+    stats = {'toughness': 3}
 
 
 class Slow(OnLvl):
