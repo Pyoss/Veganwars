@@ -314,6 +314,9 @@ class Speedy(Passive):
     prerequisites = {'dexterity': 4}
     school = 'dexterity'
 
+    def activate(self, action=None):
+        pass
+
 
 class UndyingSkill(StartAbility):
     name = 'undying'
