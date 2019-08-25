@@ -301,7 +301,7 @@ class Undying(Status):
     def __init__(self, unit):
         Status.__init__(self, unit)
         self.ready_turn = 0
-        self.cd = 0
+        self.cd = 2
 
     def activate(self, action=None):
         hp_delta = self.unit.hp_delta - (bool(self.unit.dmg_received) + self.unit.dmg_received // self.unit.toughness)
