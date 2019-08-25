@@ -343,9 +343,10 @@ class AttackLobby(Lobby):
 
     def run(self):
         path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
-        bot_methods.send_image(image_generator.create_dungeon_image(path,
-                                                                    (self.get_image(key) for key in self.team)),
-                               self.attack_action.defender_lobby.chat_id)
+        image = image_generator.create_dungeon_image(path, (self.get_image(key) for key in self.team))
+        caption = ','.join([self[key]['name'] for key in self.team.keys()])
+        bot_methods.send_image(image, self.attack_action.defender_lobby.chat_id, message=caption)
+        bot_methods.send_image(image, self.chat_id, message=caption)
         self.attack_action.attack_ready = True
         if self.attack_action.defense_ready:
             self.attack_action.start()
@@ -369,9 +370,10 @@ class DefenceLobby(Lobby):
 
     def run(self):
         path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
-        bot_methods.send_image(image_generator.create_dungeon_image(path,
-                                                                    (self.get_image(key) for key in self.team)),
-                               self.attack_action.attacker_lobby.chat_id)
+        image = image_generator.create_dungeon_image(path, (self.get_image(key) for key in self.team))
+        caption = ','.join([self[key]['name'] for key in self.team.keys()])
+        bot_methods.send_image(image, self.attack_action.attacker_lobby.chat_id, message=caption)
+        bot_methods.send_image(image, self.chat_id, message=caption)
         self.attack_action.attack_ready = True
         if self.attack_action.attack_ready:
             self.attack_action.start()
@@ -382,7 +384,6 @@ class DefenceLobby(Lobby):
         if user_id in self.attack_action.attacker_lobby.team:
             return True
         return False
-
 
     def to_team(self):
         team_dict = {chat_id: self.team[chat_id]['unit_dict'] for chat_id in self.team}

@@ -147,6 +147,9 @@ class AttackAction:
                 send_message(self.attacker_lobby.chat_id,
                              'Битва выиграна! Вы можете осадить чат {}'.format(self.defender_lobby.name),
                              reply_markup=keyboard)
+                send_message(self.defender_lobby.chat_id,
+                             'Битва проиграна! Вас может осадить чат {}'.format(self.attacker_lobby.name),
+                             reply_markup=keyboard)
             elif self.mode == 'attack':
                 button = keyboards.Button('Грабить!', callback_data='_'.join(['mngt', str(self.attacker_lobby.chat_id), 'marauder',
                                                                              str(self.defender_lobby.chat_id),
@@ -157,13 +160,19 @@ class AttackAction:
                 send_message(self.attacker_lobby.chat_id,
                              'Битва выиграна! Вы можете ограбить чат {}'.format(self.defender_lobby.name),
                              reply_markup=keyboard)
+                send_message(self.defender_lobby.chat_id,
+                             'Битва проиграна! Вас может ограбить чат {}'.format(self.attacker_lobby.name))
         else:
             if self.mode == 'siege':
                 send_message(self.attacker_lobby.chat_id,
                              '{} отбивает вашу попытку осады!'.format(self.defender_lobby.name))
+                send_message(self.defender_lobby.chat_id,
+                             'Вы успешно обороняетесь от {}!'.format(self.attacker_lobby.name))
             elif self.mode == 'attack':
                 send_message(self.attacker_lobby.chat_id,
                              '{} успешно обороняется!'.format(self.defender_lobby.name))
+                send_message(self.defender_lobby.chat_id,
+                             'Вы успешно обороняетесь от {}!'.format(self.attacker_lobby.name))
         for user_id in self.get_all_user_ids():
             if user_id in occupied_list:
                 occupied_list.remove(user_id)
