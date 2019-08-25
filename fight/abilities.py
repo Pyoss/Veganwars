@@ -754,6 +754,9 @@ class Berserk(Passive):
         elif self.bonus_damage:
             self.bonus_damage = False
 
+    def gain(self, user):
+        OnLvl.gain(self, user)
+
 
 class HandToHand(OnHit):
     name = 'hand-to-hand'
