@@ -505,7 +505,7 @@ class FastAttack(TargetAbility):
     full = False
     default_energy_cost = 1
     cd = 2
-    prerequisites = {'dexterity': 2, 'strength': 1}
+    prerequisites = {'dexterity': 3}
     school = 'dexterity'
 
     def targets(self):
