@@ -501,6 +501,7 @@ class Block(TargetAbility):
 
 
 class FastAttack(TargetAbility):
+
     name = 'fast-attack'
     full = False
     default_energy_cost = 1
