@@ -191,6 +191,23 @@ class Lobby1x1(Lobby):
         result = self.run_fight(*[{chat_id: team[chat_id]['unit_dict'] for chat_id in team} for team in self.teams])
 
 
+class LobbyFFA(Lobby):
+
+    def run(self):
+        path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
+        for team in self.teams:
+            bot_methods.send_image(image_generator.create_dungeon_image(path,
+                                                                        (self.get_image(key) for key in team)),
+                                   self.chat_id)
+        result = self.run_fight(*[{chat_id: team[chat_id]['unit_dict'] for chat_id in team} for team in self.teams])
+
+    def player_join(self, user_id, unit_dict):
+        self.teams.append({})
+        self.join_lobby(user_id, unit_dict, self.teams[-1])
+
+
+
+
 class StartChecker:
     def __init__(self, lobby):
         self.lobby = lobby

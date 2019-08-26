@@ -128,6 +128,14 @@ def start(message):
     dung.send_lobby()
 
 
+@bot.message_handler(commands=['ffa'])
+def start(message):
+    chat = chat_main.pyossession.get_chat(message.chat.id)
+    chat.clear_used_items()
+    dung = chat_lobbies.LobbyFFA(message.chat.id)
+    dung.send_lobby()
+
+
 @bot.message_handler(commands=['test_fight'])
 def start(message):
     from fight.unit_files import human, red_oak, bloodbug, ogre, goblin_shaman, goblin, dragon, worm
