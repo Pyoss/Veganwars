@@ -657,8 +657,8 @@ class SledgeHammer(TwoHanded, SpecialAttackWeapon):
 class Harpoon(SpecialOptionWeapon, Knife):
     name = 'harpoon'
     order = 9
-    cd = 3
-    special_energy_cost = 4
+    cd = 4
+    special_energy_cost = 3
     default_effect_chance = 10
     range_option = True
     special_types = ['attack']
@@ -680,6 +680,7 @@ class Harpoon(SpecialOptionWeapon, Knife):
         attack = standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
                                        info=None, order=self.order, energy_cost=self.special_energy_cost)
         attack.activate()
+        statuses.LostWeapon(self.unit)
 
     def get_menu_string(self, short_menu=False, target=None):
         return localization.LangTuple(self.table_row, 'weapon_menu_1',
