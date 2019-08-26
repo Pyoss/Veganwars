@@ -272,13 +272,15 @@ class Unit:
         statuses.Retreating(self, 1)
 
     def move_forward(self):
-        units_to_melee = [unit for unit in self.targets() if 'forward' in unit.action]
-        if not units_to_melee:
-            units_to_melee = self.targets()
-        for unit in units_to_melee:
-            if unit not in self.melee_targets:
-                unit.melee_targets.append(self)
-                self.melee_targets.append(unit)
+        for team in [tm for tm in self.fight.teams if self not in tm.units]:
+            units_to_melee = [unit for unit in team.units() if 'forward' in unit.action]
+
+            if not units_to_melee:
+                units_to_melee = team.units()
+            for unit in units_to_melee:
+                if unit not in self.melee_targets:
+                    unit.melee_targets.append(self)
+                    self.melee_targets.append(unit)
         statuses.Running(self, 1)
 
     # ------------------------- Активация способностей -------------------

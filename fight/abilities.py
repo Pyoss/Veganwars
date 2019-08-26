@@ -535,6 +535,12 @@ class FastAttack(TargetAbility):
         attack = standart_actions.Attack(self.unit, self.unit.fight)
         attack.activate(target=action.target)
 
+    def available(self):
+        if not self.unit.weapon.melee:
+            return False
+        else:
+            return TargetAbility.available(self)
+
 
 class Cleave(InstantAbility):
     name = 'cleave'
