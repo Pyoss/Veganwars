@@ -597,7 +597,7 @@ class Provoke(TargetAbility):
     def activate(self, action):
         statuses.CustomPassive(action.target, types=['on_hit'], name='provoke_stop',
                                delay=6, func=self.stop_provoke, option=action.unit)
-        statuses.PermaStatus(action.target, 1, 6, self.provoke, name='provoke', emoji='😡', args=[action.target,
+        statuses.PermaStatus(action.target, 1, 6, self.provoke, name='provoke', emoji=emoji_utils.emote_dict['provoke_em'], args=[action.target,
                                                                                                   self.unit])
         self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
 
@@ -798,7 +798,7 @@ class Berserk(Passive):
 
         # Увеличивает урон на 2 при одной жизни.
         if self.unit.hp == 1:
-            statuses.Buff(self.unit, 'damage', 2, 2, emoji=emoji_utils.emote_dict['strength_em'])
+            statuses.Buff(self.unit, 'damage', 2, 2, emoji=emoji_utils.emote_dict['berserk_em'])
             if not self.bonus_damage:
                 self.string('special', format_dict={'actor': self.unit.name})
                 self.bonus_damage = True
@@ -838,7 +838,7 @@ class UnrelentingForce(InstantAbility):
                 damage = self.unit.dmg_received
                 attack_action = standart_actions.Attack(self.unit, self.unit.fight, stringed=False)
                 attack_action.blockable = False
-                attack_action.activate(target=target, waste=0, dmg=damage)
+                attack_action.activate(target=target, waste=0, dmg=damage + self.unit.damage)
                 self.string('use', format_dict={'actor': self.unit.name, 'target': target.name,
                                                 'damage': attack_action.dmg_done + attack_action.dmg_blocked})
         else:
