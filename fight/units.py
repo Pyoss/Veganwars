@@ -321,7 +321,7 @@ class Unit:
             armor_data = self.activate_armor(action)
             if armor_data[0] >= action.dmg_done:
                 if not action.stringed:
-                    standart_actions.Custom(armor_data[1].string, 'use', order=19, format_dict={'actor': self.name, 'dmg': action.dmg_done})
+                    standart_actions.Custom(armor_data[1].string, 'use', order=19, unit=self, format_dict={'actor': self.name, 'dmg': action.dmg_done})
                 action.dmg_blocked = action.dmg_done
                 action.dmg_done = 0
                 action.armored = armor_data[1]

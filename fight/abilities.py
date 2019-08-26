@@ -295,15 +295,15 @@ class JumpBack(InstantAbility):
             ability.ready_turn = self.unit.fight.turn + self.unit.speed_penalty() + ability.cd
 
 
-class Biceps(OnHit):
+class Biceps(Passive):
     name = 'biceps'
     prerequisites = {'strength': 4}
     school = 'strength'
+    order = 0
 
-    def act(self, action):
+    def act(self, action=None):
         if self.unit.energy == self.unit.max_energy:
-            action.dmg_done += 2
-            action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
+            statuses.Buff(self.unit, 'damage', 2, 1, emoji=emoji_utils.emote_dict['strength_em'])
 
 
 class Speedy(Passive):
