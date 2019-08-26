@@ -101,7 +101,7 @@ class Lobby:
             bot_methods.err(traceback.format_exc())
 
     def send_lobby(self):
-        if self.image is not None:
+        if self.image is None:
             message = bot_methods.send_message(self.chat_id, self.create_lobby(), reply_markup=self.keyboard())
         else:
             path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
