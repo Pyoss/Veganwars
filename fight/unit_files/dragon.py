@@ -65,7 +65,7 @@ class Dragon(StandardCreature):
         self.toughness = 8
         self.tail = weapons.DragonTail(self)
         self.weapon = weapons.BearClaw(self)
-        self.default_weapon = 'bear-claw'
+        self.default_weapon = weapons.BearClaw(self)
         self.melee_accuracy = 0
         self.range_accuracy = 0
         self.weapons = []
@@ -116,8 +116,9 @@ class Dragon(StandardCreature):
         if 'dodge' in target.action:
             unit.string('skill_4', format_dict={'actor': unit.name, 'target': target.name})
         else:
-            statuses.Burning(target, stacks=damage)
             unit.string('skill_1', format_dict={'actor': unit.name, 'target': target.name})
+            if 'shield' not in target.action:
+                statuses.Burning(target, stacks=damage)
 
     @staticmethod
     def wing_clap(ability, action):

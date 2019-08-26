@@ -23,7 +23,8 @@ class CallbackHandler:
                            'chat': chat_main.ChatHandler(self),
                            'lobby': chat_lobbies.LobbyHandler(self),
                            'mngt': chat_menu.ManageHandler(self),
-                           'user': user_menu.UserHandler(self)}
+                           'user': user_menu.UserHandler(self),
+                           'mobchoice': chat_lobbies.MobChoiceHandler(self)}
 
     def handle(self, call):
         call_split = call.data.split('_')

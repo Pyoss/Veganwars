@@ -18,6 +18,7 @@ class Lobby:
         self.chat_id = chat_id
         self.message_id = None
         self.teams = [{}]
+        self.image = None
         # Команда вида {chat_id: [unit_dict, False(ready_status)]}
         self.text = 'FILL THE TEXT'
         self.lang = 'rus'
@@ -143,8 +144,12 @@ class Lobby:
 
     def update_lobby(self, keyboard=True):
         message = self.create_lobby()
-        bot_methods.edit_message(self.chat_id, message_id=self.message_id, message_text=message,
-                                 reply_markup=self.keyboard() if keyboard else None)
+        if self.image is None:
+            bot_methods.edit_message(self.chat_id, message_id=self.message_id, message_text=message,
+                                     reply_markup=self.keyboard() if keyboard else None)
+        else:
+            bot_methods.bot.edit_message_caption(caption=message, chat_id=self.chat_id, message_id=self.message_id,
+                                                 reply_markup=self.keyboard() if keyboard else None)
 
     def error(self, error):
         bot_methods.send_message(self.chat_id,
@@ -315,6 +320,27 @@ class Dungeon(Lobby):
                 member.message_id = None
 
 
+class MobFight(Lobby):
+    def __init__(self, chat_id, mob_list):
+        Lobby.__init__(self, chat_id, skip_armory=False)
+        self.team = self.teams[0]
+        self.complexity = None
+        self.mob_list = mob_list
+        self.lang = 'rus'
+        self.image = '/files/images/backgrounds/dragon_lair.jpg'
+        self.text = 'ЕТО ДРАКОН РРРРРРР'
+
+    def __str__(self):
+        return str(self.id)
+
+    def run(self):
+        path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
+        bot_methods.send_image(image_generator.create_dungeon_image(path,
+                                                                    (self.get_image(key) for key in self.team)),
+                               self.chat_id, message=','.join([self[key]['unit_dict']['name'] for key in self.team.keys()]))
+        result = self.run_fight(*[{chat_id: self.team[chat_id]['unit_dict'] for chat_id in self.team}, {units.units_dict[mob]: units.units_dict[mob]().to_dict() for mob in self.mob_list}])
+
+
 class AttackLobby(Lobby):
     def __init__(self, chat, attack_action, target_chat):
         Lobby.__init__(self, chat.chat_id, skip_armory=False)
@@ -344,7 +370,7 @@ class AttackLobby(Lobby):
     def run(self):
         path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
         image = image_generator.create_dungeon_image(path, (self.get_image(key) for key in self.team))
-        caption = ','.join([self[key]['unit_dict']['name'] for key in self.team.keys()])
+        caption = ', '.join([self[key]['unit_dict']['name'] for key in self.team.keys()])
         bot_methods.send_image(image, self.attack_action.defender_lobby.chat_id, message=caption)
         bot_methods.send_image(image, self.chat_id, message=caption)
         self.attack_action.attack_ready = True
@@ -371,7 +397,7 @@ class DefenceLobby(Lobby):
     def run(self):
         path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
         image = image_generator.create_dungeon_image(path, (self.get_image(key) for key in self.team))
-        caption = ','.join([self[key]['unit_dict']['name'] for key in self.team.keys()])
+        caption = ', '.join([self[key]['unit_dict']['name'] for key in self.team.keys()])
         bot_methods.send_image(image, self.attack_action.attacker_lobby.chat_id, message=caption)
         bot_methods.send_image(image, self.chat_id, message=caption)
         self.attack_action.attack_ready = True
@@ -454,3 +480,24 @@ class LobbyHandler:
                 else:
                     unit_dict['inventory'][engine.rand_id()] = [item.to_dict(), 1]
                 user.send_equipment_choice(call_data[1], chat.chat_id, item_type, message_id=call.message.message_id)
+
+
+def send_mob_choice(chat_id):
+    mob_list = ['dragon']
+    buttons = []
+    for mob in mob_list:
+        buttons.append(keyboards.Button(mob, 'mobchoice_{}_{}'.format(mob, chat_id)))
+    keyboard = keyboards.form_keyboard(*buttons)
+    bot_methods.send_message(chat_id, 'Выберите противника', reply_markup=keyboard)
+
+
+class MobChoiceHandler:
+    name = None
+
+    def __init__(self, handler):
+        self.handler = handler
+
+    def handle(self, call):
+        call_data = call.data.split('_')
+        bot_methods.delete_message(call=call)
+        MobFight(int(call_data[-1]), mob_list=[call_data[-2]]).send_lobby()

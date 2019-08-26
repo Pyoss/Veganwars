@@ -185,6 +185,13 @@ def start(message):
         chat.show_chat_stats('rus')
 
 
+@bot.message_handler(commands=['mob_fight'])
+def start(message):
+    if message.from_user.id == config.admin_id:
+        chat_lobbies.send_mob_choice(message.chat.id)
+
+
+
 @bot.message_handler(func=lambda message: True, commands=['show_items'])
 def start(message):
         chat = chat_main.get_chat(message.chat.id)
