@@ -667,7 +667,8 @@ class Harpoon(SpecialOptionWeapon, Knife):
         if len(info) > 4:
             self.melee = False
             self.unit.target = self.unit.fight[info[-1]]
-            standart_actions.Custom(self.activate_special_action, info, order=self.order, unit=self.unit, types=self.special_types)
+            standart_actions.Custom(self.activate_special_action, info, order=self.order,
+                                    unit=self.unit, types=self.special_types)
             self.unit.end_turn()
         else:
             self.unit.active = True
