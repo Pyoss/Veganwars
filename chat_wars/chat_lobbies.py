@@ -332,7 +332,7 @@ class MobFight(Lobby):
         self.complexity = None
         self.mob_list = mob_list
         self.lang = 'rus'
-        self.image = '/files/images/backgrounds/dragon_lair.jpg'
+        self.image = '/files/images/backgrounds/camp.jpg'
         self.text = 'ЕТО ДРАКОН РРРРРРР'
 
     def __str__(self):
