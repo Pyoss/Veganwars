@@ -492,7 +492,7 @@ class Block(TargetAbility):
         else:
             for actn in self.unit.fight.action_queue.action_list:
                 if actn.unit == action.target and 'attack' in actn.action_type:
-                    dmg = actn.weapon.get_damage(action.unit)
+                    dmg = actn.unit.weapon.get_damage(action.unit)
                     if dmg <= max_dmg:
                         action.target.waste_energy(action.target.weapon.energy_cost)
                         self.unit.fight.action_queue.remove(actn)
