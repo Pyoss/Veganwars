@@ -826,6 +826,7 @@ class UnrelentingForce(InstantAbility):
             self.string('fail', format_dict={'actor': self.unit.name})
         if self.unit.melee_targets:
             target = random.choice(self.unit.melee_targets)
+            self.unit.target = target
             if 'dodge' not in target.action:
                 damage = self.unit.dmg_received
                 attack_action = standart_actions.Attack(self.unit, self.unit.fight, stringed=False)
