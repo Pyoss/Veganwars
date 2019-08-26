@@ -108,7 +108,6 @@ class Lobby:
                                              reply_markup=self.keyboard())
         self.message_id = message.message_id
 
-
     def get_vacant_team(self):
         return min(self.teams, key=lambda k: len(k))
 
@@ -332,7 +331,7 @@ class MobFight(Lobby):
         self.complexity = None
         self.mob_list = mob_list
         self.lang = 'rus'
-        self.image = './files/images/backgrounds/dragon_lair.png'
+        self.image = None
         self.text = 'ЕТО ДРАКОН РРРРРРР'
 
     def __str__(self):
