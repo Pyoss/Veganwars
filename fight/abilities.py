@@ -345,6 +345,7 @@ class Trip(TargetAbility):
         elif 'move' in action.target.action:
             self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
             statuses.Prone(action.target)
+            action.target.receive_damage(3)
         else:
             self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target.name})
 
