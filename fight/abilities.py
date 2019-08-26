@@ -301,9 +301,9 @@ class Biceps(Passive):
     school = 'strength'
     order = 0
 
-    def act(self, action=None):
+    def activate(self, action=None):
         if self.unit.energy == self.unit.max_energy:
-            statuses.Buff(self.unit, 'damage', 2, 1, emoji=emoji_utils.emote_dict['strength_em'])
+            statuses.Buff(self.unit, 'damage', 2, 1, emoji=emoji_utils.emote_dict['biceps_em'])
 
 
 class Speedy(Passive):
@@ -805,7 +805,6 @@ class Berserk(Passive):
         elif self.bonus_damage:
             self.bonus_damage = False
 
-
     def gain(self, user):
         OnLvl.gain(self, user)
 
@@ -844,6 +843,12 @@ class UnrelentingForce(InstantAbility):
                                                 'damage': attack_action.dmg_done + attack_action.dmg_blocked})
         else:
             self.string('special', format_dict={'actor': self.unit.name})
+
+    def available(self):
+        if self.unit.disarmed:
+            return False
+        else:
+            return InstantAbility.available(self)
 
 
 class CounterAttack(Passive):

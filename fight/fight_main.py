@@ -352,8 +352,7 @@ class Fight:
                 if abs(unit.hp_delta) > unit.hp:
                     unit.hp_delta = - unit.hp
                 unit.hp += unit.hp_delta
-                if unit.alive():
-                    self.string_tuple.row(LangTuple('fight', 'hp_loss', format_dict={'actor': unit.name,
+                self.string_tuple.row(LangTuple('fight', 'hp_loss', format_dict={'actor': unit.name,
                                                                                      'hp': unit.hp,
                                                                                      'hp_delta':  abs(unit.hp_delta)}))
 

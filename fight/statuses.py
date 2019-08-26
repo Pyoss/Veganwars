@@ -25,7 +25,7 @@ class Status(standart_actions.GameObject):
         self.additional_buttons_actions = None
         self.kwargs = kwargs
         self.handle_dict = {}
-        if unit is not None and self.name not in unit.statuses:
+        if unit is not None:
             unit.statuses[self.name] = self
             print('Инициирован статус {} для {}...'.format(self.name, unit.name))
             if acting:
@@ -65,10 +65,7 @@ class Status(standart_actions.GameObject):
 
     def finish(self):
         print('Удаляется статус {} для {}...'.format(self.name, self.unit.name))
-        try:
-            del self.unit.statuses[self.name]
-        except KeyError:
-            pass
+        del self.unit.statuses[self.name]
 
     def menu_string(self):
         return False
@@ -254,7 +251,7 @@ class Buff:
         self.unit = unit
         setattr(self.unit, self.attr, getattr(self.unit, self.attr) + self.value)
         self.unit.boost_attribute(attr, value)
-        CustomStatus(unit, delay=length, func=self.stop_buff, order=60, acting=True,
+        CustomStatus(unit, delay=length, func=self.stop_buff, order=59, acting=True,
                      name='buff_{}_{}'.format(attr, engine.rand_id()), emoji=emoji)
 
     def stop_buff(self):

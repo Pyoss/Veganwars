@@ -72,7 +72,7 @@ emote_dict = {
     'force_shield_em': emoji.emojize(':large_blue_circle:', use_aliases=True),
 
     # Способности
-    "sadist_em": emoji.emojize(':smiley:', use_aliases=True),
+    "sadist_em": '😏',
     "berserk_em": u'\U0001F620',
     "pyroman_em": u'\U0001F47A',
     "zombie_em": u'\U0001F62C',
@@ -90,6 +90,9 @@ emote_dict = {
     'bag_search_em': '\U0001f9f3',
     'restrict_em': '\U0001f6ab',
     'push_em': '🦶',
+    'provoke_em': '🤬',
+    'biceps_em': '💪',
+    'cleave_em': '💫',
 
     # Магия
     "ignite_em": u'\U0001f525',

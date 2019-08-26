@@ -303,7 +303,6 @@ class MoveBack(Action):
 
     def available(self):
         if self.unit.rooted:
-            print('rooted')
             return False
         return True
 

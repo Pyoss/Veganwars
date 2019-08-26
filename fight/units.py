@@ -292,6 +292,7 @@ class Unit:
                     v.act(action=action)
             else:
                 if self.alive() or 'permanent' in v.types:
+                    print(v.name)
                     v.act()
 
     def activate_abilities(self, sp_type, action=None):
