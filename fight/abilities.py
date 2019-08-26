@@ -579,7 +579,7 @@ class Cleave(InstantAbility):
 
 class Provoke(TargetAbility):
     name = 'provoke'
-    order = 5
+    order = 6
     cd = 2
     default_energy_cost = 1
     prerequisites = {'lvl': 2}

@@ -601,7 +601,7 @@ class Crossbow(OneHanded, SpecialActionWeapon):
         return [keyboards.AttackButton(self.unit, target) for target in self.targets()] if self.loaded else []
 
     def available(self):
-        return True
+        return True if not self.unit.disarmed else False
 
     def get_menu_string(self, short_menu=False, target=None):
         if self.loaded:
