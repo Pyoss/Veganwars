@@ -657,6 +657,7 @@ class SledgeHammer(TwoHanded, SpecialAttackWeapon):
 class Harpoon(SpecialOptionWeapon, Knife):
     name = 'harpoon'
     order = 9
+    cd = 3
     special_energy_cost = 4
     default_effect_chance = 10
     range_option = True
@@ -670,6 +671,7 @@ class Harpoon(SpecialOptionWeapon, Knife):
             standart_actions.Custom(self.activate_special_action, info, order=self.order,
                                     unit=self.unit, types=self.special_types)
             self.unit.end_turn()
+            self.on_cd()
         else:
             self.unit.active = True
             self.ask_options()
@@ -678,7 +680,6 @@ class Harpoon(SpecialOptionWeapon, Knife):
         attack = standart_actions.SpecialAttack(unit=self.unit, fight=self.unit.fight,
                                        info=None, order=self.order, energy_cost=self.special_energy_cost)
         attack.activate()
-        statuses.LostWeapon(self.unit)
 
     def get_menu_string(self, short_menu=False, target=None):
         return localization.LangTuple(self.table_row, 'weapon_menu_1',
@@ -707,6 +708,15 @@ class Harpoon(SpecialOptionWeapon, Knife):
         self.effect_chance = self.default_effect_chance
         statuses.Bleeding(attack_action.target)
         attack_action.to_emotes(emoji_utils.emote_dict['bleeding_em'])
+
+    def special_available(self, target=None):
+        if not self.available():
+            return False
+        elif self.unit.energy < self.special_energy_cost:
+            return False
+        elif not self.ready():
+            return False
+        return True
 
 
 class Rapier(OneHanded, SpecialAttackWeapon):

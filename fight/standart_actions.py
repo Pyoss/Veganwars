@@ -534,7 +534,7 @@ class Custom:
         self.order = order
         self.unit = unit
         self.action_type = [] if types is None else types
-        self.unit.action = [*self.unit.action, *types]
+        self.unit.action = [*self.unit.action, *self.action_type]
         if to_queue:
             self.unit.fight.edit_queue(self)
 
