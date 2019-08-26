@@ -104,7 +104,7 @@ class Lobby:
         if self.image is None:
             message = bot_methods.send_message(self.chat_id, self.create_lobby(), reply_markup=self.keyboard())
         else:
-            message = bot_methods.send_image(open(self.image), self.chat_id, message=self.create_lobby(),
+            message = bot_methods.send_image(open(self.image, 'rb'), self.chat_id, message=self.create_lobby(),
                                              reply_markup=self.keyboard())
         self.message_id = message.message_id
 
