@@ -487,7 +487,7 @@ class LobbyHandler:
 
 
 def send_mob_choice(chat_id):
-    mob_list = ['dragon']
+    mob_list = ['dragon', 'ogre']
     buttons = []
     for mob in mob_list:
         buttons.append(keyboards.Button(mob, 'mobchoice_{}_{}'.format(mob, chat_id)))
