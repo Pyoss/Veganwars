@@ -104,8 +104,7 @@ class Lobby:
         if self.image is None:
             message = bot_methods.send_message(self.chat_id, self.create_lobby(), reply_markup=self.keyboard())
         else:
-            path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
-            message = bot_methods.send_image(open(path), self.chat_id, message=self.create_lobby(),
+            message = bot_methods.send_image(open(self.image), self.chat_id, message=self.create_lobby(),
                                              reply_markup=self.keyboard())
         self.message_id = message.message_id
 
@@ -332,7 +331,7 @@ class MobFight(Lobby):
         self.complexity = None
         self.mob_list = mob_list
         self.lang = 'rus'
-        self.image = None
+        self.image = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
         self.text = 'ЕТО ДРАКОН РРРРРРР'
 
     def __str__(self):
