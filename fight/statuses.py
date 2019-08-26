@@ -208,7 +208,7 @@ class Running(OnHitStatus):
 
 class Retreating(BeforeHit):
     name = 'retreating'
-    core_types = ['status', 'receive_hit', 'on_hit']
+    core_types = ['status', 'before_hit', 'on_hit']
 
     def __init__(self, unit, delay=1, acting=False):
         BeforeHit.__init__(self, unit, delay=1, acting=False)
@@ -218,10 +218,10 @@ class Retreating(BeforeHit):
         if action is not None:
             if not action.weapon.melee:
                 if not self.switch:
-                    self.unit.range_accuracy -= 4
+                    self.unit.range_accuracy -= 6
                     self.switch = True
                 else:
-                    self.unit.range_accuracy += 4
+                    self.unit.range_accuracy += 6
                     self.switch = False
 
         else:
