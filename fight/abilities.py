@@ -798,7 +798,13 @@ class Berserk(Passive):
 
         # Увеличивает урон на 2 при одной жизни.
         if self.unit.hp == 1:
-            statuses.Buff(self.unit, 'damage', 2, 1, emoji=emoji_utils.emote_dict['strength_em'])
+            statuses.Buff(self.unit, 'damage', 2, 2, emoji=emoji_utils.emote_dict['strength_em'])
+            if not self.bonus_damage:
+                self.string('special', format_dict={'actor': self.unit.name})
+                self.bonus_damage = True
+        elif self.bonus_damage:
+            self.bonus_damage = False
+
 
     def gain(self, user):
         OnLvl.gain(self, user)
@@ -834,7 +840,7 @@ class UnrelentingForce(InstantAbility):
                 attack_action = standart_actions.Attack(self.unit, self.unit.fight, stringed=False)
                 attack_action.activate(target=target, waste=0, dmg=damage)
                 self.string('use', format_dict={'actor': self.unit.name, 'target': target.name,
-                                                 'damage': attack_action.dmg_done})
+                                                'damage': attack_action.dmg_done + attack_action.dmg_blocked})
         else:
             self.string('special', format_dict={'actor': self.unit.name})
 
