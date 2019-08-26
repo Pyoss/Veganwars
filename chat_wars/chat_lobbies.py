@@ -192,6 +192,9 @@ class Lobby1x1(Lobby):
 
 
 class LobbyFFA(Lobby):
+    def __init__(self, chat_id, skip_armory=False):
+        Lobby.__init__(self, chat_id, skip_armory=skip_armory)
+        self.teams = []
 
     def run(self):
         path = file_manager.my_path + '/files/images/backgrounds/camp.jpg'
