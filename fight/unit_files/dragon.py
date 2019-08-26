@@ -22,12 +22,15 @@ class DragonAi(Ai):
             self.action_ability('fire_breath', 8)
             self.unit.breathing = 0
             return
+        if 'provoke' in self.unit.statuses:
+            target = self.unit.statuses['provoke'].args[0]
+            self.action_ability('tail_whip', self.unit.energy, target=target)
         if len(self.unit.melee_targets) > 0 and not self.unit.acted:
             self.action_ability('wing_clap', self.unit.energy*len(self.unit.melee_targets))
         elif self.unit.breathing != self.fight.turn:
             self.action_ability('take_air', self.unit.energy)
         self.attack(self.unit.energy if self.unit.target is not None else 0)
-        self.action_ability('tail_whip', self.unit.energy)
+        self.action_ability('tail_whip', self.unit.energy, target=random.choice(self.unit.targets()))
         self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
 
     def get_action(self, edit=False):
@@ -61,6 +64,8 @@ class Dragon(StandardCreature):
         self.hp = 7
         self.energy = 9
         self.max_energy = 9
+        self.max_recovery = 9
+        self.speed = 20
         self.damage = 2
         self.toughness = 8
         self.tail = weapons.DragonTail(self)
@@ -84,10 +89,15 @@ class Dragon(StandardCreature):
                          ability_type='instant',
                          name_tuple=self.to_string('button_1'), ability_order=10)
         self.new_ability(ability_name='tail_whip', ability_func=self.tail_whip,
-                         ability_type='instant',
-                         name_tuple=self.to_string('button_1'))
+                         ability_type='target',
+                         name_tuple=self.to_string('button_1'),
+                         targets=self.tail_targets)
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
+
+    @staticmethod
+    def tail_targets(action):
+        return action.unit.targets()
 
     def recovery(self):
         self.acted = False
@@ -134,8 +144,7 @@ class Dragon(StandardCreature):
     def tail_whip(ability, action):
         unit = action.unit
         unit.waste_energy(2)
-        unit.controller.find_target()
-        target = random.choice(unit.targets())
+        target = action.target
         x = Attack(unit, unit.fight)
         x.activate(target=target, weapon=unit.tail)
 
