@@ -158,11 +158,11 @@ class BaseAttack(Action):
         self.weapon.on_act()
         Action.act(self)
 
-    def attack(self, waste=None, dmg=None, special=False):
+    def attack(self, waste=None, dmg=None, special=False, bonus_accuracy=0):
         self.weapon.before_hit(self)
         self.unit.on_hit(self)
         # Вычисление нанесенного урона и трата энергии
-        self.dmg_done = self.weapon.get_damage(self.target) if dmg is None else dmg
+        self.dmg_done = self.weapon.get_damage(self.target, bonus_accuracy=bonus_accuracy) if dmg is None else dmg
         if waste is None:
             self.unit.waste_energy(self.weapon.energy_cost)
         else:
@@ -242,11 +242,11 @@ class Suicide(Action):
 class Attack(BaseAttack):
     name = 'attack'
 
-    def activate(self, target=None, weapon=None, waste=None, dmg=None):
+    def activate(self, target=None, weapon=None, waste=None, dmg=None, bonus_accuracy=0):
         self.weapon = weapon if weapon is not None else self.weapon
         # Определение цели
         self.target = self.unit.target if target is None else target
-        self.attack(waste=waste, dmg=dmg)
+        self.attack(waste=waste, dmg=dmg, bonus_accuracy=bonus_accuracy)
         self.on_attack()
         # Добавление описания в строку отчета
         if self.stringed:

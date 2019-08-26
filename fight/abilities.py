@@ -524,8 +524,7 @@ class FastAttack(TargetAbility):
             for action_type in action.action_type:
                 self.unit.action.append(action_type)
             self.on_cd()
-            if self.energy_cost > 0:
-                self.unit.waste_energy(self.energy_cost)
+            self.unit.energy -= self.unit.weapon.energy_cost
             self.unit.rooted.append('fast-attack')
             self.ask_action()
         else:
@@ -534,7 +533,7 @@ class FastAttack(TargetAbility):
     def activate(self, action):
         self.unit.rooted.remove('fast-attack')
         attack = standart_actions.Attack(self.unit, self.unit.fight)
-        attack.activate(target=action.target)
+        attack.activate(target=action.target, bonus_accuracy=self.energy_cost + self.unit.weapon.energy_cost)
 
     def available(self):
         if not self.unit.weapon.melee:

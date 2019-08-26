@@ -98,10 +98,10 @@ class Weapon(standart_actions.GameObject):
             miss_chance -= miss_chance * one_hit_chance / 10
         return int(100 - miss_chance) if miss_chance < 100 else 0
 
-    def get_damage(self, target):
+    def get_damage(self, target, bonus_accuracy=0):
         accuracy = self.unit.melee_accuracy if self.melee else self.unit.range_accuracy
         energy = self.unit.energy if self.unit.energy < 6 else 5
-        modifier = accuracy + self.accuracy - target.evasion + energy
+        modifier = accuracy + self.accuracy - target.evasion + energy + bonus_accuracy
         damage = engine.damage_roll(self.dice_num, modifier)
         if damage:
             damage += self.damage
@@ -710,7 +710,7 @@ class Harpoon(SpecialOptionWeapon, Knife):
 
 class Rapier(OneHanded, SpecialAttackWeapon):
     name = 'rapier'
-    order = 5
+    order = 6
     special_energy_cost = 2
     cd = 1
     special_types = ['pierce', 'attack']
