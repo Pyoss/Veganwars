@@ -331,8 +331,8 @@ class MobFight(Lobby):
         self.complexity = None
         self.mob_list = mob_list
         self.lang = 'rus'
-        self.image = file_manager.my_path + '/files/images/units/ogre.png' if bot_methods.images else None
-        self.text = 'ЕТО ОГР РРРРРРР'
+        self.image = file_manager.my_path + '/files/images/units/dragon_lair.png' if bot_methods.images else None
+        self.text = 'ЕТО ДРАКОН РРРРРРР'
 
     def __str__(self):
         return str(self.id)
