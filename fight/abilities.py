@@ -536,7 +536,7 @@ class FastAttack(TargetAbility):
         attack.activate(target=action.target, bonus_accuracy=self.energy_cost + self.unit.weapon.energy_cost)
 
     def available(self):
-        if not self.unit.weapon.melee:
+        if not self.unit.weapon.melee or self.unit.energy < self.unit.weapon.energy_cost:
             return False
         else:
             return TargetAbility.available(self)
@@ -585,7 +585,7 @@ class Cleave(InstantAbility):
 
 class Provoke(TargetAbility):
     name = 'provoke'
-    order = 6
+    order = 4
     cd = 2
     default_energy_cost = 1
     prerequisites = {'lvl': 2}
