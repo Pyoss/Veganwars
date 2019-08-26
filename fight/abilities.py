@@ -591,11 +591,12 @@ class Provoke(TargetAbility):
     def activate(self, action):
         statuses.CustomPassive(action.target, types=['on_hit'], name='provoke_stop',
                                delay=6, func=self.stop_provoke, option=action.unit)
-        statuses.PermaStatus(action.target, 1, 6, self.provoke, name='provoke', emoji='😡', args=[action.target])
+        statuses.PermaStatus(action.target, 1, 6, self.provoke, name='provoke', emoji='😡', args=[action.target,
+                                                                                                  self.unit])
         self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
 
     @staticmethod
-    def provoke(target):
+    def provoke(target, unit):
         target.waste_energy(2)
         Provoke(target).string('special', format_dict={'actor': target.name})
 

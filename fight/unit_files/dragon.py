@@ -23,7 +23,7 @@ class DragonAi(Ai):
             self.unit.breathing = 0
             return
         if 'provoke' in self.unit.statuses:
-            target = self.unit.statuses['provoke'].args[0]
+            target = self.unit.statuses['provoke'].args[1]
             self.action_ability('tail_whip', self.unit.energy, target=target)
         if len(self.unit.melee_targets) > 0 and not self.unit.acted:
             self.action_ability('wing_clap', self.unit.energy*len(self.unit.melee_targets))
