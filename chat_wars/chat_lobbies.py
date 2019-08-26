@@ -101,8 +101,13 @@ class Lobby:
             bot_methods.err(traceback.format_exc())
 
     def send_lobby(self):
-        message = bot_methods.send_message(self.chat_id, self.create_lobby(), reply_markup=self.keyboard())
+        if self.image is None:
+            message = bot_methods.send_message(self.chat_id, self.create_lobby(), reply_markup=self.keyboard())
+        else:
+            message = bot_methods.send_image(image=self.image, chat_id=self.chat_id, message=self.create_lobby(),
+                                             reply_markup=self.keyboard())
         self.message_id = message.message_id
+
 
     def get_vacant_team(self):
         return min(self.teams, key=lambda k: len(k))
