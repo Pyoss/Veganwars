@@ -758,7 +758,7 @@ class Sadist(Passive):
 class Berserk(Passive):
     name = 'berserk'
     core_types = ['ability', 'on_lvl']
-    types = ['passive', 'on_hit']
+    types = ['passive']
     order = 42
     prerequisites = {'strength': 2}
     school = 'strength'
@@ -798,11 +798,7 @@ class Berserk(Passive):
 
         # Увеличивает урон на 2 при одной жизни.
         if self.unit.hp == 1:
-            if not self.bonus_damage:
-                self.bonus_damage = True
-                self.string('special', format_dict={'actor': self.unit.name})
-        elif self.bonus_damage:
-            self.bonus_damage = False
+            statuses.Buff(self.unit, 'damage', 2, 1, emoji=emoji_utils.emote_dict['strength_em'])
 
     def gain(self, user):
         OnLvl.gain(self, user)
