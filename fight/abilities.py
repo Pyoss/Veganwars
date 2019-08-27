@@ -829,16 +829,17 @@ class UnrelentingForce(InstantAbility):
     school = 'strength'
 
     def activate(self, action):
+        self.on_cd()
         if self.unit.dmg_received == 0:
             self.string('fail', format_dict={'actor': self.unit.name})
-        if self.unit.melee_targets:
+        elif self.unit.melee_targets:
             target = random.choice(self.unit.melee_targets)
             self.unit.target = target
             if 'dodge' not in target.action:
                 damage = self.unit.dmg_received
                 attack_action = standart_actions.Attack(self.unit, self.unit.fight, stringed=False)
                 attack_action.blockable = False
-                attack_action.activate(target=target, waste=0, dmg=damage + self.unit.damage)
+                attack_action.activate(target=target, waste=self.energy_cost, dmg=damage + self.unit.damage)
                 self.string('use', format_dict={'actor': self.unit.name, 'target': target.name,
                                                 'damage': attack_action.dmg_done + attack_action.dmg_blocked})
             else:
