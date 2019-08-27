@@ -839,7 +839,7 @@ class UnrelentingForce(InstantAbility):
                 damage = self.unit.dmg_received
                 attack_action = standart_actions.Attack(self.unit, self.unit.fight, stringed=False)
                 attack_action.blockable = False
-                attack_action.activate(target=target, waste=self.energy_cost, dmg=damage + self.unit.damage)
+                attack_action.activate(target=target, waste=self.unit.weapon.energy_cost, dmg=damage + self.unit.damage)
                 self.string('use', format_dict={'actor': self.unit.name, 'target': target.name,
                                                 'damage': attack_action.dmg_done + attack_action.dmg_blocked})
             else:
