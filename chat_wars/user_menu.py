@@ -131,7 +131,7 @@ class UserGetAbility(UserAction):
     def act(self):
         available_abilities = self.user.get_possible_abilities_amount()
         if available_abilities:
-            if self.ability not in get_possible_abilities(self.user.experience, self.user.get_abilities()):
+            if self.ability.name not in [ab.name for ab in get_possible_abilities(self.user.experience, self.user.get_abilities())]:
                 answer_callback_query(self.call, 'Вы не можете взять способность "{}"'.format(self.ability.name_lang_tuple().translate('rus')))
             elif not any(self.ability.name == ability['name'] for ability in self.user.get_abilities()):
                 self.user.add_ability(self.ability)
