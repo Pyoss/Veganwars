@@ -104,7 +104,7 @@ emote_dict = {
     "spark_em": u'\u26a1',
     'ice_em': u'\u2744',
     'self_em': u'\U0001f64f',
-    'strength_em': u'\U0001f64f',
+    'strength_em': u'\U00002694',
     'palm_em': u'\U0001f590',
     'earth_em': u'\U0001f311',
     'wind_em': u'\U0001f32a',
