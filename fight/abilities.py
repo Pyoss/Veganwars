@@ -824,7 +824,7 @@ class UnrelentingForce(InstantAbility):
     order = 15
     types = ['attack']
     default_energy_cost = 4
-    cd = 3
+    cd = 5
     prerequisites = {'strength': 3}
     school = 'strength'
 
@@ -832,6 +832,7 @@ class UnrelentingForce(InstantAbility):
         self.on_cd()
         if self.unit.dmg_received == 0:
             self.string('fail', format_dict={'actor': self.unit.name})
+            self.unit.waste_energy(2)
         elif self.unit.melee_targets:
             target = random.choice(self.unit.melee_targets)
             self.unit.target = target
@@ -844,8 +845,10 @@ class UnrelentingForce(InstantAbility):
                                                 'damage': attack_action.dmg_done + attack_action.dmg_blocked})
             else:
                 self.string('fail', format_dict={'actor': self.unit.name})
+                self.unit.waste_energy(2)
         else:
             self.string('special', format_dict={'actor': self.unit.name})
+            self.unit.waste_energy(2)
 
     def available(self):
         if self.unit.disarmed:

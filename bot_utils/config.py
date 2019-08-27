@@ -7,4 +7,4 @@ test_ability = []
 test_items = []
 test_weapon = []
 
-special_units = {441399484: 'Pasyuk', 83697884: 'Artyom', 1: 'Asguard'}
+special_units = {441399484: 'Pasyuk', 83697884: 'Artyom', 891152176: 'Moon'}
