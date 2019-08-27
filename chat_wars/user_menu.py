@@ -4,6 +4,7 @@ from fight.abilities import ability_dict
 from chat_wars.chat_main import get_user
 from chat_wars.chat_menu import MenuPage, MenuAction, CloseMenu
 from locales.localization import LangTuple
+from locales.emoji_utils import emote_dict
 import sys, inspect
 
 
@@ -112,7 +113,8 @@ class UserAbilityMenu(UserPage):
                                                                   translate('rus'))
 
     def button_to_page(self, name=None):
-        return UserButton(self.ability_name, 'rus', self.name, self.ability.name, named=True)
+        return UserButton(self.ability_name + ' ' + emote_dict[self.ability.school + '_em'],
+                          'rus', self.name, self.ability.name, named=True)
 
 
 class UserGetAbility(UserAction):
@@ -129,13 +131,14 @@ class UserGetAbility(UserAction):
     def act(self):
         available_abilities = self.user.get_possible_abilities_amount()
         if available_abilities:
-            if not any(self.ability.name == ability['name'] for ability in self.user.get_abilities()):
+            if self.ability not in get_possible_abilities(self.user.experience, self.user.get_abilities()):
+                answer_callback_query(self.call, 'Вы не можете взять способность "{}"'.format(self.ability.name_lang_tuple().translate('rus')))
+            elif not any(self.ability.name == ability['name'] for ability in self.user.get_abilities()):
                 self.user.add_ability(self.ability)
                 answer_callback_query(self.call, 'Вы приобретаете способность "{}"'.format(self.ability.name_lang_tuple().translate('rus')))
             else:
                 answer_callback_query(self.call, 'У вас уже есть эта способность!'.format(self.ability.name_lang_tuple().translate('rus')))
             UserMainMenu(self.user, self.user_id, call=self.call).send_page()
-
 
         else:
             answer_callback_query(self.call, 'что-то пошло не так')
