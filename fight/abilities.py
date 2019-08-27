@@ -841,11 +841,15 @@ class UnrelentingForce(InstantAbility):
                 attack_action.activate(target=target, waste=0, dmg=damage + self.unit.damage)
                 self.string('use', format_dict={'actor': self.unit.name, 'target': target.name,
                                                 'damage': attack_action.dmg_done + attack_action.dmg_blocked})
+            else:
+                self.string('fail', format_dict={'actor': self.unit.name})
         else:
             self.string('special', format_dict={'actor': self.unit.name})
 
     def available(self):
         if self.unit.disarmed:
+            return False
+        elif not self.unit.weapon.melee:
             return False
         else:
             return InstantAbility.available(self)
