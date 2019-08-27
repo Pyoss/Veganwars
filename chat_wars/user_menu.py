@@ -165,6 +165,7 @@ def get_possible_abilities(experience, user_abilities_dicts):
                 and not any(dct['name'] == ability.name for dct in user_abilities_dicts):
         # if 0 not in ability.prerequisites:
             abilities.append(ability)
+        abilities.sort(key=lambda ab: ab.school)
     return abilities
 
 
