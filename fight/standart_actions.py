@@ -669,7 +669,7 @@ class GameObject:
             return True
 
     def on_cd(self):
-        self.ready_turn = self.unit.fight.turn + self.unit.speed_penalty() + self.cd
+        self.ready_turn = self.unit.fight.turn + self.unit.speed_penalty() + self.cd - 1
 
     def ready(self):
         if self.unit.fight.turn < self.ready_turn:

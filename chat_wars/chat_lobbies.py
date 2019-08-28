@@ -209,8 +209,6 @@ class LobbyFFA(Lobby):
         self.join_lobby(user_id, unit_dict, self.teams[-1])
 
 
-
-
 class StartChecker:
     def __init__(self, lobby):
         self.lobby = lobby

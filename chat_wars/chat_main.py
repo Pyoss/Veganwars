@@ -4,7 +4,7 @@ import sql_alchemy
 from bot_utils import keyboards
 from bot_utils.bot_methods import send_message, edit_message, delete_message, get_chat_administrators
 from sql_alchemy import Pyossession
-from fight import units, standart_actions
+from fight import units, standart_actions, weapons, armors
 from adventures import dungeon_main
 from locales.localization import LangTuple
 import engine
@@ -225,18 +225,34 @@ class User(sql_alchemy.SqlUser):
         else:
             return False
 
-
     def form_equipment_message(self, lobby_id, equipment_type):
+        unit_dict = dynamic_dicts.lobby_list[lobby_id][self.user_id]['unit_dict']
         equipment_message_dict = {
-            'weapon': 'Выберите оружие из доступного.',
-            'items': 'Выберите комплект брони.',
-            'armor': 'Выберите предметы.'
+            'weapon': 'Выберите оружие из доступного.\n Вес {}\{}',
+            'items': 'Выберите комплект брони.\n Вес {}\{}',
+            'armor': 'Выберите предметы.\n Вес {}\{}'
         }
-        message = equipment_message_dict[equipment_type]
-        inventory = dungeon_main.Inventory(member=dynamic_dicts.lobby_list[lobby_id][self.user_id]['unit_dict'])
+        message = equipment_message_dict[equipment_type].format(self.get_weight(unit_dict), self.get_weight_limit(unit_dict))
+
+        if self.get_weight(unit_dict) > self.get_weight_limit(unit_dict):
+
+            message += '\n' + u'\U000026A0' + 'Восстановление энергии уменьшено на {}.'.format(self.get_weight(unit_dict) - self.get_weight_limit(unit_dict) if self.get_weight(unit_dict) - self.get_weight_limit(unit_dict) < 4 else 3)
+        inventory = dungeon_main.Inventory(member=unit_dict)
         message += '\n Экипировка: ' + inventory.get_equipment_string(self.lang)
         message += '\n Инвентарь: ' + inventory.get_inventory_string(self.lang)
         return message
+
+    def get_weight_limit(self, unit_dict):
+        return unit_dict['speed'] - 5
+
+    def get_weight(self, unit_dict):
+        weight = 0
+        weapon = unit_dict['weapon']
+        if weapon is not None:
+            weight += weapons.weapon_dict[weapon['name']].weight
+        for armor in unit_dict['armor']:
+            weight += armors.armor_dict[armor['name']].weight
+        return weight
 
     @staticmethod
     def choice_button(lobby_id, equipment_type):
