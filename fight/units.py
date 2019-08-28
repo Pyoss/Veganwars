@@ -53,7 +53,7 @@ class Unit:
         self.damage = 0
         self.spell_damage = 0
         self.energy = 0
-        self.speed = 9
+        self.speed = 11
         self.max_recovery = 5
         self.weapon = weapons.Fist(self)
         self.weapons = []

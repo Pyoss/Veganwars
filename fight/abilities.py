@@ -426,7 +426,7 @@ class Push(TargetAbility):
 
 class Heavy(OnLvl):
     name = 'heavy'
-    stats = {'speed': 4}
+    stats = {'speed': 6}
     school = 'protection'
     prerequisites = {'lvl': 2}
 
