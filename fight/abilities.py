@@ -603,7 +603,7 @@ class Provoke(TargetAbility):
 
     @staticmethod
     def provoke(target, unit):
-        target.waste_energy(2)
+        target.energy -= 2
         Provoke(target).string('special', format_dict={'actor': target.name})
 
     @staticmethod
@@ -834,8 +834,7 @@ class UnrelentingForce(InstantAbility):
             self.string('fail', format_dict={'actor': self.unit.name})
             self.unit.waste_energy(2)
         elif self.unit.melee_targets:
-            target = random.choice(self.unit.melee_targets)
-            self.unit.target = target
+            target = self.unit.target
             if 'dodge' not in target.action:
                 damage = self.unit.dmg_received
                 attack_action = standart_actions.Attack(self.unit, self.unit.fight, stringed=False)
@@ -857,6 +856,11 @@ class UnrelentingForce(InstantAbility):
             return False
         else:
             return InstantAbility.available(self)
+
+    def act(self, action):
+        if self.unit.melee_targets:
+            self.unit.target = random.choice(self.unit.melee_targets)
+        InstantAbility.act(self, action)
 
 
 class CounterAttack(Passive):

@@ -357,6 +357,11 @@ class SpecialWeaponAction(Action):
         self.order = self.unit.weapon.order
         self.weapon = self.unit.weapon
 
+    def act(self):
+        if self.target is not None:
+            self.unit.target = self.target
+        Action.act(self)
+
     def activate(self):
         weapon = self.unit.weapon
         weapon.start_special_action(self.info, types=self.types)
