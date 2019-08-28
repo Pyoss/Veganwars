@@ -416,8 +416,8 @@ class Spear(OneHanded, SpecialActionWeapon):
     def activate_special_action(self, target=None):
         self.on_cd()
         targets = [target for target in self.targets()
-                   if any('attack' in action.action_type for action in target.actions())
-                   and target.target == self.unit]
+                   if any('attack' in action.action_type and
+                   action.target == self.unit for action in target.actions())]
         if targets:
             standart_actions.Custom(self.counterattack, targets[0], order=10, unit=self.unit)
         else:
