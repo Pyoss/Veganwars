@@ -739,6 +739,7 @@ class TargetObject(GameObject):
 
     def act_options(self, action):
         action.target = self.unit.fight[action.info[-1]]
+        self.unit.target = action.target
         self.unit.fight.action_queue.append(action)
 
     def ask_options(self):
