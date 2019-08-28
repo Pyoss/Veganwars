@@ -25,7 +25,7 @@ class Status(standart_actions.GameObject):
         self.additional_buttons_actions = None
         self.kwargs = kwargs
         self.handle_dict = {}
-        if unit is not None:
+        if unit is not None and self.name not in unit.statuses:
             unit.statuses[self.name] = self
             print('Инициирован статус {} для {}...'.format(self.name, unit.name))
             if acting:
@@ -65,7 +65,10 @@ class Status(standart_actions.GameObject):
 
     def finish(self):
         print('Удаляется статус {} для {}...'.format(self.name, self.unit.name))
-        del self.unit.statuses[self.name]
+        try:
+            del self.unit.statuses[self.name]
+        except KeyError:
+            pass
 
     def menu_string(self):
         return False
