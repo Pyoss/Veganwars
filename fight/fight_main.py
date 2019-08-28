@@ -203,10 +203,7 @@ class Fight:
         message.row(*args)
         message.construct()
         for chat_id in self.chat_id:
-            try:
-                bot_methods.send_message(chat_id, message.result_dict[self.lang])
-            except:
-                pass
+            bot_methods.send_message(chat_id, message.result_dict[self.lang])
 
     def unit_talk(self, unit_id, message):
         unit = self.units_dict[unit_id]
@@ -365,6 +362,7 @@ class Fight:
         self.string_tuple.construct()
         if self.string_tuple.active:
             for listener in self.listeners:
+                bot_methods.err(listener.name)
                 listener.send_message(self.string_tuple[listener.lang])
                 time.sleep(0.5)
                 if not listener.unit.alive():
