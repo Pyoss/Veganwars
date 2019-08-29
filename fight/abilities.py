@@ -15,7 +15,7 @@ class Ability(standart_actions.GameObject):
     db_string = 'abilities'
     action_type = ['ability']
     prerequisites = {}
-    school = []
+    school = ''
 
     def __init__(self, unit=None, obj_dict=None):
         standart_actions.GameObject.__init__(self, unit=unit, obj_dict=obj_dict)
