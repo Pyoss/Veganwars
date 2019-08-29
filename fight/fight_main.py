@@ -364,7 +364,7 @@ class Fight:
         self.string_tuple.construct()
         if self.string_tuple.active:
             for listener in self.listeners:
-                bot_methods.err(listener.name)
+                bot_methods.err(listener.unit.name)
                 listener.send_message(self.string_tuple[listener.lang])
                 time.sleep(0.5)
                 if not listener.unit.alive():
