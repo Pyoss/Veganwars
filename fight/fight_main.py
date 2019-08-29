@@ -60,6 +60,8 @@ class Player:
         self.talked = False
 
     def get_action(self, edit=False):
+        print(self.unit.name)
+        print('спрашиваем действие')
         self.unit.active = True
         self.ask_action(edit=edit)
 
