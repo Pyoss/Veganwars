@@ -367,8 +367,6 @@ class Fight:
                 bot_methods.err(listener.unit.name)
                 listener.send_message(self.string_tuple[listener.lang])
                 time.sleep(0.5)
-                if not listener.unit.alive():
-                    self.listeners.remove(listener)
             if self.public and self.chat_id not in self.listeners:
                 self.send_message(self.string_tuple[self.lang])
         self.string_tuple.clear()

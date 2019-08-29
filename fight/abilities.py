@@ -604,6 +604,8 @@ class Provoke(TargetAbility):
     @staticmethod
     def provoke(target, unit):
         target.energy -= 2
+        if target.energy < 0:
+            target.energy = 0
         Provoke(target).string('special', format_dict={'actor': target.name})
 
     @staticmethod

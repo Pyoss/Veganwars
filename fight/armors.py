@@ -227,6 +227,7 @@ class Shield(Armor, weapons.OneHanded, weapons.Weapon):
 
     def activate(self, action):
         unit = action.unit
+        self.coverage -= 100
         self.unit.waste_energy(self.block_energy_cost)
         if not self.armor:
             return False
@@ -258,6 +259,7 @@ class Shield(Armor, weapons.OneHanded, weapons.Weapon):
         for action_type in action.action_type:
             self.unit.action.append(action_type)
         self.on_cd()
+        self.coverage += 100
         self.ask_action()
 
     def button(self):
