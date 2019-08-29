@@ -229,7 +229,7 @@ class Shield(Armor, weapons.OneHanded, weapons.Weapon):
         unit = action.unit
         self.coverage -= 100
         self.unit.waste_energy(self.block_energy_cost)
-        if not self.armor:
+        if self.armor <= 0:
             return False
         if unit.dmg_received > 0:
             if unit.dmg_received > self.armor and not self.destroyed:
