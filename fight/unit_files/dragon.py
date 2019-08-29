@@ -66,7 +66,7 @@ class Dragon(StandardCreature):
         self.max_energy = 9
         self.max_recovery = 9
         self.speed = 20
-        self.damage = 2
+        self.damage = 3
         self.toughness = 8
         self.tail = weapons.DragonTail(self)
         self.weapon = weapons.BearClaw(self)

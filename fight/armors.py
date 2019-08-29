@@ -155,7 +155,7 @@ class HeavyHelmet(Armor):
 class DragonHide(Armor):
     name = 'dragon_hide'
     placement = 'head'
-    max_armor = 10
+    max_armor = 13
     rating = 10
     coverage = 80
     destructable = True
