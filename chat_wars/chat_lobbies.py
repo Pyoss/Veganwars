@@ -349,8 +349,11 @@ class MobFight(Lobby):
         self.complexity = None
         self.mob_list = mob_list
         self.lang = 'rus'
-        self.image = file_manager.my_path + '/files/images/backgrounds/dragon_lair.png' if bot_methods.images else None
-        self.text = 'ЕТО ДРАКОН РРРРРРР'
+        image_dict = {'dragon': '/files/images/backgrounds/dragon_lair.png',
+                      'ogre': '/files/images/units/ogre.png',
+                      'goblin': '/files/images/units/goblin.png'}
+        self.image = file_manager.my_path + image_dict[mob_list[0]] if bot_methods.images else None
+        self.text = 'файто'
 
     def __str__(self):
         return str(self.id)
@@ -505,7 +508,7 @@ class LobbyHandler:
 
 
 def send_mob_choice(chat_id):
-    mob_list = ['dragon', 'ogre']
+    mob_list = ['dragon', 'ogre', 'goblin']
     buttons = []
     for mob in mob_list:
         buttons.append(keyboards.Button(mob, 'mobchoice_{}_{}'.format(mob, chat_id)))

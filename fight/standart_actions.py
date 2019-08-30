@@ -691,7 +691,7 @@ class GameObject:
         pass
 
     def try_placement(self, unit_dict):
-        if 'item' in self.core_types and len(unit_dict['inventory']) > 2:
+        if 'item' in self.core_types and len(unit_dict['inventory']) > 1    :
             return False
         return True
 
