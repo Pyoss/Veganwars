@@ -24,10 +24,10 @@ class __OptionItem(standart_actions.SpecialObject):
     weight = 1
 
     def act(self, action):
-        if len(action.info) > 4:
+        standart_actions.SpecialObject.act(self, action)
+        if len(action.info) > 5:
             if self.one_time:
                 self.unit.items.remove(self)
-        standart_actions.SpecialObject.act(self, action)
 
 
 class MapItem(standart_actions.GameObject):

@@ -760,7 +760,7 @@ class SpecialObject(GameObject):
         return [keyboards.OptionObject(self, name=option[0], option=option[1]) for option in self.options()]
 
     def act(self, action):
-        if len(action.info) > 4:
+        if len(action.info) > 5:
             self.act_options(action)
             for action_type in action.action_type:
                 self.unit.action.append(action_type)
@@ -777,7 +777,7 @@ class SpecialObject(GameObject):
     def ask_options(self):
         self.unit.active = True
         keyboard = self.target_keyboard()
-        self.unit.edit_message(localization.LangTuple(self.table_row, 'options'), reply_markup=keyboard)
+        self.unit.controller.edit_message(localization.LangTuple(self.table_row, 'options'), reply_markup=keyboard)
 
 act_dict = dict(inspect.getmembers(sys.modules[__name__], inspect.isclass))
 action_dict = {**action_dict, **{v.name: v for k, v in act_dict.items()}}
