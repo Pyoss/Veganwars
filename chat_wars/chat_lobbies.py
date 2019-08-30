@@ -122,7 +122,7 @@ class Lobby:
             'unit_dict': unit_dict,
             'equipment_choice':
                 [
-                    'items',
+                    'item',
                     'armor',
                     'weapon'
                 ] if not self.skip_armory else [],
@@ -496,7 +496,7 @@ class LobbyHandler:
                 user.send_equipment_choice(call_data[1], chat.chat_id, item_type, message_id=call.message.message_id)
             elif item_type == 'item':
                 chat.use_item(item_name)
-                test = list(k for k, v in unit_dict['inventory'].items() if v[0]['name'] == item['name'])
+                test = list(k for k, v in unit_dict['inventory'].items() if v[0]['name'] == item.name)
                 if test:
                     unit_dict['inventory'][test[0]][1] += 1
                 else:

@@ -10,6 +10,7 @@ import engine
 class __InstantItem(standart_actions.InstantObject):
     core_types = ['item', 'fight']
     db_string = 'items'
+    weight = 1
 
     def act(self, action):
         if self.one_time:
@@ -20,6 +21,7 @@ class __InstantItem(standart_actions.InstantObject):
 class __OptionItem(standart_actions.SpecialObject):
     core_types = ['item', 'option', 'fight']
     db_string = 'items'
+    weight = 1
 
     def act(self, action):
         if len(action.info) > 4:
@@ -31,6 +33,7 @@ class __OptionItem(standart_actions.SpecialObject):
 class MapItem(standart_actions.GameObject):
     core_types = ['item', 'map']
     db_string = 'items'
+    weight = 1
 
     def map_act(self, call, item_id):
         pass
@@ -42,6 +45,7 @@ class MapItem(standart_actions.GameObject):
 class TargetItem(standart_actions.TargetObject):
     core_types = ['item', 'target', 'fight']
     db_string = 'items'
+    weight = 1
 
     def act(self, action):
         if len(action.info) > 5:
@@ -112,23 +116,40 @@ class ThrowingKnife(TargetItem):
     name = 'throwknife'
     types = ['blade']
 
+    def __init__(self, unit=None, obj_dict=None):
+        TargetItem.__init__(self, unit=unit, obj_dict=obj_dict)
+        self.blockable = True
+        self.stringed = True
+        self.dmg_done = 0
+        self.dmg_blocked = 0
+        self.target = None
+        self.armored = None
+
     def targets(self):
         return self.unit.targets()
 
     def activate(self, action):
         energy = self.unit.energy if self.unit.energy < 7 else 6
         modifier = self.unit.range_accuracy - action.target.evasion + energy + 5
-        damage = engine.damage_roll(1, modifier)
-        if damage:
-            action.target.receive_damage(1)
-            statuses.Bleeding(action.target)
+        self.dmg_done = engine.damage_roll(3, modifier)
+        self.dmg_done += self.unit.damage
+        self.target = action.target
+        self.target.receive_hit(self)
+        self.target.receive_damage(self.dmg_done)
+        if self.dmg_done:
             if 'alive' in action.target.types:
-                self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
+                statuses.Bleeding(action.target)
+                self.string('use', format_dict={'actor': self.unit.name, 'target': self.target.name,
+                                                'damage': self.dmg_done})
             else:
-                self.string('special', format_dict={'actor': self.unit.name, 'target': action.target.name})
+                self.string('special', format_dict={'actor': self.unit.name, 'target': self.target.name,
+                                                    'damage': self.dmg_done})
+        elif self.dmg_blocked:
+            self.string('armor', format_dict={'actor': self.unit.name, 'target': self.target.name,
+                                              'armor_name': self.armored.name_lang_tuple()})
         else:
-            self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target.name})
-        self.unit.wasted_energy += 2
+            self.string('fail', format_dict={'actor': self.unit.name, 'target': self.target.name})
+        self.unit.waste_energy(2)
 
     def available(self):
         if self.unit.energy > 1:
@@ -313,7 +334,7 @@ class Molotov(__InstantItem):
                                             'target_0': targets[0].name,
                                             'target_1': targets[1].name})
         for target in targets:
-            statuses.Burning(target)
+            statuses.Burning(target, 2)
 
 
 class SmokeBomb(__InstantItem):
@@ -322,10 +343,10 @@ class SmokeBomb(__InstantItem):
     full = True
 
     def activate(self, action):
-        self.string('use', format_dict={'actor': self.actor.name})
-        for actor in self.actor.fight.actors:
-            statuses.Buff(actor, 'range_accuracy', -6, 2)
-            statuses.Buff(actor, 'melee_accuracy', -4, 2)
+        self.string('use', format_dict={'actor': self.unit.name})
+        for unit in self.unit.fight.units:
+            statuses.Buff(unit, 'range_accuracy', -6, 2)
+            statuses.Buff(unit, 'melee_accuracy', -4, 2)
 
 
 class Mine(__OptionItem):
@@ -362,15 +383,15 @@ class Dynamite(__OptionItem):
 
     def activate(self, action):
         delay = int(action.info[-1])
-        statuses.CustomStatus(self.actor, 5, delay, self.blow_up, permanent=True)
-        self.string('special', format_dict={'actor': self.actor.name})
+        statuses.CustomStatus(self.unit, 5, delay, self.blow_up, permanent=True)
+        self.string('special', format_dict={'actor': self.unit.name})
 
     def blow_up(self):
-        targets = [target for target in self.actor.fight.alive_actors()]
+        targets = [target for target in self.unit.fight.alive_actors()]
         damage = 5
         for target in targets:
             target.receive_damage(damage)
-        self.string('use', format_dict={'actor': self.actor.name, 'damage': damage})
+        self.string('use', format_dict={'actor': self.unit.name, 'damage': damage})
 
     def options(self):
         return [('2', '2'), ('3', '3'), ('4', '4')]

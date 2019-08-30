@@ -135,7 +135,7 @@ class Unit:
                       'start': abilities.StartAbility,
                       'passive': abilities.Passive,
                       'on_hit': abilities.OnHit,
-                      'recieve_hit': abilities.ReceiveHit,
+                      'receive_hit': abilities.ReceiveHit,
                       }
 
         class AbilityClass(types_dict[ability_type]):
@@ -316,6 +316,8 @@ class Unit:
 
     def receive_hit(self, action):
         # Применение брони
+        print(action.name)
+        print(action.dmg_done)
         if action.dmg_done > 0:
             self.activate_statuses('receive_hit', action=action)
         if action.dmg_done > 0 and action.blockable:
@@ -385,6 +387,7 @@ class Unit:
         pass
 
     def activate_armor(self, action):
+        print(self.armor)
         if not self.armor:
             return 0, None
         armor = list(armor for armor in self.armor if armor.armor > 0 and armor.rating >= action.dmg_done)

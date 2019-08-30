@@ -79,7 +79,7 @@ class Breastplate(Armor):
     max_armor = 5
     weight = 2
     rating = 2
-    coverage = 30
+    coverage = 25
     destructable = True
     real = True
 
@@ -90,7 +90,7 @@ class Cuirass(Armor):
     max_armor = 7
     weight = 3
     rating = 5
-    coverage = 40
+    coverage = 35
     destructable = True
     real = True
 
@@ -101,7 +101,7 @@ class Leather(Armor):
     max_armor = 10
     weight = 1
     rating = 1
-    coverage = 20
+    coverage = 15
     destructable = True
     real = True
 
@@ -130,7 +130,7 @@ class HeavyHelmet(Armor):
     placement = 'head'
     max_armor = 7
     rating = 10
-    coverage = 15
+    coverage = 10
     weight = 2
     destructable = True
     real = True

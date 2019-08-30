@@ -459,7 +459,7 @@ class Armorer(StartAbility):
     def start_act(self):
         for armor in self.unit.armor:
             armor.armor += 2
-            armor.current_coverage += 15
+            armor.current_coverage += 10
 
 
 class Block(TargetAbility):

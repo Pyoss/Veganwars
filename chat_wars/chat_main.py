@@ -4,7 +4,7 @@ import sql_alchemy
 from bot_utils import keyboards
 from bot_utils.bot_methods import send_message, edit_message, delete_message, get_chat_administrators
 from sql_alchemy import Pyossession
-from fight import units, standart_actions, weapons, armors
+from fight import units, standart_actions, weapons, armors, items
 from adventures import dungeon_main
 from locales.localization import LangTuple
 import engine
@@ -229,7 +229,7 @@ class User(sql_alchemy.SqlUser):
         unit_dict = dynamic_dicts.lobby_list[lobby_id][self.user_id]['unit_dict']
         equipment_message_dict = {
             'weapon': 'Выберите оружие из доступного.\n Вес {}\{}',
-            'items': 'Выберите комплект брони.\n Вес {}\{}',
+            'item': 'Выберите комплект брони.\n Вес {}\{}',
             'armor': 'Выберите предметы.\n Вес {}\{}'
         }
         message = equipment_message_dict[equipment_type].format(self.get_weight(unit_dict), self.get_weight_limit(unit_dict))
@@ -252,6 +252,8 @@ class User(sql_alchemy.SqlUser):
             weight += weapons.weapon_dict[weapon['name']].weight
         for armor in unit_dict['armor']:
             weight += armors.armor_dict[armor['name']].weight
+        for item in unit_dict['inventory'].values():
+            weight += items.items_dict[item[0]['name']].weight
         return weight
 
     @staticmethod

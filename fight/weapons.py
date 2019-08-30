@@ -455,21 +455,25 @@ class Cleaver(TwoHanded, Weapon):
     # -------------------------
     handle = (50, 270)
 
+    default_effect_chance = 5
+
 
 class Hatchet(OneHanded, WeaponWithEffect):
     name = 'hatchet'
-    default_effect_chance = 5
 
     # -------------------------
     handle = (40, 30)
 
     def on_hit(self, attack_action):
-        if attack_action.dmg_done and engine.roll_chance(self.get_effect_chance()):
-            if 'alive' in attack_action.target.types:
-                statuses.Crippled(attack_action.target)
-                attack_action.to_emotes(emoji_utils.emote_dict['crippled_em'])
-            else:
-                attack_action.dmg_done += 1
+        if engine.roll_chance(self.get_effect_chance()):
+            if attack_action.dmg_done:
+                if 'alive' in attack_action.target.types:
+                    statuses.Crippled(attack_action.target)
+                    attack_action.to_emotes(emoji_utils.emote_dict['crippled_em'])
+                else:
+                    attack_action.dmg_done += 1
+            elif attack_action.dmg_blocked > 0:
+                attack_action.armored.armor -= 1
 
 
 class Axe(TwoHanded, Hatchet):

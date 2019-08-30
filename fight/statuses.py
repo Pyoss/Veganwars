@@ -266,7 +266,7 @@ class Bleeding(Status):
     name = 'bleeding'
     order = 22
 
-    def __init__(self, unit, strength=4):
+    def __init__(self, unit, strength=5):
         if 'alive' in unit.types:
             self.strength = strength
             Status.__init__(self, unit)
@@ -280,7 +280,7 @@ class Bleeding(Status):
         if 'idle' in self.unit.action:
             self.strength -= 3
         else:
-            self.strength += 2
+            self.strength += 3
 
         if self.strength >= 9:
             self.unit.hp_delta -= 1
@@ -389,8 +389,8 @@ class Burning(Status):
             if self.stacks:
                 self.unit.receive_damage(self.stacks)
                 self.string('damage', format_dict={'actor': self.unit.name, 'damage_dealt': self.stacks})
-                self.unit.death_lang_tuple = {'source': self,
-                                              'target': None}
+                self.unit.death_lang_tuple = {'source': None,
+                                              'target': self}
             self.stacks -= 1
             if self.stacks < 1:
                 self.finish()
