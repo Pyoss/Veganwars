@@ -45,9 +45,9 @@ class GoblinAi(StandardMeleeAi):
         self.find_target()
         if StandardMeleeAi.nessesary_actions(self):
             return
-        self.move_forward(3 if not self.unit.weapon.targets() else 0)
+        self.move_forward(1 if not self.unit.weapon.targets() and self.unit.energy > 2 else 0)
         self.attack(self.unit.energy if self.unit.target is not None else 0)
-        self.reload(5 - self.unit.energy if self.unit.energy < 2 else 0)
+        self.reload(5 - self.unit.energy if self.unit.energy <= 2 else 0)
 
     def bow_weapon_actions(self):
         self.clear_actions()

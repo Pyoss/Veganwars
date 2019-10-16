@@ -51,7 +51,6 @@ class Unit:
         self.range_accuracy = 0
         self.evasion = 0
         self.damage = 0
-        self.spell_damage = 0
         self.energy = 0
         self.speed = 9
         self.max_recovery = 5
@@ -67,6 +66,14 @@ class Unit:
         self.lost_weapon = []
         self.boosted_attributes = {}
         self.death_lang_tuple = None
+
+        # Параметры для заклинаний
+        self.spell_damage = 0
+        self.spell_overload = 6
+        self.overload_cooldown = 2
+        self.cast_speed = 0
+        self.known_sigils = [emote_dict['m_direction_em'], emote_dict['m_power_em'],
+                             emote_dict['m_self_em'], emote_dict['m_control_em']]
 
         # Временные параметры
         self.blocked_damage = 0
@@ -96,6 +103,9 @@ class Unit:
                    (3, AdditionalKeyboard(self))]
         actions = [*actions, *self.additional_actions]
         return actions
+
+    def add_action(self, func, *args, order=5, to_queue=True, types=None, **kwargs):
+        standart_actions.Custom(func, *args, order=order, to_queue=to_queue, unit=self, types=types, **kwargs)
 
     def equip_from_dict(self, unit_dict):
         for key, value in unit_dict.items():
@@ -143,6 +153,7 @@ class Unit:
             order = ability_order
             name_lng_tuple = name_tuple
             cd = cooldown
+            prerequisites = {'lvl': 10000}
 
             def name_lang_tuple(ability):
                 return ability.name_lng_tuple
@@ -310,14 +321,12 @@ class Unit:
 
     def on_spell(self, spell):
         if spell.dmg_done > 0:
-            spell.dmg_done += self.spell_damage
+            spell.dmg_done += spell.spell_damage
         self.activate_statuses('on_spell', action=spell)
         self.activate_abilities('on_spell', action=spell)
 
     def receive_hit(self, action):
         # Применение брони
-        print(action.name)
-        print(action.dmg_done)
         if action.dmg_done > 0:
             self.activate_statuses('receive_hit', action=action)
         if action.dmg_done > 0 and action.blockable:

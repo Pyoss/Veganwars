@@ -3,6 +3,7 @@
 from fight import standart_actions
 from locales import emoji_utils, localization
 import engine
+import random
 import inspect, sys
 from bot_utils import keyboards
 # 1-20 До эффектов, 21-40 - эффекты, 41-60 результаты
@@ -306,8 +307,7 @@ class Undying(Status):
     def activate(self, action=None):
         hp_delta = self.unit.hp_delta - (bool(self.unit.dmg_received) + self.unit.dmg_received // self.unit.toughness)
         if hp_delta <= -self.unit.hp and self.ready_turn <= self.unit.fight.turn:
-            self.unit.dmg_received = 0
-            self.unit.hp_delta = -self.unit.hp + 1
+            self.unit.hp_delta += 1 - hp_delta - self.unit.hp
             standart_actions.Custom(self.string, 'use', unit=self.unit, format_dict={'actor': self.unit.name})
             self.ready_turn = self.unit.fight.turn + self.cd
 
@@ -389,8 +389,8 @@ class Burning(Status):
             if self.stacks:
                 self.unit.receive_damage(self.stacks)
                 self.string('damage', format_dict={'actor': self.unit.name, 'damage_dealt': self.stacks})
-                self.unit.death_lang_tuple = {'source': None,
-                                              'target': self}
+                self.unit.death_lang_tuple = {'source': self,
+                                              'target': self.unit}
             self.stacks -= 1
             if self.stacks < 1:
                 self.finish()
@@ -514,6 +514,26 @@ class Prone(Status):
 
     def menu_string(self):
         return emoji_utils.emote_dict['prone_em']
+
+
+class Stealthed(Status):
+    name = 'stealthed'
+    order = 40
+    effect = False
+
+    def __init__(self, actor):
+        self.effectiveness = random.choice([4, 8, 12]) - actor.speed_penalty()
+        Status.__init__(self, actor, acting=False)
+        Buff(self.unit, 'evasion', self.effectiveness, 2)
+
+    def reapply(self, parent):
+        pass
+
+    def activate(self, action=None):
+        self.finish()
+
+    def menu_string(self):
+        return '👁‍🗨' + str(self.effectiveness)
 
 
 class LostWeapon(Status):

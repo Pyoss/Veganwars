@@ -155,7 +155,10 @@ def get_possible_abilities(experience, user_abilities_dicts):
         'strength': 0,
         'dexterity': 0,
         'protection': 0,
-        'lvl': 0
+        'lvl': 0,
+        'spellpower': 0,
+        'spellcontrol': 0,
+        'magic': 0
     }
     for ability in user_abilities_dicts:
         stats_dict[ability_dict[ability['name']].school] += 1

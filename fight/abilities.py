@@ -132,101 +132,6 @@ class ReceiveHit(Ability):
         pass
 
 
-class SpellCaster(OptionAbility):
-    name = 'spellcast'
-    types = ['spell']
-    order = 0
-    start_sigils = [emoji_utils.emote_dict['self_em'], emoji_utils.emote_dict['strength_em'], emoji_utils.emote_dict['palm_em']]
-    buff_sigils = [emoji_utils.emote_dict['wind_em'], emoji_utils.emote_dict['earth_em'], emoji_utils.emote_dict['random_em']]
-    end_sigils = [emoji_utils.emote_dict['spark_em'], emoji_utils.emote_dict['ice_em'], emoji_utils.emote_dict['ignite_em']]
-    prerequisites = {'lvl': 100}
-
-    def act(self, action):
-        if self.check_final(action.info):
-            spell_tuple = tuple(action.info[-1].split('-'))
-            if spell_tuple in spells.spell_dict and len(action.info) < 7:
-                if spells.spell_dict[spell_tuple].targetable:
-                    self.ask_target(action.info[-1])
-                    return True
-
-            self.act_options(action)
-            for action_type in action.action_type:
-                self.unit.action.append(action_type)
-            self.on_cd()
-            self.ask_action()
-        else:
-            self.ask_options(action)
-
-    def ask_target(self, spell_tuple):
-        self.unit.active = True
-        string = 'Выберите цель.'
-        targets = [*self.unit.targets(), *self.unit.get_allies()]
-        buttons = []
-        for target in targets:
-            buttons.append(keyboards.FightButton((target.name if isinstance(target.name, str)
-                                                                      else target.name.str(self.unit.controller.lang)),
-                                                 self.unit,
-                                                 self.types[0],
-                                 self.name, str(target), spell_tuple, named=True))
-        buttons.append(keyboards.MenuButton(self.unit, 'back'))
-        keyboard = keyboards.form_keyboard(*buttons)
-        self.unit.controller.edit_message(string, reply_markup=keyboard)
-
-    def activate(self, action):
-        spell_list = tuple(action.info[-1].split('-'))
-        if spell_list in spells.spell_dict:
-            spells.spell_dict[spell_list](self.unit).activate(action)
-        else:
-            self.fail()
-
-    def fail(self):
-        self.string('fail', format_dict={'actor':self.unit.name})
-
-    def check_final(self, info):
-        spell_list = info[-1].split('-')
-        if spell_list[-1] in self.end_sigils or len(spell_list) > 2:
-            return True
-        return False
-
-    @staticmethod
-    def chunks(l, n):
-        """Yield successive n-sized chunks from l."""
-        for i in range(0, len(l), n):
-            yield l[i:i + n]
-
-    def options(self):
-        sigils = [*self.start_sigils, *self.buff_sigils, *self.end_sigils]
-        sigils = list(self.chunks(sigils, 3))
-        end_sigils = []
-        for i in range(len(sigils[0])):
-            end_sigils = [*end_sigils, *[sigil[i] for sigil in sigils]]
-        return [(x, x) for x in end_sigils]
-
-    def options_keyboard(self, action=None):
-        if action.info[-1] == 'spellcast':
-            return OptionAbility.options_keyboard(self, action=action)
-        else:
-            current_spells = action.info[-1].split('-')
-            return [keyboards.OptionObject(self, name=option[0], option='-'.join([*current_spells, option[1]])) for option in self.options()]
-
-    def ask_options(self, action=None):
-        self.unit.active = True
-        keyboard = self.target_keyboard(action, row_width=3)
-        current_spells = action.info[-1].split('-')
-        current_spells = ['-'] if current_spells == ['spellcast'] else current_spells
-        self.unit.controller.edit_message(localization.LangTuple(self.table_row, 'options', format_dict={'spells':' '.join(current_spells)}),
-                               reply_markup=keyboard)
-
-    def available(self):
-        if self.unit.energy > 1:
-            return True
-        return False
-
-    def error_text(self):
-        if self.unit.energy < 1:
-            return 'У вас недостаточно энергии'
-
-
 # Способности ловкости
 class Dodge(InstantAbility):
     name = 'dodge'
@@ -694,7 +599,10 @@ class Execute(OnHit):
 
     def act(self, action):
         if action.target.hp <= math.ceil(action.target.max_hp/4) and action.dmg_done > 0:
-            action.dmg_done *= 2
+            if action.dmg_done < 5:
+                action.dmg_done *= 2
+            else:
+                action.dmg_done += 4
             action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
 
 
@@ -865,6 +773,52 @@ class UnrelentingForce(InstantAbility):
         InstantAbility.act(self, action)
 
 
+class Stealth(InstantAbility):
+    name = 'stealth'
+    types = ['active']
+    order = 2
+    prerequisites = {'dexterity': 1}
+    school = 'dexterity'
+    cd = 1
+
+    def activate(self, action=None):
+        self.string('use', format_dict={'actor': self.unit.name})
+        self.unit.add_action(self.sneak, order=39)
+        self.on_cd()
+
+    def sneak(self):
+        if any(unit.target == self.unit and 'attack' in unit.action for unit in self.unit.targets()) \
+                or self.unit.dmg_received != 0 or self.unit.rooted or self.unit.disabled or self.unit.melee_targets:
+            self.string('fail', format_dict={'actor': self.unit.name})
+        else:
+            self.string('special', format_dict={'actor': self.unit.name})
+            self.unit.move_forward()
+            statuses.Stealthed(self.unit)
+
+
+class Assasinate(TargetAbility):
+    name = 'assasinate'
+    types = ['active']
+    order = 2
+    prerequisites = {'magic': 1}
+    school = 'dexterity'
+    cd = 4
+
+    def activate(self, action=None):
+        self.string('use', format_dict={'actor': self.unit.name})
+        self.unit.add_action(self.sneak, order=39)
+        self.on_cd()
+
+    def sneak(self):
+        if any(unit.target == self.unit and 'attack' in unit.action for unit in self.unit.targets()) \
+                or self.unit.dmg_received != 0 or self.unit.rooted or self.unit.disabled or self.unit.melee_targets:
+            self.string('fail', format_dict={'actor': self.unit.name})
+        else:
+            self.string('special', format_dict={'actor': self.unit.name})
+            self.unit.move_forward()
+            statuses.Stealthed(self.unit)
+
+
 class CounterAttack(Passive):
     name = 'counterattack'
     types = ['passive', 'before_hit', 'on_hit']
@@ -904,7 +858,7 @@ class CounterAttack(Passive):
 
 class Cannibal(TargetAbility):
     name = 'cannibal'
-    prerequisites = {'lvl': 100}
+    prerequisites = {'lvl': 10000}
 
     def targets(self):
         allies = [target for target in self.unit.get_allies()]
@@ -930,7 +884,7 @@ class Cannibal(TargetAbility):
 
 class CorpseEater(TargetAbility):
     name = 'corpse-eater'
-    prerequisites = {'lvl': 100}
+    prerequisites = {'lvl': 10000}
 
     def targets(self):
         return [key for key in self.unit.fight.dead if 'alive' in key.types and self.unit.fight.dead[key]]
@@ -953,7 +907,7 @@ class CorpseEater(TargetAbility):
 
 class WeaponSnatcher(TargetAbility):
     name = 'weapon-snatcher'
-    prerequisites = {'lvl': 100}
+    prerequisites = {'lvl': 10000}
 
     def targets(self):
         return [target for target in self.unit.melee_targets]
@@ -973,20 +927,179 @@ class WeaponSnatcher(TargetAbility):
             return True
         return False
 
+# Магия
 
-class Witch(TargetAbility):
-    name = 'curse'
-    cd = 3
-    prerequisites = {'lvl': 100}
 
-    def targets(self):
-        return self.unit.targets()
+class SpellCaster(OptionAbility):
+    core_types = ['ability', 'on_lvl', 'option']
+    name = 'spellcast'
+    types = ['spell']
+    order = 1
+    prerequisites = {'lvl': 0, 'magic': 1}
+    school = 'magic'
+
+    def act(self, action):
+        if self.check_final(action.info):
+            spell_tuple = tuple(action.info[-1].split('-')[:-1])
+            if spells.find_spell(spell_tuple) and len(action.info) < 7:
+                if spells.find_spell(spell_tuple).targetable:
+                    self.ask_target(action.info[-1])
+                    return True
+
+            self.act_options(action)
+            for action_type in action.action_type:
+                self.unit.action.append(action_type)
+            self.on_cd()
+            self.ask_action()
+        else:
+            self.ask_options(action)
+
+    def ask_target(self, spell_tuple):
+        self.unit.active = True
+        string = 'Выберите цель.'
+        targets = [*self.unit.targets(), *self.unit.get_allies()]
+        buttons = []
+        for target in targets:
+            buttons.append(keyboards.FightButton((target.name if isinstance(target.name, str)
+                                                                      else target.name.str(self.unit.controller.lang)),
+                                                 self.unit,
+                                                 self.types[0],
+                                 self.name, str(target), spell_tuple, named=True))
+        buttons.append(keyboards.MenuButton(self.unit, 'back'))
+        keyboard = keyboards.form_keyboard(*buttons)
+        self.unit.controller.edit_message(string, reply_markup=keyboard)
 
     def activate(self, action):
-        self.unit.waste_energy(3)
-        statuses.Buff(unit=action.target, attr='range_accuracy', value=4, length=2)
-        statuses.Buff(unit=action.target, attr='melee_accuracy', value=4, length=2)
-        self.string('use', format_dict={'actor':self.unit.name, 'target': action.target.name})
+        spell_list = tuple(action.info[-1].split('-')[:-1])
+        if spells.find_spell(spell_list):
+            spell_class = spells.find_spell(spell_list)
+            failed = True if spell_list != spell_class.sigils else False
+            print(self.unit.spell_damage)
+            spell_class(self.unit, failed=failed).activate(action)
+        else:
+            self.fail()
+
+    def fail(self):
+        self.string('fail', format_dict={'actor':self.unit.name})
+
+    def check_final(self, info):
+        spell_list = info[-1].split('-')
+        if spell_list[-1] == 'done':
+            return True
+        return False
+
+    @staticmethod
+    def chunks(l, n):
+        """Yield successive n-sized chunks from l."""
+        for i in range(0, len(l), n):
+            yield l[i:i + n]
+
+    def options(self):
+        sigils = self.unit.known_sigils
+        return [(x, x) for x in sigils]
+
+    def options_keyboard(self, action=None):
+        if action.info[-1] == 'spellcast':
+            return OptionAbility.options_keyboard(self, action=action)
+        else:
+            current_spells = action.info[-1].split('-')
+            if len(current_spells) > 3:
+                current_spells = current_spells[1:]
+            keyboard = [keyboards.OptionObject(self, name=option[0], option='-'.join([*current_spells, option[1]])) for option in self.options()]
+            keyboard.append(keyboards.OptionObject(self, name='done', option='-'.join([*action.info[-1].split('-'), 'done'])))
+            return keyboard
+
+    def ask_options(self, action=None):
+        self.unit.active = True
+        keyboard = self.target_keyboard(action, row_width=2)
+        current_spells = action.info[-1].split('-')
+        current_spells = ['-'] if current_spells == ['spellcast'] else current_spells
+        base_overload = 0
+        if 'overloaded' in self.unit.statuses:
+            base_overload = self.unit.statuses['overloaded'].strength
+        overload = base_overload + self.unit.spell_overload
+        self.unit.controller.edit_message(localization.LangTuple(self.table_row,
+                                                                 'options',
+                                                                 format_dict={'spells': ' '.join(current_spells),
+                                                                              'combust_chance': spells.Spell.get_combustion_chance(overload)}),
+                                                                 reply_markup=keyboard)
+
+    def available(self):
+        if self.unit.energy > 1:
+            return True
+        return False
+
+    def error_text(self):
+        if self.unit.energy < 1:
+            return 'У вас недостаточно энергии'
+
+    def gain(self, user):
+        unit_dict = user.get_unit_dict()
+        for key in self.stats:
+            if key not in unit_dict:
+                start_value = user.get_fight_unit_dict()[key]
+            else:
+                start_value = unit_dict[key]
+            start_value += self.stats[key]
+            unit_dict[key] = start_value
+            user.set_unit_dict(unit_dict)
+
+
+class Pyromant(StartAbility):
+    name = 'pyromant'
+    order = 1
+    cd = 5
+    prerequisites = {'magic': 4}
+    school = ''
+
+    def start_act(self):
+        self.unit.known_sigils.append(emoji_utils.emote_dict['ignite_em'])
+
+
+class SpellControl(InstantAbility):
+    name = 'spellcontrol'
+    order = 5
+    cd = 2
+    default_energy_cost = 1
+    prerequisites = {'magic': 1}
+    school = 'spellcontrol'
+
+    def activate(self, action):
+        statuses.CustomPassive(self.unit, name='control_stop',
+                               delay=6, func=self.control_stop)
+        statuses.CustomStatus(self.unit, 1, 6, self.cast_speed, name='cast_speed', emoji=emoji_utils.emote_dict['provoke_em'])
+        self.string('use', format_dict={'actor': self.unit.name})
+        self.unit.cast_speed += 1
+
+    def cast_speed(self):
+        self.unit.cast_speed -= 1
+        self.string('fail', format_dict={'actor': self.unit.name})
+
+    @staticmethod
+    def control_stop(action):
+        if 'move' in action.unit or action.unit.disarmed or action.unit.disabled:
+            action.unit.statuses['cast_speed'].finish()
+            action.unit.statuses['control_stop'].finish()
+            SpellControl(action.unit).string('finish', format_dict={'actor': action.unit.name})
+
+
+class SpellPower(OptionAbility):
+    name = 'spellpower'
+    order = 0
+    cd = 2
+    full = False
+    prerequisites = {'magic': 1}
+    school = 'spellpower'
+
+    def options(self):
+        return [('1', '1'), ('2', '2'), ('3', '3'), ('4', '4')]
+
+    def activate(self, action):
+        power = int(action.info[-1])
+        statuses.Buff(self.unit, 'spell_damage', power, 2)
+        self.string('special', format_dict={'actor': self.unit.name})
+
+
 
 ability_dict = {value.name: value for key, value
                 in dict(inspect.getmembers(sys.modules[__name__], inspect.isclass)).items()

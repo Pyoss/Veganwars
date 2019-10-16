@@ -351,7 +351,7 @@ class MobFight(Lobby):
         self.lang = 'rus'
         image_dict = {'dragon': '/files/images/backgrounds/dragon_lair.png',
                       'ogre': '/files/images/units/ogre.png',
-                      'goblin': '/files/images/units/goblin.png'}
+                      'goblin': '/files/images/units/knife_goblin.png'}
         self.image = file_manager.my_path + image_dict[mob_list[0]] if bot_methods.images else None
         self.text = 'файто'
 
