@@ -396,8 +396,7 @@ class Unit:
         pass
 
     def activate_armor(self, action):
-        print(self.armor)
-        if not self.armor:
+        if not self.armor or self.rooted or self.disabled:
             return 0, None
         armor = list(armor for armor in self.armor if armor.armor > 0 and armor.rating >= action.dmg_done)
         armor.sort(key=lambda x: x.rating)
