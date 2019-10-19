@@ -438,6 +438,7 @@ class Fist(OneHanded, Weapon):
     types = ['unique', 'natural']
     natural = True
     damage_cap = 1
+    weight = 0
 
     def get_image_dict(self):
         return None

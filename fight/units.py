@@ -605,8 +605,7 @@ class StandardCreature(Unit):
         return unit_dict
 
     def recovery(self):
-        speed = self.get_speed() if self.get_speed() > 2 and 'exhausted' not in self.statuses else 2
-        recovery_speed = speed if speed < self.max_recovery else self.max_recovery
+        recovery_speed = self.recovery_speed()
 
         self.energy += recovery_speed
         self.weapon.recovery()
