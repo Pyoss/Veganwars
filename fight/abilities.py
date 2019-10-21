@@ -227,8 +227,8 @@ class UndyingSkill(StartAbility):
     name = 'undying'
     order = 1
     cd = 5
-    prerequisites = {'protection': 4}
-    school = 'protection'
+    prerequisites = {'strength': 4}
+    school = 'strength'
 
     def start_act(self):
         statuses.Undying(self.unit)
@@ -670,7 +670,7 @@ class Berserk(Passive):
     core_types = ['ability', 'on_lvl']
     types = ['passive']
     order = 42
-    prerequisites = {'strength': 2}
+    prerequisites = {'strength': 2, 'dexterity':1}
     school = 'strength'
     stats = {'max_energy': -2}
 
@@ -796,27 +796,35 @@ class Stealth(InstantAbility):
             statuses.Stealthed(self.unit)
 
 
-class Assasinate(TargetAbility):
-    name = 'assasinate'
-    types = ['active']
-    order = 2
-    prerequisites = {'magic': 1}
+class Backstab(TargetAbility):
+    name = 'backstab'
+    order = 6
+    prerequisites = {'dexterity': 4}
     school = 'dexterity'
-    cd = 4
+    cd = 6
 
-    def activate(self, action=None):
-        self.string('use', format_dict={'actor': self.unit.name})
-        self.unit.add_action(self.sneak, order=39)
-        self.on_cd()
+    def targets(self):
+        return self.unit.melee_targets
 
-    def sneak(self):
-        if any(unit.target == self.unit and 'attack' in unit.action for unit in self.unit.targets()) \
-                or self.unit.dmg_received != 0 or self.unit.rooted or self.unit.disabled or self.unit.melee_targets:
-            self.string('fail', format_dict={'actor': self.unit.name})
+    def available(self):
+        if not self.unit.weapon.melee or self.unit.energy < self.unit.weapon.energy_cost\
+                or 'backstab' not in self.unit.weapon.types:
+            return False
         else:
-            self.string('special', format_dict={'actor': self.unit.name})
-            self.unit.move_forward()
-            statuses.Stealthed(self.unit)
+            return TargetAbility.available(self)
+
+    def activate(self, action):
+        self.on_cd()
+        target = action.target
+        attack = standart_actions.Attack(self.unit, self.unit.fight, stringed=False, armor_string_alt=False)
+        dmg_done = attack.activate(target=target)
+        if dmg_done > 0 and not any(unit.target == self.unit and 'attack' in unit.action for unit in self.unit.targets()) \
+            or self.unit.dmg_received != 0 and 'shield' not in target.action:
+            self.string('use', format_dict={'actor': self.unit.name, 'target': target.name, 'damage': dmg_done})
+            target.hp_delta -= 1
+        else:
+            attack.string(attack.str)
+#
 
 
 class CounterAttack(Passive):

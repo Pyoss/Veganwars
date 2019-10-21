@@ -90,7 +90,7 @@ class Cuirass(Armor):
     max_armor = 7
     weight = 3
     rating = 5
-    coverage = 35
+    coverage = 95
     destructable = True
     real = True
 

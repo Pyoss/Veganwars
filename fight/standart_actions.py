@@ -134,7 +134,7 @@ class MenuAction(Action):
 class BaseAttack(Action):
     action_type = ['attack']
 
-    def __init__(self, unit, fight, info=None, order=5, call=None, stringed=True):
+    def __init__(self, unit, fight, info=None, order=5, call=None, stringed=True, armor_string_alt=True):
         Action.__init__(self, unit, fight, info=info)
         self.order = order
         self.weapon = self.unit.weapon
@@ -149,6 +149,7 @@ class BaseAttack(Action):
         self.armored = None
         self.attack_tuple = None
         self.blockable = True
+        self.armor_string_alt = armor_string_alt
 
     def to_emotes(self, emote):
         if emote not in self.special_emotes:
@@ -592,10 +593,11 @@ class GameObject:
         self.get_table_row()
         self.types = [*self.core_types, *self.types]
         self.ready_turn = 0
-        self.energy_cost = self.get_energy_cost()
         self.id = str(engine.rand_id())
         if obj_dict is not None:
             self.from_dict(obj_dict)
+        if unit is not None:
+            self.energy_cost = self.get_energy_cost()
 
     def get_energy_cost(self):
         return self.default_energy_cost

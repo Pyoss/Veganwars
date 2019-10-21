@@ -394,6 +394,7 @@ class GreatSword(TwoHanded, Weapon):
 class Knife(OneHanded, WeaponWithEffect):
     name = 'knife'
     handle = (15, 10)
+    types = ['backstab']
     default_effect_chance = 10
 
     def effect_applicable(self, attack_action):
@@ -757,10 +758,11 @@ class Stiletto(OneHanded, WeaponWithEffect):
     name = 'stiletto'
     order = 5
     handle = (5, 20)
+    types = ['backstab']
 
     def on_hit(self, action):
         if action.dmg_blocked:
-            self.unit.target.receive_damage(1)
+            action.dmg_done += 1
 
 
 class Mace(OneHanded, WeaponWithEffect):

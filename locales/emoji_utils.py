@@ -95,6 +95,7 @@ emote_dict = {
     'provoke_em': '🤬',
     'biceps_em': '💪',
     'cleave_em': '💫',
+    'backstab_em': '🗡',
 
     # Школы Способностей
     "dexterity_em": u'\U0001F4A8',
