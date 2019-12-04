@@ -9,7 +9,7 @@ types = telebot.types
 bot = telebot.TeleBot(config.token)
 admin_bot = telebot.TeleBot('777849028:AAFKdy8OJcLn37H7A8bJVsSCTSB-5S37zf4')
 admin_mode = False
-images = True
+images = False
 
 
 # Переопределение метода отправки сообщения (защита от ошибок)
@@ -17,7 +17,6 @@ def send_message(chat_id, message, reply_markup=None, parse_mode='markdown', to_
     if admin_mode and chat_id != config.admin_id:
         bot.send_message(config.admin_id, message)
     return bot.send_message(chat_id, message, reply_markup=reply_markup, parse_mode=parse_mode)
-
 
 
 def edit_message(chat_id, message_id, message_text, reply_markup=None, parse_mode='markdown'):

@@ -54,6 +54,12 @@ class TargetItem(standart_actions.TargetObject):
         standart_actions.TargetObject.act(self, action)
 
 
+# -------------------------   Квестовые ресурсы   --------------------------
+
+class Key:
+    name = None
+
+
 # -------------------------   Ресурсы мобов   --------------------------
 
 
@@ -169,7 +175,7 @@ class Adrenalin(__InstantItem):
 
 
 class Bandages(TargetItem):
-    core_types = ['item', 'map', 'fight', 'target']
+    core_types = ['item', 'fight', 'target']
     name = 'bandages'
     full = True
 

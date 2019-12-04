@@ -503,8 +503,7 @@ class Inventory(engine.Container):
     def get_item_actions(self, item, item_id):
         actions = []
         core_types = item.core_types
-        if 'map' in core_types:
-            actions.append(['Использовть', 'use'])
+        actions.append(['Использовать', 'use'])
         if 'weapon' in core_types:
             if item_id != 'weapon':
                 actions.append(['Надеть', 'equip'])

@@ -50,7 +50,7 @@ class Lobby:
         return message.result_dict[self.lang]
 
     def keyboard(self):
-        buttons = [types.InlineKeyboardButton(url='https://telegram.me/vwarsbot?start=join_{}'.format(self.id),
+        buttons = [types.InlineKeyboardButton(url='https://telegram.me/test_env_2_bot?start=join_{}'.format(self.id),
                                               text='Присоединиться'),
                    keyboards.Button('Начать бой', '_'.join(['lobby', str(self.id), 'startlobby']))]
         keyboard = keyboards.form_keyboard(*buttons, row_width=2)
@@ -128,6 +128,7 @@ class Lobby:
                 ] if not self.skip_armory else [],
             'ready': False
         }
+        dynamic_dicts.occupied_list.append(user_id)
         team[user_id] = unit_data
         self.update_lobby()
 
@@ -136,7 +137,6 @@ class Lobby:
             return True
 
         if user_id in dynamic_dicts.occupied_list:
-            dynamic_dicts.occupied_list.append(user_id)
             bot_methods.send_message(user_id, 'Вы не можете сейчас присоединиться.')
             return True
 
@@ -232,8 +232,8 @@ class StartChecker:
 
 
 class Dungeon(Lobby):
-    def __init__(self, chat_id, map_type):
-        Lobby.__init__(self, chat_id, skip_armory=False)
+    def __init__(self, chat_id, map_type, skip_armory=False):
+        Lobby.__init__(self, chat_id, skip_armory=skip_armory)
         self.table_row = 'dungeons_' + map_type.name
         self.team = self.teams[0]
         self.map = None
@@ -252,7 +252,6 @@ class Dungeon(Lobby):
         bot_methods.send_image(image_generator.create_dungeon_image(path,
                                                                     (self.get_image(key) for key in self.team)),
                                self.chat_id)
-        # len(self.teams)
         self.complexity = 1
         self.create_dungeon_map()
         dynamic_dicts.dungeons[self.id] = self
@@ -340,6 +339,31 @@ class Dungeon(Lobby):
             for member in self.party.members:
                 bot_methods.delete_message(message_id=member.message_id, chat_id=member.chat_id)
                 member.message_id = None
+
+
+class TutorialSequence(Dungeon):
+
+    def __init__(self, chat_id, name):
+        from adventures.maps import TutorialMap
+        Dungeon.__init__(self, chat_id, map_type=TutorialMap, skip_armory=True)
+        self.player_join(chat_id, units.units_dict['human'](name=name).to_dict())
+        self.complexity = 1
+        self.create_dungeon_map()
+        self.run()
+
+    def add_party(self, player_list):
+        self.party = dungeon_main.Party(player_list, self.chat_id, self.id)
+
+    def run(self):
+        dynamic_dicts.dungeons[self.id] = self
+        self.add_party(player_list=self.teams[0])
+        for member in self.party.members:
+            dynamic_dicts.dungeons[member.chat_id] = self
+        del dynamic_dicts.lobby_list[self.id]
+        self.map.start()
+
+    def update_lobby(self, keyboard=True):
+        pass
 
 
 class MobFight(Lobby):

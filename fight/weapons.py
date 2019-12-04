@@ -394,7 +394,7 @@ class GreatSword(TwoHanded, Weapon):
 class Knife(OneHanded, WeaponWithEffect):
     name = 'knife'
     handle = (15, 10)
-    types = ['backstab']
+    types = ['backstab', 'effect']
     default_effect_chance = 10
 
     def effect_applicable(self, attack_action):

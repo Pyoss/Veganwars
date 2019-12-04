@@ -285,7 +285,7 @@ class User(sql_alchemy.SqlUser):
     def get_possible_abilities_amount(self):
         experience = self.experience
         ability_number = len(self.get_abilities())
-        experience_list = (10, 20, 40, 70, 100)
+        experience_list = (10, 30, 70, 100)
         i = 0
         for exp in experience_list:
             if experience >= exp:
@@ -330,8 +330,8 @@ def add_chat(chat_id, name, creator):
     chat.add_user(creator)
 
 
-def add_user(user_id):
-    pyossession.create_user(user_id)
+def add_user(user_id, **kwargs):
+    pyossession.create_user(user_id, **kwargs)
 
 
 def get_chats():
@@ -348,6 +348,22 @@ def get_user(chat_id):
 
 def get_users():
     return pyossession.get_users()
+
+
+def user_exists(chat_id):
+    return pyossession.user_exists(chat_id)
+
+
+def join_game(fight_id, user_id, name):
+    import dynamic_dicts
+    if fight_id in dynamic_dicts.lobby_list and not dynamic_dicts.lobby_list[fight_id].started:
+        if not user_exists(user_id):
+            add_user(user_id, pending_tutorial=True)
+        user = get_user(user_id)
+        unit_dict = user.get_fight_unit_dict(name=name)
+        dynamic_dicts.lobby_list[fight_id].player_join(user_id, unit_dict=unit_dict)
+        send_message(user_id, 'Вы успешно присоединились.')
+
 
 pyossession = Pyossession(Chat, User)
 pyossession.start_session()

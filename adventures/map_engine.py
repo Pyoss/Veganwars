@@ -55,6 +55,7 @@ class DungeonMap:
         self.neutral_scarceness = 100
         self.impact_integer_range = (-5, 5)
         self.negative_modifier = 1
+        self.entrance_location = None
 
         self.statistics = {'positive': 0,
                            'negative': 0,
@@ -109,8 +110,7 @@ class DungeonMap:
         map_tuple = self.map_tuples[(x, y)]
         del self.map_tuples[(x, y)]
         if x == 0 and y == 0:
-            from adventures import locations
-            return locations.Entrance(0, 0, self.dungeon, map_tuple)
+            return self.entrance_location(0, 0, self.dungeon, map_tuple)
 
         if engine.roll_chance(self.neutral_chance):
             self.neutral_chance -= self.neutral_scarceness
@@ -147,7 +147,7 @@ class DungeonMap:
         return Location(x, y, self.dungeon, map_tuple=None)
 
     def start(self):
-        #self.greetings_message()
+        self.greetings_message()
         location = self.dungeon.map.get_location(0, 0)
         location.cleared = True
         self.dungeon.party.move(location, events=False, exhaust=False)

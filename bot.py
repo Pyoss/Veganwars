@@ -21,14 +21,20 @@ call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
 types = telebot.types
 
+#
+#x = '51.68.141.240:3128'
+#telebot.apihelper.proxy = {
+#'http': 'http://{}'.format(x),
+#'https': 'http://{}'.format(x)
+#}
+
 bot.send_message(config.admin_id, 'Инициация бота...')
 bot.locked = False
-
 
 @bot.message_handler(func=lambda message: True if bot.locked and message.from_user.id != config.admin_id else False,
                      content_types=['text'])
 def start(message):
-    pass
+    return False
 
 
 @bot.message_handler(commands=['map'])
@@ -97,15 +103,13 @@ def start(message):
     
 @bot.message_handler(commands=["start"])
 def game(message):
-    if len(message.text.split(' ')) > 1:
-        data = message.text.split(' ')[1].split('_')
-        import dynamic_dicts
-        if data[1] in dynamic_dicts.lobby_list:
-            chat_main.add_user(message.from_user.id)
-            user = chat_menu.get_user(message.from_user.id)
-            unit_dict = user.get_fight_unit_dict(name=message.from_user.first_name)
-            dynamic_dicts.lobby_list[data[1]].player_join(message.from_user.id, unit_dict=unit_dict)
-            bot_methods.send_message(message.from_user.id, 'Вы успешно присоединились.')
+    user_chat_id = message.from_user.id
+    if len(message.text.split()) > 1:
+        # Значит присоединились через кнопку
+        fight_id = message.text.split(' ')[1].split('_')[1]
+        chat_main.join_game(fight_id, user_chat_id, message.from_user.first_name)
+    else:
+        chat_lobbies.TutorialSequence(user_chat_id, message.from_user.first_name)
 
 
 @bot.message_handler(commands=["dicts"])
@@ -122,6 +126,7 @@ def start(message):
 
 @bot.message_handler(commands=['pvp'])
 def start(message):
+    print(message.chat.id)
     chat = chat_main.pyossession.get_chat(message.chat.id)
     chat.clear_used_items()
     dung = chat_lobbies.Lobby1x1(message.chat.id)
@@ -136,15 +141,26 @@ def start(message):
     dung.send_lobby()
 
 
+@bot.message_handler(commands=['test'])
+def start(message):
+    keyboard = telebot.types.InlineKeyboardMarkup()
+    keyboard.add(telebot.types.InlineKeyboardButton('Тест', callback_data='test'))
+    bot_methods.send_message(message.from_user.id, 'тест', reply_markup=keyboard
+    )
+
+
 @bot.message_handler(commands=['test_fight'])
 def start(message):
     from fight.unit_files import human, red_oak, bloodbug, ogre, goblin_shaman, goblin, dragon, worm
-    from fight import ai
+    from fight import ai, items
+    import engine
     dct = chat_main.get_user(message.from_user.id).get_fight_unit_dict(name=message.from_user.first_name)
-    enemy_3_class = ogre.Ogre
+    player = human.Human(unit_dict=dct)
+    dct = player.to_dict()
+    enemy_3_class = goblin.Goblin
     enemy_3 = enemy_3_class()
+    enemy_3.armor = [armors.Cuirass()]
     team_1 = {message.from_user.id: dct}
-    enemy_3.armor = []
     team_2 = {(enemy_3_class, 1): enemy_3.to_dict()}
     fight_main.thread_fight([team_1, team_2], chat_id=message.chat.id)
 
@@ -199,7 +215,6 @@ def start(message):
         chat_lobbies.send_mob_choice(message.chat.id)
 
 
-
 @bot.message_handler(func=lambda message: True, commands=['show_items'])
 def start(message):
         chat = chat_main.get_chat(message.chat.id)
@@ -219,6 +234,8 @@ def start(message):
 
 @bot.callback_query_handler(func=lambda call: call)
 def action(call):
+    if call.data == 'test':
+        bot_methods.answer_callback_query(call, '89296052405', alert=True)
     try:
         call_handler.handle(call)
     except Exception as e:

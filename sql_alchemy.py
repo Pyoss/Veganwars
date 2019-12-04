@@ -35,7 +35,8 @@ users_table = Table('users', metadata,
                     Column('user_id', Integer, unique=True),
                     Column('attacked', Integer, default=0),
                     Column('experience', String),
-                    Column('unit_dict', String))
+                    Column('unit_dict', String),
+                    Column('options', String))
 
 # Занесение таблицы в базу данных с помощью metadata через engine
 metadata.create_all(engn)
@@ -120,7 +121,6 @@ class SqlChat(object):
         self.buildings = json.dumps(building_dict)
         session.commit()
 
-
     # Предметы
     # Обработка предметов
     def add_item(self, item, value=1):
@@ -188,11 +188,12 @@ class SqlChat(object):
 class SqlUser(object):
     pyosession = None
 
-    def __init__(self, user_id, attacked=0, experience=0, unit_dict='{"unit":"human"}'):
+    def __init__(self, user_id, attacked=0, experience=0, unit_dict='{"unit":"human"}', pending_tutorial=False):
         self.user_id = user_id
         self.attacked = attacked
         self.experience = experience
         self.unit_dict = unit_dict
+        self.options = {'pending_tutorial': pending_tutorial, 'language': 'rus'}
 
     def __repr__(self):
         return "<User('%s')>" % (self.user_id)
@@ -212,6 +213,13 @@ class SqlUser(object):
         self.unit_dict = json.dumps(unit_dict)
         session.commit()
 
+    def get_options(self):
+        return json.loads(self.options)
+
+    def set_options(self, options):
+        self.options = json.dumps(options)
+        session.commit()
+
     def get_abilities(self):
         return json.loads(self.unit_dict)['abilities']
 
@@ -223,7 +231,6 @@ class SqlUser(object):
 
     def reset_abilities(self):
         self.set_unit_dict({"unit": "human", "abilities": []})
-
 
 
 class Pyossession:
@@ -247,8 +254,8 @@ class Pyossession:
             session.rollback()
             pass
 
-    def create_user(self, chat_id):
-        session.add(self.user_class(chat_id))
+    def create_user(self, chat_id, **kwargs):
+        session.add(self.user_class(chat_id, **kwargs))
         try:
             session.commit()
         except Exception as e:
@@ -272,10 +279,10 @@ class Pyossession:
     def get_user(self, user_id):
         user = session.query(self.user_class).filter_by(user_id=user_id).one()
         user.pyosession = self
-        if user:
-            return user
-        else:
-            return None
+        return user
+
+    def user_exists(self, user_id):
+        return session.query(self.user_class).filter_by(user_id=user_id).scalar() is not None
 
     def get_users(self):
         users = session.query(self.user_class).all()

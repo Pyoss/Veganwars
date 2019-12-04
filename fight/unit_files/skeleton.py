@@ -53,7 +53,7 @@ class Skeleton(Unit):
     control_class = SkeletonAi
     emote = emote_dict['skeleton_em']
     types = ['undead']
-    image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\skeleton.png'
+    image = './files/images/units/skeleton.png'
     broken_dict = {'head': 'skill_1', 'legs': 'skill_3', 'arms': 'skill_2'}
     greet_msg = 'текст-скелетов'
     danger = 12
@@ -84,7 +84,7 @@ class Skeleton(Unit):
 
     def get_image(self):
         if self.weapon.name == 'bow':
-            image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\units\skeleton_archer.png'
+            image = './files/images/units/skeleton_archer.png'
         else:
             image = self.image
         return Image.open(image), 'standard', (0, 0)

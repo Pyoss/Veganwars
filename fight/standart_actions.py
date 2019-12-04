@@ -671,7 +671,9 @@ class GameObject:
             return True
 
     def on_cd(self):
-        self.ready_turn = self.unit.fight.turn + self.unit.speed_penalty() + self.cd - 1
+        self.ready_turn = self.unit.fight.turn + self.unit.speed_penalty() + self.cd
+        if self.ready_turn == self.unit.fight.turn + 1:
+            self.ready_turn += 1
 
     def ready(self):
         if self.unit.fight.turn < self.ready_turn:
@@ -693,9 +695,17 @@ class GameObject:
         pass
 
     def try_placement(self, unit_dict):
+        print(list(unit_dict['inventory']))
+        print(list(unit_dict['inventory'].values()))
         if 'item' in self.core_types and sum(list(unit_dict['inventory'].values())) > 1:
             return False
         return True
+
+    def map_act(self, call, item_id):
+        self.unit.alert('Вы не можете придумать, как это сейчас можно использовать.', call)
+
+    def map_available(self, call):
+        pass
 
 
 def get_name(name, lang):

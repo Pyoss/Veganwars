@@ -551,10 +551,10 @@ class StandardCreature(Unit):
     def __init__(self, name, controller=None, fight=None, unit_dict=None, complexity=None):
         Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
         # Максимальные параметры
-        self.max_hp = 4
+        self.max_hp = 3
         self.hp = self.max_hp
-        self.max_energy = 5
-        self.toughness = 5
+        self.max_energy = 4
+        self.toughness = 6
         self.melee_accuracy = 0
         self.range_accuracy = 0
         self.evasion = 0
@@ -613,7 +613,7 @@ class StandardCreature(Unit):
 
     def recovery_speed(self):
         speed = self.get_speed() if self.get_speed() > 2 and 'exhausted' not in self.statuses else 2
-        recovery_speed = speed if speed < self.max_energy else self.max_energy
+        recovery_speed = speed if speed < self.max_recovery else self.max_recovery
         return recovery_speed
 
     def add_energy(self, number):
@@ -689,6 +689,7 @@ class Shadow(StandardCreature):
         if unit_dict is not None:
             self.equip_from_dict(unit_dict)
         self.energy = self.max_energy
+
 
 units_dict = {}
 

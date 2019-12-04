@@ -233,8 +233,8 @@ class Shield(Armor, weapons.OneHanded, weapons.Weapon):
             return False
         if unit.dmg_received > 0:
             if unit.dmg_received > self.armor and not self.destroyed:
-                blocked_dmg = self.armor
-                unit.dmg_received -= self.armor
+                blocked_dmg = self.rating
+                unit.dmg_received -= self.rating
                 self.armor = 0
             elif self.destroyed:
                 blocked_dmg = 0

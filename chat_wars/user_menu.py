@@ -113,7 +113,10 @@ class UserAbilityMenu(UserPage):
                                                                   translate('rus'))
 
     def button_to_page(self, name=None):
-        return UserButton(self.ability_name + ' ' + emote_dict[self.ability.school + '_em'],
+        addition = ''
+        if self.ability.school + '_em' in emote_dict:
+            addition = ' ' + emote_dict[self.ability.school + '_em']
+        return UserButton(self.ability_name + addition,
                           'rus', self.name, self.ability.name, named=True)
 
 
@@ -161,8 +164,9 @@ def get_possible_abilities(experience, user_abilities_dicts):
         'magic': 0
     }
     for ability in user_abilities_dicts:
-        stats_dict[ability_dict[ability['name']].school] += 1
-        stats_dict['lvl'] += 1
+        if ability_dict[ability['name']].school != 'blank':
+            stats_dict[ability_dict[ability['name']].school] += 1
+            stats_dict['lvl'] += 1
     for ability in ability_dict.values():
         if all(ability.prerequisites[prerequisite] <= stats_dict[prerequisite] for prerequisite in ability.prerequisites)\
                 and not any(dct['name'] == ability.name for dct in user_abilities_dicts):

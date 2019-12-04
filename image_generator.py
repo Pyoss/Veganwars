@@ -1,5 +1,6 @@
 from PIL import Image
 import io
+import os
 
 
 class ImageObject:
@@ -133,9 +134,9 @@ if __name__ == '__main__':
     from fight import weapons, armors
     unit = Human()
     unit.weapon = weapons.Spear()
-    unit.armor = [armors.Cuirass(), armors.HeavyHelmet(), armors.HeavyShield()]
+    unit.armor = [armors.Cuirass(), armors.HeavyShield()]
     unit1 = Goblin()
-    constructor = ImageConstructor(ImageBackground(Image.open('D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\Duel.png')),
+    constructor = ImageConstructor(ImageBackground(Image.open('files/images/backgrounds/Duel.png')),
                                                    (unit.get_image(1),))
     image = constructor.create_image()
 

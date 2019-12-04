@@ -78,9 +78,41 @@ class Entrance(OpenLocation):
     def __init__(self, x, y, dungeon, map_tuple):
         map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
         self.emote = '-'
+        self.open = False
+        self.looked = False
+        self.key_taken = False
 
     def greet_party(self):
-        pass
+        bot_methods.send_message(self.dungeon.party.members[0].chat_id, 'Приветствуем тебя в обучении.')
+
+    def move_permission(self, movement, call):
+        if not self.open:
+            bot_methods.answer_callback_query(call, 'Вы не можете двигаться дальше, пока не откроете клетку.', alert=True)
+            return False
+        return True
+
+    def buttons(self, member):
+        look_around_button = dict()
+        look_around_button['name'] = 'Осмотреться'
+        look_around_button['act'] = 'look_around'
+        pick_up_key = dict()
+        pick_up_key['name'] = 'Поднять ключ'
+        pick_up_key['act'] = 'take_key'
+        buttons = []
+        if not self.looked:
+            buttons.append(look_around_button)
+        elif not self.key_taken:
+            buttons.append(pick_up_key)
+        return buttons
+
+    def handler(self, call):
+        member = self.dungeon.party.member_dict[call.from_user.id]
+        data = call.data.split('_')
+        action = data[3]
+        if action == 'look_around':
+            self.дщщл(member)
+        elif action == 'take_key':
+            self.improve(call, member, data[-1])
 
 
 class Smith(OpenLocation):
@@ -103,7 +135,7 @@ class Smith(OpenLocation):
         action = data[3]
         if action == 'choice':
             self.send_choice(member)
-        if action == 'improve':
+        elif action == 'improve':
             self.improve(call, member, data[-1])
 
     def send_choice(self, member):

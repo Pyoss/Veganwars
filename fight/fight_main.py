@@ -46,6 +46,9 @@ class Team:
     def alive_actors(self):
         return list(unit for unit in self.units if unit.alive())
 
+    def get_dmg(self):
+        return sum(unit.dmg_received for unit in self.units if unit.alive())
+
 
 class Player:
     ai = False
@@ -321,7 +324,7 @@ class Fight:
     def get_results(self):
 
         # Выясняется победившая команда сравнением полученного командами урона
-        dmg_received_dict = {team: sum(unit.dmg_received for unit in team.units if unit.alive()) for team in self.teams}
+        dmg_received_dict = {team: team.get_dmg() for team in self.teams}
 
         # Команда(ды), получившая наибольшее количество урона, считается проигравшей
         losers = [key for key, value in dmg_received_dict.items()

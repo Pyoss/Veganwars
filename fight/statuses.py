@@ -305,7 +305,9 @@ class Undying(Status):
         self.cd = 4
 
     def activate(self, action=None):
-        hp_delta = self.unit.hp_delta - (bool(self.unit.dmg_received) + self.unit.dmg_received // self.unit.toughness)
+        hp_delta = self.unit.hp_delta
+        if max(team.get_dmg() for team in self.unit.fight.teams) == self.unit.team.get_dmg():
+            self.unit.hp_delta - (bool(self.unit.dmg_received) + self.unit.dmg_received // self.unit.toughness)
         if hp_delta <= -self.unit.hp and self.ready_turn <= self.unit.fight.turn:
             self.unit.hp_delta += 1 - hp_delta - self.unit.hp
             standart_actions.Custom(self.string, 'use', unit=self.unit, format_dict={'actor': self.unit.name})
@@ -522,7 +524,7 @@ class Stealthed(Status):
     effect = False
 
     def __init__(self, actor):
-        self.effectiveness = random.choice([4, 8, 12]) - actor.speed_penalty()
+        self.effectiveness = random.choice([8, 12]) - actor.speed_penalty()
         Status.__init__(self, actor, acting=False)
         Buff(self.unit, 'evasion', self.effectiveness, 2)
 

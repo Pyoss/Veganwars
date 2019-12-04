@@ -61,7 +61,7 @@ class TargetAbility(standart_actions.TargetObject, Ability):
     db_string = 'abilities'
 
     def available(self):
-        if not self.targets():
+        if not self.targets() and not self.unit.rooted and not self.unit.disarmed:
             return False
         else:
             return Ability.available(self)
@@ -133,6 +133,33 @@ class ReceiveHit(Ability):
 
 
 # Способности ловкости
+
+
+class KnockBack(TargetAbility):
+    name = 'knock-back'
+    order = 4
+    cd = 2
+    default_energy_cost = 2
+    prerequisites = {'dexterity': 1}
+    school = 'dexterity'
+
+    def targets(self):
+        return self.unit.melee_targets
+
+    def activate(self, action):
+        self.on_cd()
+        if 'massive' in action.target.types:
+            self.string('impossible', format_dict={'target': action.target.name, 'actor': self.unit.name})
+        elif action.target.energy < action.unit.energy + random.randint(0, 1):
+            self.string('use', format_dict={'actor': action.unit.name, 'target': action.target.name})
+            statuses.Buff(action.target, 'melee_accuracy', -6, 1)
+            statuses.Buff(action.target, 'range_accuracy', -6, 1)
+            print(action.target.melee_accuracy)
+            statuses.Prone(action.target)
+        else:
+            self.string('fail', format_dict={'actor': action.unit.name, 'target': action.target.name})
+
+
 class Dodge(InstantAbility):
     name = 'dodge'
     types = ['dodge', 'move']
@@ -170,6 +197,43 @@ class Dodge(InstantAbility):
             ability.ready_turn = self.unit.fight.turn + self.unit.speed_penalty() + ability.cd
 
 
+class FastAttack(TargetAbility):
+
+    name = 'fast-attack'
+    full = False
+    default_energy_cost = 1
+    types = ['attack']
+    cd = 4
+    prerequisites = {'dexterity': 3}
+    school = 'dexterity'
+
+    def targets(self):
+        return self.unit.weapon.targets()
+
+    def act(self, action):
+        if len(action.info) > 5:
+            self.act_options(action)
+            for action_type in action.action_type:
+                self.unit.action.append(action_type)
+            self.on_cd()
+            self.unit.energy -= self.unit.weapon.energy_cost
+            self.unit.rooted.append('fast-attack')
+            self.ask_action()
+        else:
+            self.ask_options()
+
+    def activate(self, action):
+        self.unit.rooted.remove('fast-attack')
+        attack = standart_actions.Attack(self.unit, self.unit.fight)
+        attack.activate(target=action.target, waste=self.energy_cost + self.unit.weapon.energy_cost)
+
+    def available(self):
+        if not self.unit.weapon.melee or self.unit.energy < self.unit.weapon.energy_cost:
+            return False
+        else:
+            return TargetAbility.available(self)
+
+
 class JumpBack(InstantAbility):
     name = 'jump-back'
     types = ['dodge', 'move']
@@ -200,38 +264,16 @@ class JumpBack(InstantAbility):
             ability.ready_turn = self.unit.fight.turn + self.unit.speed_penalty() + ability.cd
 
 
-class Biceps(Passive):
-    name = 'biceps'
-    prerequisites = {'strength': 4}
-    school = 'strength'
-    order = 0
-
-    def activate(self, action=None):
-        if self.unit.energy == self.unit.max_energy:
-            statuses.Buff(self.unit, 'damage', 2, 1, emoji=emoji_utils.emote_dict['biceps_em'])
-
-
 class Speedy(Passive):
     name = 'speedy'
     types = ['dodge', 'move']
     order = 1
     cd = 5
-    prerequisites = {'dexterity': 4}
+    prerequisites = {'dexterity': 3}
     school = 'dexterity'
 
     def activate(self, action=None):
         pass
-
-
-class UndyingSkill(StartAbility):
-    name = 'undying'
-    order = 1
-    cd = 5
-    prerequisites = {'strength': 4}
-    school = 'strength'
-
-    def start_act(self):
-        statuses.Undying(self.unit)
 
 
 class Trip(TargetAbility):
@@ -259,7 +301,7 @@ class Assassin(Passive):
     name = 'assassin'
     order = 41
     school = 'dexterity'
-    prerequisites = {'dexterity': 2, 'strength': 1}
+    prerequisites = {'dexterity': 1}
 
     def activate(self, action=None):
         if 'effect' in self.unit.weapon.types:
@@ -271,180 +313,66 @@ class Assassin(Passive):
             print(self.unit.weapon.effect_chance)
 
 
-class TwoHandedMastery(Passive):
-    name = 'two-handed-mastery'
-    order = 41
-    school = 'strength'
-    prerequisites = {'lvl': 2}
-
-    def activate(self, action=None):
-        if 'two-handed' in self.unit.weapon.types:
-            if 'attack' in self.unit.action:
-                self.unit.energy += 1
-
-
-class ShieldMastery(Passive):
-    name = 'shield-mastery'
-    order = 41
-    school = 'protection'
-    prerequisites = {'protection': 1}
-
-    def activate(self, action=None):
-        if 'shield' in self.unit.action:
-            shield = next(armor for armor in self.unit.armor if 'shield' in armor.types)
-            self.unit.energy += shield.block_energy_cost
-
-
-class Charge(Passive):
-    name = 'charge'
-    school = 'strength'
-
-    def activate(self, action=None):
-        pass
-
-
-class Push(TargetAbility):
-    name = 'push'
-    order = 1
-    cd = 3
-    default_energy_cost = 1
-    school = 'strength'
-    prerequisites = {'strength': 2, 'protection': 1}
-
-    def targets(self):
-        return [target for target in self.unit.melee_targets if 'massive' not in target.types]
-
-    def activate(self, action):
-        self.on_cd()
-        if 'massive' in action.target.types:
-            self.string('impossible', format_dict={'target': action.target.name, 'actor': self.unit.name})
-        elif 'dodge' in action.target.action:
-            self.string('fail', format_dict={'target': action.target.name, 'actor': self.unit.name})
-        elif 'shield' in action.target.action:
-            self.string('special', format_dict={'target': action.target.name, 'actor': self.unit.name})
-        else:
-            self.string('use', format_dict={'target': action.target.name, 'actor': self.unit.name})
-            statuses.Buff(action.target, 'melee_accuracy', -6, 1)
-            statuses.Buff(action.target, 'range_accuracy', -6, 1)
-            action.target.move_back()
-
-
-class Heavy(OnLvl):
-    name = 'heavy'
-    stats = {'speed': 6}
-    school = 'protection'
-    prerequisites = {'lvl': 2}
-
-
-class Tough(OnLvl):
-    name = 'tough'
-    school = 'protection'
-    stats = {'toughness': 3}
-
-
-class Slow(OnLvl):
-    name = 'slow'
-    stats = {'max_recovery': -2, 'max_energy': 2}
-    prerequisites = {'protection': 2}
-    school = 'protection'
-
-
-class Sturdy(OnLvl):
-    name = 'sturdy'
-    stats = {'max_hp': 1, 'hp': 1}
-    prerequisites = {'protection': 1}
-    school = 'protection'
-
-
-class Armorer(StartAbility):
-    name = 'armorer'
-    prerequisites = {'protection': 3}
-    school = 'protection'
-
-    def start_act(self):
-        for armor in self.unit.armor:
-            armor.armor += 2
-            armor.current_coverage += 10
-
-
-class Block(TargetAbility):
-    name = 'block'
-    order = 1
+class Stealth(InstantAbility):
+    name = 'stealth'
+    types = ['active']
+    order = 2
+    prerequisites = {'dexterity': 1}
+    school = 'dexterity'
     cd = 1
-    default_energy_cost = 1
-    types = ['defense']
-    prerequisites = {'protection': 2, 'dexterity': 1}
-    school = 'protection'
+
+    def activate(self, action=None):
+        self.string('use', format_dict={'actor': self.unit.name})
+        self.unit.add_action(self.sneak, order=39)
+        self.on_cd()
+
+    def sneak(self):
+        if any(unit.target == self.unit and 'attack' in unit.action for unit in self.unit.targets()) \
+                or self.unit.dmg_received != 0 or self.unit.rooted or self.unit.disabled or self.unit.melee_targets:
+            self.string('fail', format_dict={'actor': self.unit.name})
+        else:
+            self.string('special', format_dict={'actor': self.unit.name})
+            self.unit.move_forward()
+            statuses.Stealthed(self.unit)
+
+
+class Backstab(TargetAbility):
+    name = 'backstab'
+    types = ['attack']
+    order = 6
+    prerequisites = {'dexterity': 3}
+    school = 'dexterity'
+    cd = 6
 
     def targets(self):
         return self.unit.melee_targets
 
-    def activate(self, action):
-        self.on_cd()
-        if any('shield' in armor.types for armor in self.unit.armor) and \
-                        next(armor for armor in self.unit.armor if 'shield' in armor.types).armor > 0:
-            blocker = next(armor for armor in self.unit.armor if 'shield' in armor.types)
-            max_dmg = 100
-        else:
-            blocker = self.unit.weapon
-            max_dmg = self.unit.weapon.dice_num
-            max_dmg = self.unit.weapon.damage_cap if self.unit.weapon.damage_cap < max_dmg else max_dmg
-            if 'two-handed' in blocker.types:
-                self.unit.waste_energy(1)
-        if 'attack' not in action.target.action:
-            self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target.name,
-                                             'blocker': blocker.name_lang_tuple()})
-        else:
-            for actn in self.unit.fight.action_queue.action_list:
-                if actn.unit == action.target and 'attack' in actn.action_type:
-                    dmg = actn.unit.weapon.get_damage(action.unit)
-                    if dmg <= max_dmg:
-                        action.target.waste_energy(action.target.weapon.energy_cost)
-                        self.unit.fight.action_queue.remove(actn)
-                        self.string('use', format_dict={'actor': self.unit.name,
-                                                        'target': action.target.name,
-                                                        'blocker':  blocker.name_lang_tuple()})
-                    else:
-                        self.string('special', format_dict={'actor': self.unit.name,
-                                                            'target': action.target.name,
-                                                            'blocker':  blocker.name_lang_tuple()})
-
-
-class FastAttack(TargetAbility):
-
-    name = 'fast-attack'
-    full = False
-    default_energy_cost = 1
-    types = ['attack']
-    cd = 2
-    prerequisites = {'dexterity': 3}
-    school = 'dexterity'
-
-    def targets(self):
-        return self.unit.weapon.targets()
-
-    def act(self, action):
-        if len(action.info) > 5:
-            self.act_options(action)
-            for action_type in action.action_type:
-                self.unit.action.append(action_type)
-            self.on_cd()
-            self.unit.energy -= self.unit.weapon.energy_cost
-            self.unit.rooted.append('fast-attack')
-            self.ask_action()
-        else:
-            self.ask_options()
-
-    def activate(self, action):
-        self.unit.rooted.remove('fast-attack')
-        attack = standart_actions.Attack(self.unit, self.unit.fight)
-        attack.activate(target=action.target, bonus_accuracy=self.energy_cost + self.unit.weapon.energy_cost)
-
     def available(self):
-        if not self.unit.weapon.melee or self.unit.energy < self.unit.weapon.energy_cost:
+        if not self.unit.weapon.melee or self.unit.energy < self.unit.weapon.energy_cost\
+                or 'backstab' not in self.unit.weapon.types:
             return False
         else:
             return TargetAbility.available(self)
+
+    def activate(self, action):
+        self.on_cd()
+        target = action.target
+        attack = standart_actions.Attack(self.unit, self.unit.fight, stringed=False, armor_string_alt=False)
+        dmg_done = attack.activate(target=target)
+        if dmg_done > 0 and not any(unit.target == self.unit and 'attack' in unit.action for unit in self.unit.targets()) \
+            and self.unit.dmg_received == 0:
+            self.string('use', format_dict={'actor': self.unit.name, 'target': target.name, 'damage': dmg_done})
+            target.hp_delta -= 1
+        else:
+            attack.string(attack.str)
+
+# Способности силы
+
+
+class Warrior(OnLvl):
+    name = 'warrior'
+    stats = {'max_energy': 1}
+    school = 'strength'
 
 
 class Cleave(InstantAbility):
@@ -488,92 +416,11 @@ class Cleave(InstantAbility):
         return InstantAbility.available(self)
 
 
-class Provoke(TargetAbility):
-    name = 'provoke'
-    order = 4
-    cd = 2
-    default_energy_cost = 1
-    prerequisites = {'lvl': 2}
-    school = 'dexterity'
-
-    def targets(self):
-        return self.unit.targets()
-
-    def activate(self, action):
-        statuses.CustomPassive(action.target, types=['on_hit'], name='provoke_stop',
-                               delay=6, func=self.stop_provoke, option=action.unit)
-        statuses.PermaStatus(action.target, 1, 6, self.provoke, name='provoke', emoji=emoji_utils.emote_dict['provoke_em'], args=[action.target,
-                                                                                                  self.unit])
-        self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
-
-    @staticmethod
-    def provoke(target, unit):
-        target.energy -= 2
-        if target.energy < 0:
-            target.energy = 0
-        Provoke(target).string('special', format_dict={'actor': target.name})
-
-    @staticmethod
-    def stop_provoke(action, options):
-        if action.target == options:
-            action.unit.statuses['provoke'].finish()
-            action.unit.statuses['provoke_stop'].finish()
-
-
-class SecondBreath(Passive):
-    name = 'second-breath'
-    order = 60
-    prerequisites = {'dexterity': 2, 'protection': 1}
-    school = 'dexterity'
-
-    def __init__(self, unit=None, obj_dict=None):
-        Passive.__init__(self, unit=unit, obj_dict=obj_dict)
-        self.used = False
-
-    def activate(self, action=None):
-        if not self.used:
-            if self.unit.energy <= 0:
-                self.string('use', format_dict={'actor': self.unit.name})
-                self.unit.energy = self.unit.max_energy
-                self.used = True
-
-
-class ShieldSmash(TargetAbility):
-    name = 'shield-smash'
-    order = 3
-    prerequisites = {'strength': 1, 'protection': 1}
-    school = 'protection'
-
-    def targets(self):
-        return self.unit.melee_targets
-
-    def activate(self, action):
-        self.on_cd()
-        target = action.target
-        attack = standart_actions.Attack(self.unit, self.unit.fight)
-        shield = next(armor for armor in self.unit.armor if 'shield' in armor.types)
-        attack.activate(target=target, weapon=shield)
-        self.unit.waste_energy(shield.energy_cost)
-        shield.current_coverage = 100
-        statuses.CustomStatus(self.unit, 0, 1, self.stop_shield, args=[shield])
-
-    @staticmethod
-    def stop_shield(shield):
-        shield.current_coverage = shield.get_coverage()
-
-    def available(self):
-        if not any('shield' in armor.types for armor in self.unit.armor):
-            return False
-        elif next(armor for armor in self.unit.armor if 'shield' in armor.types).armor <= 0:
-            return False
-        return TargetAbility.available(self)
-
-
 class Jump(TargetAbility):
     name = 'jump'
     order = 10
     cd = 1
-    prerequisites = {'strength': 2, 'dexterity': 1}
+    prerequisites = {'strength': 3}
     school = 'strength'
 
     def get_energy_cost(self):
@@ -606,72 +453,291 @@ class Execute(OnHit):
             action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
 
 
-class KnockBack(TargetAbility):
-    name = 'knock-back'
-    order = 4
-    cd = 2
-    default_energy_cost = 2
-    prerequisites = {'strength': 1, 'protection': 1}
+class Biceps(Passive):
+    name = 'biceps'
+    prerequisites = {'strength': 1}
     school = 'strength'
+    order = 0
+
+    def activate(self, action=None):
+        if self.unit.energy == self.unit.max_energy:
+            statuses.Buff(self.unit, 'damage', 2, 1, emoji=emoji_utils.emote_dict['biceps_em'])
+
+
+class UndyingSkill(StartAbility):
+    name = 'undying'
+    order = 1
+    cd = 5
+    prerequisites = {'strength': 3}
+    school = 'strength'
+
+    def start_act(self):
+        statuses.Undying(self.unit)
+
+
+class Charge(Passive):
+    name = 'charge'
+    school = 'strength'
+    prerequisites = {'strength': 1}
+
+    def activate(self, action=None):
+        pass
+
+
+class UnrelentingForce(InstantAbility):
+    name = 'unrelenting-force'
+    order = 15
+    types = ['attack']
+    default_energy_cost = 4
+    cd = 5
+    prerequisites = {'strength': 1}
+    school = 'strength'
+
+    def activate(self, action):
+        self.on_cd()
+        if self.unit.dmg_received == 0:
+            self.string('fail', format_dict={'actor': self.unit.name})
+            self.unit.waste_energy(2)
+        elif self.unit.melee_targets:
+            target = self.unit.target
+            if 'dodge' not in target.action:
+                damage = self.unit.dmg_received
+                attack_action = standart_actions.Attack(self.unit, self.unit.fight, stringed=False)
+                attack_action.blockable = False
+                attack_action.activate(target=target, waste=self.unit.weapon.energy_cost, dmg=damage + self.unit.damage)
+                self.string('use', format_dict={'actor': self.unit.name, 'target': target.name,
+                                                'damage': attack_action.dmg_done + attack_action.dmg_blocked})
+            else:
+                self.string('fail', format_dict={'actor': self.unit.name})
+                self.unit.waste_energy(2)
+        else:
+            self.string('special', format_dict={'actor': self.unit.name})
+            self.unit.waste_energy(2)
+
+    def available(self):
+        if self.unit.disarmed:
+            return False
+        elif not self.unit.weapon.melee:
+            return False
+        else:
+            return InstantAbility.available(self)
+
+    def act(self, action):
+        if self.unit.melee_targets:
+            self.unit.target = random.choice(self.unit.melee_targets)
+        InstantAbility.act(self, action)
+
+# Способности стойкости
+#
+
+
+class CounterAttack(Passive):
+    name = 'counterattack'
+    types = ['passive', 'before_hit', 'on_hit']
+    order = 20
+    prerequisites = {'protection': 1}
+    school = 'protection'
+
+    def __init__(self, unit=None, obj_dict=None):
+        Passive.__init__(self, unit=unit, obj_dict=obj_dict)
+        self.activated_round = 0
+        self.switch = False
+
+    def act(self, action=None):
+        if action is None:
+            Passive.act(self, action=action)
+        else:
+            if self.activated_round == self.unit.fight.turn:
+                if not self.switch:
+                    print(1)
+                    self.unit.melee_accuracy += 3
+                    self.unit.waste_energy(-1)
+                    self.switch = True
+                else:
+                    self.unit.melee_accuracy -= 3
+                    print(2)
+                    if action.dmg_done > 0:
+                        action.dmg_done += 1
+                        action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
+                    self.switch = False
+
+    def activate(self, action=None):
+        if any(unit.target == self.unit and 'attack' in unit.action for unit in self.unit.targets()) and self.unit.dmg_received == 0:
+            if 'shield' in self.unit.action or 'dodge' in self.unit.action or 'defense' in self.unit.action:
+                standart_actions.Custom(self.string, 'use', order=60, format_dict={'actor': self.unit.name}, unit=self.unit)
+                self.activated_round = self.unit.fight.turn + 1
+
+
+class Sturdy(OnLvl):
+    name = 'sturdy'
+    stats = {'max_hp': 1, 'hp': 1}
+    school = 'protection'
+
+
+class Heavy(OnLvl):
+    name = 'heavy'
+    stats = {'speed': 6}
+    school = 'protection'
+    prerequisites = {'protection': 1}
+
+
+class Slow(OnLvl):
+    name = 'slow'
+    stats = {'max_recovery': -2, 'max_energy': 2}
+    prerequisites = {'protection': 1}
+    school = 'protection'
+
+
+class Tough(OnLvl):
+    name = 'tough'
+    school = 'protection'
+    stats = {'toughness': 3}
+    prerequisites = {'protection': 1}
+
+
+class Push(TargetAbility):
+    name = 'push'
+    order = 1
+    cd = 3
+    default_energy_cost = 1
+    school = 'protection'
+    prerequisites = {'protection': 1}
+
+    def targets(self):
+        return [target for target in self.unit.melee_targets if 'massive' not in target.types]
+
+    def activate(self, action):
+        self.on_cd()
+        if 'massive' in action.target.types:
+            self.string('impossible', format_dict={'target': action.target.name, 'actor': self.unit.name})
+        elif 'dodge' in action.target.action:
+            self.string('fail', format_dict={'target': action.target.name, 'actor': self.unit.name})
+        elif 'shield' in action.target.action:
+            self.string('special', format_dict={'target': action.target.name, 'actor': self.unit.name})
+        else:
+            self.string('use', format_dict={'target': action.target.name, 'actor': self.unit.name})
+            statuses.Buff(action.target, 'melee_accuracy', -6, 1)
+            statuses.Buff(action.target, 'range_accuracy', -6, 1)
+            action.target.move_back()
+
+
+class Armorer(StartAbility):
+    name = 'armorer'
+    prerequisites = {'protection': 3}
+    school = 'protection'
+
+    def start_act(self):
+        for armor in self.unit.armor:
+            armor.armor += 2
+            armor.current_coverage += 10
+
+
+class Block(TargetAbility):
+    name = 'block'
+    order = 1
+    cd = 1
+    default_energy_cost = 1
+    types = ['defense']
+    prerequisites = {'protection': 1}
+    school = 'protection'
 
     def targets(self):
         return self.unit.melee_targets
 
     def activate(self, action):
         self.on_cd()
-        if 'massive' in action.target.types:
-            self.string('impossible', format_dict={'target': action.target.name, 'actor': self.unit.name})
-        elif action.target.energy < action.unit.energy + random.randint(0, 1):
-            self.string('use', format_dict={'actor': action.unit.name, 'target': action.target.name})
-            statuses.Buff(action.target, 'melee_accuracy', -6, 1)
-            statuses.Buff(action.target, 'range_accuracy', -6, 1)
-            print(action.target.melee_accuracy)
-            statuses.Prone(action.target)
+        if any('shield' in armor.types for armor in self.unit.armor) and \
+                        next(armor for armor in self.unit.armor if 'shield' in armor.types).armor > 0:
+            blocker = next(armor for armor in self.unit.armor if 'shield' in armor.types)
+            max_dmg = 100
         else:
-            self.string('fail', format_dict={'actor': action.unit.name, 'target': action.target.name})
+            blocker = self.unit.weapon
+            max_dmg = self.unit.weapon.dice_num
+            max_dmg = self.unit.weapon.damage_cap if self.unit.weapon.damage_cap < max_dmg else max_dmg
+            if 'two-handed' in blocker.types:
+                self.unit.waste_energy(1)
+        if 'attack' not in action.target.action:
+            self.string('fail', format_dict={'actor': self.unit.name, 'target': action.target.name,
+                                             'blocker': blocker.name_lang_tuple()})
+        else:
+            for actn in self.unit.fight.action_queue.action_list:
+                if actn.unit == action.target and 'attack' in actn.action_type:
+                    dmg = actn.unit.weapon.get_damage(action.unit)
+                    if dmg <= max_dmg:
+                        action.target.waste_energy(action.target.weapon.energy_cost)
+                        self.unit.fight.action_queue.remove(actn)
+                        self.string('use', format_dict={'actor': self.unit.name,
+                                                        'target': action.target.name,
+                                                        'blocker':  blocker.name_lang_tuple()})
+                    else:
+                        self.string('special', format_dict={'actor': self.unit.name,
+                                                            'target': action.target.name,
+                                                            'blocker':  blocker.name_lang_tuple()})
 
 
-# ################################ НИЖЕ НИЧЕГО НЕ ПРОВЕРЕНО #######################################
-# Способность Садист: прибавляет энергию, если у текущей цели отнялись жизни.
-
-class Sadist(Passive):
-    name = 'sadist'
+class ShieldMastery(Passive):
+    name = 'shield-mastery'
     order = 41
-    prerequisites = {'strength': 1, 'dexterity': 1}
-    school = 'dexterity'
-
-    def __init__(self, unit=None, obj_dict=None):
-        Passive.__init__(self, unit=unit, obj_dict=obj_dict)
-        self.hp = 0
-
-    def act(self, action=None):
-        standart_actions.Custom(self.set_hp, order=40, unit=self.unit)
-        self.unit.fight.action_queue.append(self)
+    school = 'protection'
+    prerequisites = {'protection': 1}
 
     def activate(self, action=None):
-        if self.hp > 0:
-            if self.hp > self.unit.target.hp:
-                print(True)
-                self.unit.energy += self.hp - self.unit.target.hp
-                self.string('use', format_dict={'actor': self.unit.name, 'energy': self.hp - self.unit.target.hp})
-        self.hp = 0
-
-    def set_hp(self):
-        if self.unit.target is not None:
-            self.hp = self.unit.target.hp
+        if 'shield' in self.unit.action:
+            shield = next(armor for armor in self.unit.armor if 'shield' in armor.types)
+            self.unit.energy += shield.block_energy_cost
 
 
-# Способность Берсерк: Ваша начальная энергия уменьшается на 2.
-#  Вы получаете дополнительную энергию за каждую недостающую жизнь.
-#  Вы наносите бонусный урон, пока у вас остается только 1 жизнь.
+class ShieldSmash(TargetAbility):
+    name = 'shield-smash'
+    order = 3
+    types = ['attack']
+    prerequisites = {'protection': 1}
+    school = 'protection'
+
+    def targets(self):
+        return self.unit.melee_targets
+
+    def activate(self, action):
+        self.on_cd()
+        target = action.target
+        attack = standart_actions.Attack(self.unit, self.unit.fight)
+        shield = next(armor for armor in self.unit.armor if 'shield' in armor.types)
+        attack.activate(target=target, weapon=shield)
+        self.unit.waste_energy(shield.energy_cost)
+        shield.current_coverage = 100
+        statuses.CustomStatus(self.unit, 0, 1, self.stop_shield, args=[shield])
+
+    @staticmethod
+    def stop_shield(shield):
+        shield.current_coverage = shield.get_coverage()
+
+    def available(self):
+        if not any('shield' in armor.types for armor in self.unit.armor):
+            return False
+        elif next(armor for armor in self.unit.armor if 'shield' in armor.types).armor <= 0:
+            return False
+        return TargetAbility.available(self)
+
+# Нейтральные способности
+
+
+class TwoHandedMastery(Passive):
+    name = 'two-handed-mastery'
+    order = 41
+    school = 'blank'
+
+    def activate(self, action=None):
+        if 'two-handed' in self.unit.weapon.types:
+            if 'attack' in self.unit.action:
+                self.unit.energy += 1
+
 
 class Berserk(Passive):
     name = 'berserk'
     core_types = ['ability', 'on_lvl']
     types = ['passive']
     order = 42
-    prerequisites = {'strength': 2, 'dexterity':1}
-    school = 'strength'
+    school = 'blank'
     stats = {'max_energy': -2}
 
     def __init__(self, unit=None, obj_dict=None):
@@ -721,147 +787,90 @@ class Berserk(Passive):
 
 class HandToHand(OnHit):
     name = 'hand-to-hand'
-    prerequisites = {'dexterity': 2}
-    school = 'dexterity'
+    school = 'blank'
 
     def act(self, action=None):
         if action.dmg_done and action.weapon.name == 'fist':
             action.dmg_done += 2
 
 
-class UnrelentingForce(InstantAbility):
-    name = 'unrelenting-force'
-    order = 15
-    types = ['attack']
-    default_energy_cost = 4
-    cd = 5
-    prerequisites = {'strength': 3}
-    school = 'strength'
+# Отмененные способности
 
-    def activate(self, action):
-        self.on_cd()
-        if self.unit.dmg_received == 0:
-            self.string('fail', format_dict={'actor': self.unit.name})
-            self.unit.waste_energy(2)
-        elif self.unit.melee_targets:
-            target = self.unit.target
-            if 'dodge' not in target.action:
-                damage = self.unit.dmg_received
-                attack_action = standart_actions.Attack(self.unit, self.unit.fight, stringed=False)
-                attack_action.blockable = False
-                attack_action.activate(target=target, waste=self.unit.weapon.energy_cost, dmg=damage + self.unit.damage)
-                self.string('use', format_dict={'actor': self.unit.name, 'target': target.name,
-                                                'damage': attack_action.dmg_done + attack_action.dmg_blocked})
-            else:
-                self.string('fail', format_dict={'actor': self.unit.name})
-                self.unit.waste_energy(2)
-        else:
-            self.string('special', format_dict={'actor': self.unit.name})
-            self.unit.waste_energy(2)
-
-    def available(self):
-        if self.unit.disarmed:
-            return False
-        elif not self.unit.weapon.melee:
-            return False
-        else:
-            return InstantAbility.available(self)
-
-    def act(self, action):
-        if self.unit.melee_targets:
-            self.unit.target = random.choice(self.unit.melee_targets)
-        InstantAbility.act(self, action)
-
-
-class Stealth(InstantAbility):
-    name = 'stealth'
-    types = ['active']
-    order = 2
-    prerequisites = {'dexterity': 1}
+class Sadist(Passive):
+    name = 'sadist'
+    order = 41
+    prerequisites = {'strength': 1, 'dexterity': 10}
     school = 'dexterity'
-    cd = 1
-
-    def activate(self, action=None):
-        self.string('use', format_dict={'actor': self.unit.name})
-        self.unit.add_action(self.sneak, order=39)
-        self.on_cd()
-
-    def sneak(self):
-        if any(unit.target == self.unit and 'attack' in unit.action for unit in self.unit.targets()) \
-                or self.unit.dmg_received != 0 or self.unit.rooted or self.unit.disabled or self.unit.melee_targets:
-            self.string('fail', format_dict={'actor': self.unit.name})
-        else:
-            self.string('special', format_dict={'actor': self.unit.name})
-            self.unit.move_forward()
-            statuses.Stealthed(self.unit)
-
-
-class Backstab(TargetAbility):
-    name = 'backstab'
-    order = 6
-    prerequisites = {'dexterity': 4}
-    school = 'dexterity'
-    cd = 6
-
-    def targets(self):
-        return self.unit.melee_targets
-
-    def available(self):
-        if not self.unit.weapon.melee or self.unit.energy < self.unit.weapon.energy_cost\
-                or 'backstab' not in self.unit.weapon.types:
-            return False
-        else:
-            return TargetAbility.available(self)
-
-    def activate(self, action):
-        self.on_cd()
-        target = action.target
-        attack = standart_actions.Attack(self.unit, self.unit.fight, stringed=False, armor_string_alt=False)
-        dmg_done = attack.activate(target=target)
-        if dmg_done > 0 and not any(unit.target == self.unit and 'attack' in unit.action for unit in self.unit.targets()) \
-            or self.unit.dmg_received != 0 and 'shield' not in target.action:
-            self.string('use', format_dict={'actor': self.unit.name, 'target': target.name, 'damage': dmg_done})
-            target.hp_delta -= 1
-        else:
-            attack.string(attack.str)
-#
-
-
-class CounterAttack(Passive):
-    name = 'counterattack'
-    types = ['passive', 'before_hit', 'on_hit']
-    order = 20
-    prerequisites = {'dexterity': 1, 'protection': 1}
-    school = 'protection'
 
     def __init__(self, unit=None, obj_dict=None):
         Passive.__init__(self, unit=unit, obj_dict=obj_dict)
-        self.activated_round = 0
-        self.switch = False
+        self.hp = 0
 
     def act(self, action=None):
-        if action is None:
-            Passive.act(self, action=action)
-        else:
-            if self.activated_round == self.unit.fight.turn:
-                if not self.switch:
-                    print(1)
-                    self.unit.melee_accuracy += 3
-                    self.unit.waste_energy(-1)
-                    self.switch = True
-                else:
-                    self.unit.melee_accuracy -= 3
-                    print(2)
-                    if action.dmg_done > 0:
-                        action.dmg_done += 1
-                        action.to_emotes(emoji_utils.emote_dict['exclaim_em'])
-                    self.switch = False
+        standart_actions.Custom(self.set_hp, order=40, unit=self.unit)
+        self.unit.fight.action_queue.append(self)
 
     def activate(self, action=None):
-        if any(unit.target == self.unit and 'attack' in unit.action for unit in self.unit.targets()) and self.unit.dmg_received == 0:
-            if 'shield' in self.unit.action or 'dodge' in self.unit.action or 'defense' in self.unit.action:
-                standart_actions.Custom(self.string, 'use', order=60, format_dict={'actor': self.unit.name}, unit=self.unit)
-                self.activated_round = self.unit.fight.turn + 1
+        if self.hp > 0:
+            if self.hp > self.unit.target.hp:
+                print(True)
+                self.unit.energy += self.hp - self.unit.target.hp
+                self.string('use', format_dict={'actor': self.unit.name, 'energy': self.hp - self.unit.target.hp})
+        self.hp = 0
+
+    def set_hp(self):
+        if self.unit.target is not None:
+            self.hp = self.unit.target.hp
+
+
+class Provoke(TargetAbility):
+    name = 'provoke'
+    order = 4
+    cd = 2
+    default_energy_cost = 1
+    prerequisites = {'lvl': 20}
+    school = 'dexterity'
+
+    def targets(self):
+        return self.unit.targets()
+
+    def activate(self, action):
+        statuses.CustomPassive(action.target, types=['on_hit'], name='provoke_stop',
+                               delay=6, func=self.stop_provoke, option=action.unit)
+        statuses.PermaStatus(action.target, 1, 6, self.provoke, name='provoke', emoji=emoji_utils.emote_dict['provoke_em'], args=[action.target,
+                                                                                                  self.unit])
+        self.string('use', format_dict={'actor': self.unit.name, 'target': action.target.name})
+
+    @staticmethod
+    def provoke(target, unit):
+        target.energy -= 2
+        if target.energy < 0:
+            target.energy = 0
+        Provoke(target).string('special', format_dict={'actor': target.name})
+
+    @staticmethod
+    def stop_provoke(action, options):
+        if action.target == options:
+            action.unit.statuses['provoke'].finish()
+            action.unit.statuses['provoke_stop'].finish()
+
+
+class SecondBreath(Passive):
+    name = 'second-breath'
+    order = 60
+    prerequisites = {'dexterity': 4, 'protection': 4}
+    school = 'dexterity'
+
+    def __init__(self, unit=None, obj_dict=None):
+        Passive.__init__(self, unit=unit, obj_dict=obj_dict)
+        self.used = False
+
+    def activate(self, action=None):
+        if not self.used:
+            if self.unit.energy <= 0:
+                self.string('use', format_dict={'actor': self.unit.name})
+                self.unit.energy = self.unit.max_energy
+                self.used = True
 
 
 class Cannibal(TargetAbility):
