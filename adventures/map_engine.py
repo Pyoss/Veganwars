@@ -207,6 +207,7 @@ class Location:
         self.visited = False
         self.current = False
         self.seen = False
+        self.action_expected = False
         self.coordinates = (x, y)
         self.x = x
         self.y = y
@@ -341,6 +342,8 @@ class Location:
         lang_tuple = self.get_greet_tuple()
         self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True,
                                         short_member_ui=True, reply_markup_func=self.get_action_keyboard)
+        if not self.action_expected:
+            self.dungeon.update_map()
 
     # -------- СОЗДАНИЕ КНОПОК ДЕЙСТВИЯ -------
     # get_encounter_button = [(Название действия, доступного при входе: его функция)]
@@ -372,10 +375,15 @@ class Location:
 
     def get_action_keyboard(self, member):
         buttons = self.get_button_list()['encounter']
-        buttons = [(self.get_button_tuples(member.lang)[str(button[0])], str(button[0])) for button in buttons]
-        keyboard = form_keyboard(*[self.create_button(button[0], member, 'location', str(button[1]),
-                                                      named=True) for button in buttons])
-        return keyboard
+        if buttons:
+            buttons = [(self.get_button_tuples(member.lang)[str(button[0])], str(button[0])) for button in buttons]
+            keyboard = form_keyboard(*[self.create_button(button[0], member, 'location', str(button[1]),
+                                                          named=True) for button in buttons])
+            self.action_expected = True
+            return keyboard
+        else:
+            self.action_expected = False
+            return
 
     # ------------------------------------------------------------------------------------------------------------------
 
