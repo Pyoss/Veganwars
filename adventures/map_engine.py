@@ -343,7 +343,7 @@ class Location:
         self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True,
                                         short_member_ui=True, reply_markup_func=self.get_action_keyboard)
         if not self.action_expected:
-            self.dungeon.update_map()
+            self.dungeon.update_map(new=True)
 
     # -------- СОЗДАНИЕ КНОПОК ДЕЙСТВИЯ -------
     # get_encounter_button = [(Название действия, доступного при входе: его функция)]
