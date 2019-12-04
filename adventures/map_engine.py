@@ -375,6 +375,7 @@ class Location:
 
     def get_action_keyboard(self, member):
         buttons = self.get_button_list()['encounter']
+        print(buttons)
         if buttons:
             buttons = [(self.get_button_tuples(member.lang)[str(button[0])], str(button[0])) for button in buttons]
             keyboard = form_keyboard(*[self.create_button(button[0], member, 'location', str(button[1]),
