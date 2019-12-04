@@ -214,13 +214,18 @@ class Member:
                                                                                                  inventory_fill)).translate(self.lang)
 
     def menu_keyboard(self):
-        buttons = list()
+        buttons = []
+
         buttons.append(keyboards.DungeonButton('Инвентарь', self, 'menu', 'inventory', named=True))
         buttons.append(keyboards.DungeonButton('На карту', self, 'menu', 'map', named=True))
         buttons.append(keyboards.DungeonButton('Покинуть карту', self, 'menu', 'leave', named=True))
         if len(self.dungeon.party.members) > 1:
             buttons.append(keyboards.DungeonButton('Обмен', self, 'menu', 'give', named=True))
-        for button in self.dungeon.party.current_location.get_button_list()['idle']:
+
+        idle_buttons = self.dungeon.party.current_location.get_button_list()['encounter']
+        idle_buttons = [(self.dungeon.party.current_location(self.lang)[str(button[0])],
+                                                                        str(button[0])) for button in idle_buttons]
+        for button in idle_buttons:
             buttons.append(keyboards.DungeonButton(button[0], self, 'location', str(button[1]), named=True))
         keyboard = form_keyboard(*buttons)
         return keyboard
