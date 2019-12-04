@@ -352,12 +352,8 @@ class Location:
 
     def get_button_list(self):
         return {
-                'idle': [
-                    self.get_idle_buttons()
-                ],
-                'encounter': [
-                    self.get_encounter_button()
-                ]
+                'idle': self.get_idle_buttons(),
+                'encounter': self.get_encounter_button()
                 }
 
     def get_action_dict(self):
