@@ -510,7 +510,7 @@ class ForestBarrow(OpenLocation):
     name = 'forest_barrow'
     impact = 'negative'
     impact_integer = 1
-    image_file = '/files/images/backgrounds/barrow.jpg'
+    image_file = './files/images/backgrounds/barrow.jpg'
 
     def get_mobs(self):
         self.mobs = map_engine.MobPack('skeleton', 'skeleton', complexity=self.complexity)

@@ -1,6 +1,5 @@
 from PIL import Image
 import io
-import file_manager
 import os
 
 
@@ -117,7 +116,7 @@ class DuelImage(ImageConstructor):
 
 
 def create_dungeon_image(background, image_tuples):
-    constructor = ImageConstructor(ImageBackground(Image.open(file_manager.my_path + background)), image_tuples)
+    constructor = ImageConstructor(ImageBackground(Image.open(background)), image_tuples)
     image = constructor.create_image()
     return io_from_PIL(image)
 
