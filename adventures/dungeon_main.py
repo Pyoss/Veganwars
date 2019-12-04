@@ -221,7 +221,7 @@ class Member:
         if len(self.dungeon.party.members) > 1:
             buttons.append(keyboards.DungeonButton('Обмен', self, 'menu', 'give', named=True))
         for button in self.dungeon.party.current_location.get_button_list()['idle']:
-            buttons.append(keyboards.DungeonButton(button[0], self, 'location', button[1], named=True))
+            buttons.append(keyboards.DungeonButton(button[0], self, 'location', str(button[1]), named=True))
         keyboard = form_keyboard(*buttons)
         return keyboard
 
