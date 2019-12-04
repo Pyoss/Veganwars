@@ -1,8 +1,9 @@
 from adventures import locations
+import file_manager
 
 
 class TutorialEntrance(locations.OpenLocation):
-    image = './files/images/backgrounds/tutorial_cage.jpg'
+    image = file_manager.my_path + 'files/images/backgrounds/tutorial_cage.jpg'
     name = 'tutorial_entrance'
 
     def __init__(self, x, y, dungeon, map_tuple):
