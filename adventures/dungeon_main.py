@@ -113,6 +113,7 @@ class Party:
             msg = '\n'.join([arg.translate(self.leader.lang) for arg in rgs])
             return msg
 
+        image = open(image, 'rb')
         self.leader.send_message(form_message(*args, sh_m_ui=short_member_ui, memb=self.leader),
                                  reply_markup=reply_markup_func(self.leader) if reply_markup_func is not None else None,
                                  image=image)
