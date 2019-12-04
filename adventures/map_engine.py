@@ -149,7 +149,6 @@ class DungeonMap:
     def start(self):
         self.greetings_message()
         location = self.dungeon.map.get_location(0, 0)
-        location.cleared = True
         self.dungeon.party.move(location, events=False, exhaust=False)
 
     # Возвращает локацию от координат матрицы
@@ -255,6 +254,10 @@ class Location:
     def get_lang_tuple(self, string):
         return LangTuple(self.table_row, string)
 
+    @staticmethod
+    def answer_callback_query(call, text, alert=True):
+        bot_methods.answer_callback_query(call, text, alert=alert)
+
     @classmethod
     def available_for_pool(cls, map_tuples):
         return True
@@ -267,14 +270,14 @@ class Location:
     def return_button(self):
         return Button(text=self.emoji(), callback_data='map_' + str(self.dungeon.chat_id) + '_move_' + '-'.join([str(item) for item in self.coordinates]))
 
-    def buttons(self, member):
+    def get_buttons(self, member):
         return list()
 
     def handler(self, call):
         bot_methods.err(call.data)
         data = call.data.split('_')
         action = data[3]
-        for tpl in self.get_button_list():
+        for tpl in self.get_action_dict():
             if str(tpl[0]) == action:
                 tpl[1](call)
 
@@ -298,27 +301,34 @@ class Location:
     def get_image(self):
         return self.image
 
-    # Перемещение группы
+    # Вход группы в локацию
     def enter_location(self, party, new_map=False):
-        if self.mobs:
-            self.mob_team = self.mobs.team_dict
+        # Формирование новой картинки (для заполнения картинки новыми объектами)
         self.image = self.get_image()
+
         self.current = True
         party.current_location = self
+
         if not self.cleared:
             self.dungeon.delete_map()
             for member in party.members:
                 member.message_id = None
                 member.occupied = True
             self.enter()
+            self.visited = True
         else:
+            # В случае повторного посещения пустой локации
+
             self.on_enter(new_map=new_map)
-        self.visited = True
+
+    def form_mobs_team(self):
+        self.mob_team = self.mobs.team_dict
 
     def available(self):
         return False
 
-    def create_button(self, name_or_lang_tuple, member, *args, named=False):
+    @staticmethod
+    def create_button(name_or_lang_tuple, member, *args, named=False):
         return DungeonButton(name_or_lang_tuple, member, *args, named=named)
 
     # Проверяет, можно ли производить перемещение с данной локации
@@ -332,12 +342,42 @@ class Location:
         self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True,
                                         short_member_ui=True, reply_markup_func=self.get_action_keyboard)
 
+    # -------- СОЗДАНИЕ КНОПОК ДЕЙСТВИЯ -------
+    # get_encounter_button = [(Название действия, доступного при входе: его функция)]
+    # get_idle_buttons: [(Название действия, доступного всегда: его функция)]
+    # ------------------------------------------------------------------------------------------------------------------
+
+    def get_button_list(self):
+        return {
+                'idle': [
+                    self.get_idle_buttons()
+                ],
+                'encounter': [
+                    self.get_encounter_button()
+                ]
+                }
+
+    def get_action_dict(self):
+        action_dict = {}
+        for value in self.get_button_list().values():
+            for tpl in value:
+                action_dict[tpl[0]] = tpl[1]
+        return action_dict
+
+    def get_idle_buttons(self):
+        return list()
+
+    def get_encounter_button(self):
+        return list()
+
     def get_action_keyboard(self, member):
-        buttons = self.get_button_list()
+        buttons = self.get_button_list()['encounter']
         buttons = [(self.get_button_tuples(member.lang)[str(button[0])], str(button[0])) for button in buttons]
         keyboard = form_keyboard(*[self.create_button(button[0], member, 'location', str(button[1]),
                                                       named=True) for button in buttons])
         return keyboard
+
+    # ------------------------------------------------------------------------------------------------------------------
 
     def reset_message(self, db_string, image=None, keyboard_func=True, short_member_ui=False):
         if not keyboard_func:
@@ -352,9 +392,6 @@ class Location:
     def victory(self):
         self.dungeon.party.send_message(LangTuple('dungeon', 'victory'), image=self.image,
                                         reply_markup_func=self.get_action_keyboard)
-
-    def get_button_list(self):
-        return [('Назад', self.to_map)]
 
     def on_enter(self, new_map=False):
         self.dungeon.update_map(new=new_map)

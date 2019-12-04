@@ -87,6 +87,7 @@ class TutorialMap(DungeonMap):
     name = 'tutorial'
 
     def __init__(self, dungeon, new=True, dungeon_dict=None):
+        from adventures.map_locations import tutorial_section_locations
         DungeonMap.__init__(self, length=10, dungeon=dungeon, branch_length=0, branch_number=0,  new=True, dungeon_dict=None)
         # self.balance_integer: маятник локаций для определения положительной или отрицательной локации. Его\
         # смещение редактируется параметром location.impact_integer
@@ -105,7 +106,7 @@ class TutorialMap(DungeonMap):
         self.wall_emote = emoji_utils.emote_dict['tree_em']
 
         self.enemy_list = (EnemyKey('goblin', 7, 238, 10),)
-        self.entrance_location = locations.Entrance
+        self.entrance_location = tutorial_section_locations.TutorialEntrance
 
     def generate_location_dict(self):
         base_list = [(locations.ForestNeutral, 1), (locations.ForestPos, 10), (locations.ForestBarrow, 10)]
