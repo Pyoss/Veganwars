@@ -222,7 +222,7 @@ class Member:
         if len(self.dungeon.party.members) > 1:
             buttons.append(keyboards.DungeonButton('Обмен', self, 'menu', 'give', named=True))
 
-        idle_buttons = self.dungeon.party.current_location.get_button_list()['encounter']
+        idle_buttons = self.dungeon.party.current_location.get_button_list()['idle']
         idle_buttons = [(self.dungeon.party.current_location.get_button_tuples(self.lang)[str(button[0])],
                          str(button[0])) for button in idle_buttons]
         for button in idle_buttons:
