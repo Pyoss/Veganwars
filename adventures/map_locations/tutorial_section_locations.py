@@ -27,8 +27,8 @@ class TutorialEntrance(locations.OpenLocation):
             buttons.append(('1', self.take_key))
         return buttons
 
-    def look_around(self):
+    def look_around(self, call):
         pass
 
-    def take_key(self):
+    def take_key(self, call):
         pass
