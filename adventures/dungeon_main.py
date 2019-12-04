@@ -238,7 +238,7 @@ class Member:
     def member_menu_start(self):
         self.menu = Menu(text=self.member_string(), keyboard=self.menu_keyboard(), member=self)
 
-    def add_item(self, item, call=None):
+    def add_item(self, item, call = None):
         return self.inventory.put(item)
 
     def remove_item(self, item_id):

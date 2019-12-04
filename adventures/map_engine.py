@@ -278,9 +278,7 @@ class Location:
         bot_methods.err(call.data)
         data = call.data.split('_')
         action = data[3]
-        for tpl in self.get_action_dict():
-            if str(tpl[0]) == action:
-                tpl[1](call)
+        self.get_action_dict()[action](call)
 
     def to_map(self, call):
         bot_methods.bot.edit_message_reply_markup(chat_id=call.from_user.id, message_id=call.message.message_id)
