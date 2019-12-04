@@ -14,7 +14,7 @@ class TutorialEntrance(locations.OpenLocation):
         self.key_taken = False
 
     def move_permission(self, movement, call):
-        if not self.open:
+        if not self.open and movement.end_location != self:
             self.answer_callback_query(call, 'Вы не можете двигаться дальше, пока не откроете клетку.', alert=True)
             return False
         return True
