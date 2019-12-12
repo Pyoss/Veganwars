@@ -231,6 +231,9 @@ class Location:
         button_tuples = json.loads(LangTuple(self.table_row, 'buttons').translate(lang))
         return button_tuples
 
+    def throwed(self, name):
+        pass
+
     def create_images(self):
         if self.mobs is not None:
             self.mob_image = image_generator.create_dungeon_image(self.image_file, self.mobs.get_image_tuples())

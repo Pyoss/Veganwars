@@ -188,8 +188,8 @@ class Member:
             self.message_id = bot_methods.send_image(image, self.chat_id, text, reply_markup=reply_markup).message_id
         return self.message_id
 
-    def alert(self, text, call):
-        bot_methods.answer_callback_query(call, text, alert=False)
+    def alert(self, text, call, alert = False):
+        bot_methods.answer_callback_query(call, text, alert=alert)
 
     def edit_message(self, text, reply_markup=None):
         return bot_methods.edit_message(self.chat_id, self.message_id,
@@ -371,6 +371,8 @@ class Inventory(engine.Container):
             self.update_menu()
         elif action == 'throw':
             item_id = call_data[4]
+            item = self[item_id]
+            self.member.dungeon.party.current_location.throwed(item[0]['name'])
             self.remove(item_id)
             self.update_menu()
         elif action == 'equip':
@@ -557,8 +559,10 @@ class Menu:
                                      reply_markup=keyboard)
             self.message_id = self.member.message_id
         else:
-            self.member.send_message(text,
+
+            self.message_id = self.member.send_message(text,
                                      reply_markup=keyboard)
+
         self.member.occupied = True
         self.timer_max = 60
         self.time_now = 0
