@@ -1,5 +1,6 @@
 from adventures import locations
 import file_manager
+from bot_utils import bot_methods
 
 
 class TutorialEntrance(locations.OpenLocation):
@@ -16,7 +17,7 @@ class TutorialEntrance(locations.OpenLocation):
     def move_permission(self, movement, call):
         if not movement.end_location.available():
             self.answer_callback_query(call, "Это символ стены: Пройти тут невозможно.")
-        if not self.open and movement.end_location != self:
+        elif not self.open and movement.end_location != self:
             self.answer_callback_query(call, 'Вы не можете двигаться дальше, пока не откроете клетку.', alert=True)
             return False
         return True
@@ -44,6 +45,11 @@ class TutorialEntrance(locations.OpenLocation):
             buttons.append(('1', self.take_key))
         return buttons
 
+    def throwed(self, name):
+        if name == 'tutorial_key':
+            self.looked = False
+            self.key_taken = False
+
     def look_around(self, call):
         self.reset_message('text_1')
         self.looked = True
@@ -57,5 +63,7 @@ class TutorialEntrance(locations.OpenLocation):
         for member in self.dungeon.party.members:
             member.message_id = None
             member.add_item('tutorial_key')
+            bot_methods.send_message(member.chat_id,
+                '<Вы подняли ключ. Поднятые предметы появляются у вас в инвентаре.>')
 
         self.dungeon.party.member_dict[call.from_user.id].member_menu_start()

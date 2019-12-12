@@ -21,12 +21,12 @@ call_handler = bot_handlers.CallbackHandler()
 game_dict = dynamic_dicts.lobby_list
 types = telebot.types
 
-#
-#x = '51.68.141.240:3128'
-#telebot.apihelper.proxy = {
-#'http': 'http://{}'.format(x),
-#'https': 'http://{}'.format(x)
-#}
+
+x = '5.189.144.84:3128'
+telebot.apihelper.proxy = {
+'http': 'http://{}'.format(x),
+'https': 'http://{}'.format(x)
+}
 
 bot.send_message(config.admin_id, 'Инициация бота...')
 bot.locked = False

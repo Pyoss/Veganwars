@@ -60,6 +60,14 @@ class TutorialKey(MapItem):
     db_string = 'questitems'
     name = 'tutorial_key'
 
+    def map_act(self, call, item_id):
+        member = self.unit
+        location = member.dungeon.party.current_location
+        if location.name == 'tutorial_entrance' and not location.open:
+            location.open = True
+            member.inventory.remove(item_id)
+            member.alert('Вы открыли клетку.', call, alert=True)
+
 
 # -------------------------   Ресурсы мобов   --------------------------
 

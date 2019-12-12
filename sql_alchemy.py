@@ -9,7 +9,7 @@ import threading
 from bot_utils import bot_methods
 
 # Создание объекта соединения с нашей базой данных
-engn = sqlalchemy.create_engine('sqlite:///chat_data.db', echo=False)
+engn = sqlalchemy.create_engine('sqlite:///C:/Users/zuza/PycharmProjects/Veganwars4/chat_data.db', echo=False)
 
 session_factory = sessionmaker(bind=engn)
 Session = scoped_session(session_factory)
