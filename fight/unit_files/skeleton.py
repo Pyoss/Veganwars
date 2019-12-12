@@ -5,6 +5,7 @@ from fight.standart_actions import *
 from bot_utils.keyboards import *
 from fight import weapons, statuses
 from locales.localization import LangTuple
+import file_manager
 from PIL import Image
 import random
 
@@ -53,7 +54,7 @@ class Skeleton(Unit):
     control_class = SkeletonAi
     emote = emote_dict['skeleton_em']
     types = ['undead']
-    image = './files/images/units/skeleton.png'
+    image = file_manager.my_path + '/files/images/units/skeleton.png'
     broken_dict = {'head': 'skill_1', 'legs': 'skill_3', 'arms': 'skill_2'}
     greet_msg = 'текст-скелетов'
     danger = 12
@@ -84,7 +85,7 @@ class Skeleton(Unit):
 
     def get_image(self):
         if self.weapon.name == 'bow':
-            image = './files/images/units/skeleton_archer.png'
+            image = file_manager.my_path + '/files/images/units/skeleton_archer.png'
         else:
             image = self.image
         return Image.open(image), 'standard', (0, 0)

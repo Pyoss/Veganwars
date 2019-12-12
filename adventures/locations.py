@@ -3,6 +3,7 @@ from locales import emoji_utils, localization
 from fight import fight_main, ai, items, units, armors, standart_actions
 from image_generator import create_dungeon_image
 from bot_utils import bot_methods, keyboards
+import file_manager
 import random
 import inspect
 import sys
@@ -105,14 +106,7 @@ class Entrance(OpenLocation):
             buttons.append(pick_up_key)
         return buttons
 
-    def handler(self, call):
-        member = self.dungeon.party.member_dict[call.from_user.id]
-        data = call.data.split('_')
-        action = data[3]
-        if action == 'look_around':
-            self.дщщл(member)
-        elif action == 'take_key':
-            self.improve(call, member, data[-1])
+
 
 
 class Smith(OpenLocation):
@@ -490,7 +484,7 @@ class ForestBarrow(OpenLocation):
     name = 'forest_barrow'
     impact = 'negative'
     impact_integer = 1
-    image_file = './files/images/backgrounds/default.jpg'
+    image_file = file_manager.my_path + '/files/images/backgrounds/default.jpg'
 
     def get_mobs(self):
         self.mobs = map_engine.MobPack('skeleton', 'skeleton', complexity=self.complexity)

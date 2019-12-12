@@ -56,8 +56,9 @@ class TargetItem(standart_actions.TargetObject):
 
 # -------------------------   Квестовые ресурсы   --------------------------
 
-class Key:
-    name = None
+class TutorialKey(MapItem):
+    db_string = 'questitems'
+    name = 'tutorial_key'
 
 
 # -------------------------   Ресурсы мобов   --------------------------

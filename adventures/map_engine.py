@@ -316,10 +316,10 @@ class Location:
             self.enter()
             self.visited = True
         else:
+
             # В случае повторного посещения пустой локации
 
             self.on_enter(new_map=new_map)
-
     def form_mobs_team(self):
         self.mob_team = self.mobs.team_dict
 
@@ -341,6 +341,8 @@ class Location:
         self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True,
                                         short_member_ui=True, reply_markup_func=self.get_action_keyboard)
         if not self.action_expected:
+            for member in self.dungeon.party.members:
+                member.occupied = False
             self.dungeon.update_map(new=True)
 
     # -------- СОЗДАНИЕ КНОПОК ДЕЙСТВИЯ -------

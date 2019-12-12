@@ -112,8 +112,8 @@ class Party:
                 rgs = [*rgs, LangTuple('dungeon_short-member', 'name', format_dict=units.units_dict[memb['unit_name']].get_dungeon_format_dict(memb))]
             msg = '\n'.join([arg.translate(self.leader.lang) for arg in rgs])
             return msg
-
-        image = open(image, 'rb')
+        if image is not None:
+            image = open(image, 'rb')
         self.leader.send_message(form_message(*args, sh_m_ui=short_member_ui, memb=self.leader),
                                  reply_markup=reply_markup_func(self.leader) if reply_markup_func is not None else None,
                                  image=image)
@@ -238,7 +238,7 @@ class Member:
     def member_menu_start(self):
         self.menu = Menu(text=self.member_string(), keyboard=self.menu_keyboard(), member=self)
 
-    def add_item(self, item, call = None):
+    def add_item(self, item, call=None):
         return self.inventory.put(item)
 
     def remove_item(self, item_id):
@@ -552,10 +552,13 @@ class Menu:
     def __init__(self, member, text, keyboard, new=False):
         self.member = member
         self.new = new
-        if not new:
+        if not new and self.member.message_id is not None:
             self.member.edit_message(text,
                                      reply_markup=keyboard)
             self.message_id = self.member.message_id
+        else:
+            self.member.send_message(text,
+                                     reply_markup=keyboard)
         self.member.occupied = True
         self.timer_max = 60
         self.time_now = 0

@@ -14,10 +14,27 @@ class TutorialEntrance(locations.OpenLocation):
         self.key_taken = False
 
     def move_permission(self, movement, call):
+        if not movement.end_location.available():
+            self.answer_callback_query(call, "Это символ стены: Пройти тут невозможно.")
         if not self.open and movement.end_location != self:
             self.answer_callback_query(call, 'Вы не можете двигаться дальше, пока не откроете клетку.', alert=True)
             return False
         return True
+
+    # Функция, запускающаяся при входе в комнату. Именно сюда планируется пихать события.
+    def enter(self):
+        lang_tuple = self.get_greet_tuple()
+        self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True,
+                                        short_member_ui=True, reply_markup_func=self.get_action_keyboard)
+
+        self.dungeon.party.send_message('<ℹ️Снизу Вы видите меню карты с комнатами. 👥 обозначает локацию, где находится '
+                                        'Ваша группа. Нажмите на иконку 👥 для просмотра действий, доступных в данной '
+                                        'локации. Для перемещения группы нажмите на одну из соседних локаций.>')
+
+        if not self.action_expected:
+            for member in self.dungeon.party.members:
+                member.occupied = False
+            self.dungeon.update_map(new=True)
 
     def get_idle_buttons(self):
         buttons = []
@@ -28,7 +45,17 @@ class TutorialEntrance(locations.OpenLocation):
         return buttons
 
     def look_around(self, call):
-        pass
+        self.reset_message('text_1')
+        self.looked = True
+        for member in self.dungeon.party.members:
+            member.message_id = None
+        self.dungeon.party.member_dict[call.from_user.id].member_menu_start()
 
     def take_key(self, call):
-        pass
+        self.reset_message('text_2')
+        self.key_taken = True
+        for member in self.dungeon.party.members:
+            member.message_id = None
+            member.add_item('tutorial_key')
+
+        self.dungeon.party.member_dict[call.from_user.id].member_menu_start()
