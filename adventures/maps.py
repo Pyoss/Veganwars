@@ -103,10 +103,23 @@ class TutorialMap(DungeonMap):
         self.neutral_probability = 20
         self.neutral_scarceness = 100
         self.impact_integer_range = (-5, 5)
-        self.wall_emote = emoji_utils.emote_dict['tree_em']
+        self.wall_emote = emoji_utils.emote_dict['wall_em']
 
         self.enemy_list = (EnemyKey('goblin', 7, 238, 10),)
         self.entrance_location = tutorial_section_locations.TutorialEntrance
+
+    def fill_locations(self):
+        from adventures.map_locations import tutorial_section_locations
+        self.width = 3
+        self.height = 3
+        for x in range(self.width):
+            for y in range(self.height):
+                if x == 0 and y == 0:
+                    self.location_matrix[(x, y)] = tutorial_section_locations.TutorialEnemyLoc(x, y, self.dungeon, self.map_tuples[(0, 0)])
+                elif x == 1 and y == 0:
+                    self.location_matrix[(x, y)] = tutorial_section_locations.TutorialSecondLoc(x, y, self.dungeon, self.map_tuples[(0, 0)])
+                else:
+                    self.location_matrix[(x, y)] = self.generate_wall(x, y)
 
     def generate_location_dict(self):
         base_list = [(locations.ForestNeutral, 1), (locations.ForestPos, 10), (locations.ForestBarrow, 10)]

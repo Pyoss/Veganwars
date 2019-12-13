@@ -14,6 +14,10 @@ class TutorialEntrance(locations.OpenLocation):
         self.looked = False
         self.key_taken = False
 
+    def get_emote(self):
+        # return '-' + str(self.complexity)
+        return ' '
+
     def move_permission(self, movement, call):
         if not movement.end_location.available():
             self.answer_callback_query(call, "Это символ стены: Пройти тут невозможно.")
@@ -67,3 +71,74 @@ class TutorialEntrance(locations.OpenLocation):
                 '<Вы подняли ключ. Поднятые предметы появляются у вас в инвентаре.>')
 
         self.dungeon.party.member_dict[call.from_user.id].member_menu_start()
+
+
+class TutorialSecondLoc(locations.OpenLocation):
+    image = file_manager.my_path + '/files/images/backgrounds/tutorial_cage.jpg'
+    name = 'tutorial_secondloc'
+
+    def __init__(self, x, y, dungeon, map_tuple):
+        locations.OpenLocation.__init__(self, x, y, dungeon, map_tuple)
+        self.emote = '-'
+
+    def enter(self):
+        lang_tuple = self.get_greet_tuple()
+        self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True,
+                                        short_member_ui=True, reply_markup_func=self.get_action_keyboard)
+
+        self.dungeon.party.send_message('<У вашего персонажа есть жизни, энергия и скрытые параметры, зависящие от экипировки и уровня.>')
+
+        if not self.action_expected:
+            for member in self.dungeon.party.members:
+                member.occupied = False
+            self.dungeon.update_map(new=True)
+
+    def get_emote(self):
+        # return '-' + str(self.complexity)
+        if not self.visited:
+            return '❓'
+        else:
+            return ' '
+
+
+class TutorialEnemyLoc(locations.OpenLocation):
+    name = 'tutorial_enemy'
+    impact = 'negative'
+    impact_integer = 1
+    image = 'AgADAgADSaoxGxm_CUioZK0h2y0xQzlpXw8ABNGUQWMolIOL0_MFAAEC'
+    image_file = file_manager.my_path + '/files/images/backgrounds/tutorial_cage.jpg'
+    standard_mobs = True
+
+    def get_emote(self):
+        # return '-' + str(self.complexity)
+        if not self.visited:
+            return '❓'
+        elif not self.cleared:
+            return '👹'
+        else:
+            return ''
+
+    def get_encounter_button(self):
+        self.form_mobs_team()
+        buttons = []
+        #if not self.visited:
+        buttons.append(('0', self.go_away))
+        buttons.append(('1', self.fight))
+        return buttons
+
+    def go_away(self, call):
+        self.reset_message('text_6', image=self.mob_image, keyboard_func=False)
+        for member in self.dungeon.party.members:
+            member.occupied = False
+        self.dungeon.party.move(self.entrance_location, new_map=True, exhaust=False, events=False)
+
+    def enter(self):
+        lang_tuple = self.get_greet_tuple()
+        actions_keyboard = self.get_action_keyboard
+        image = self.mob_image
+        self.dungeon.party.send_message(lang_tuple, image=image,
+                                        reply_markup_func=actions_keyboard, leader_reply=True, short_member_ui=True)
+
+    def victory(self):
+        self.cleared = True
+        self.reset_message('text_3', image=self.image)

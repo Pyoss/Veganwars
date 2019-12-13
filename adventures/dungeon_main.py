@@ -112,8 +112,8 @@ class Party:
                 rgs = [*rgs, LangTuple('dungeon_short-member', 'name', format_dict=units.units_dict[memb['unit_name']].get_dungeon_format_dict(memb))]
             msg = '\n'.join([arg.translate(self.leader.lang) for arg in rgs])
             return msg
-        if image is not None:
-            image = open(image, 'rb')
+        #if image is not None:
+        #    image = open(image, 'rb')
         self.leader.send_message(form_message(*args, sh_m_ui=short_member_ui, memb=self.leader),
                                  reply_markup=reply_markup_func(self.leader) if reply_markup_func is not None else None,
                                  image=image)

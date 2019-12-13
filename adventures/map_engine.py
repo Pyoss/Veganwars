@@ -489,6 +489,8 @@ class Location:
         return self.name + '_' + self.special + '_' + visited
 
     def location_fight(self, first_turn=None):
+            print(self.mob_team)
+            print(self.dungeon.party.join_fight())
             results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mob_team, first_turn=first_turn)
             self.process_fight_results(results)
 
