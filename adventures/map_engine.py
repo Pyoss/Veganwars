@@ -5,6 +5,7 @@ from adventures import map_generator
 from bot_utils import bot_methods
 from bot_utils.keyboards import Button, DungeonButton, form_keyboard
 from fight import units
+from fight.fight_main import Team, Fight
 from locales.emoji_utils import emote_dict
 from locales.localization import LangTuple
 import threading, json
@@ -214,13 +215,14 @@ class Location:
         self.dungeon = dungeon
         self.special = '0'
         self.mobs = None
-        self.mob_team = None
         self.mob_image = None
         self.receipts = engine.ChatContainer()
         if map_tuple is not None:
             self.complexity = map_tuple.complexity
         self.emote = self.get_emote()
         self.get_mobs()
+        if self.mobs is not None:
+            self.mob_team = self.mobs.team
         self.loot = engine.ChatContainer()
         self.cleared_emote = ' '
         self.entrance_location = None
@@ -236,14 +238,15 @@ class Location:
 
     def create_images(self):
         if self.mobs is not None:
-            self.mob_image = image_generator.create_dungeon_image(self.image_file, self.mobs.get_image_tuples())
+            self.mob_image = image_generator.create_dungeon_image(self.image_file, list(self.mobs.get_image_tuples()))
 
     def get_mobs(self):
         if self.standard_mobs:
             mobs = get_enemy(self.complexity, self.dungeon.map.enemy_list)
             self.mobs = MobPack(*mobs, complexity=self.complexity)
 
-    def fight(self, first_turn=None):
+    def fight(self, call, first_turn=None):
+        self.erase_keyboard(call)
         for member in self.dungeon.party.members:
             member.occupied = True
         thread = threading.Thread(target=self.location_fight, kwargs={'first_turn': first_turn})
@@ -323,8 +326,6 @@ class Location:
             # В случае повторного посещения пустой локации
 
             self.on_enter(new_map=new_map)
-    def form_mobs_team(self):
-        self.mob_team = self.mobs.team_dict
 
     def available(self):
         return False
@@ -374,7 +375,6 @@ class Location:
 
     def get_action_keyboard(self, member):
         buttons = self.get_button_list()['encounter']
-        print(buttons)
         if buttons:
             buttons = [(self.get_button_tuples(member.lang)[str(button[0])], str(button[0])) for button in buttons]
             keyboard = form_keyboard(*[self.create_button(button[0], member, 'location', str(button[1]),
@@ -396,6 +396,9 @@ class Location:
             member.delete_message()
         self.dungeon.party.send_message(self.get_lang_tuple(db_string), image=image, reply_markup_func=keyboard_func,
                                         short_member_ui=short_member_ui)
+
+    def erase_keyboard(self, call):
+        bot_methods.delete_keyboard(call)
 
     def victory(self):
         self.dungeon.party.send_message(LangTuple('dungeon', 'victory'), image=self.image,
@@ -489,9 +492,7 @@ class Location:
         return self.name + '_' + self.special + '_' + visited
 
     def location_fight(self, first_turn=None):
-            print(self.mob_team)
-            print(self.dungeon.party.join_fight())
-            results = self.dungeon.run_fight(self.dungeon.party.join_fight(), self.mob_team, first_turn=first_turn)
+            results = self.dungeon.run_fight(self.dungeon.party.generate_team(), self.mob_team, first_turn=first_turn)
             self.process_fight_results(results)
 
     def process_fight_results(self, results):
@@ -520,20 +521,20 @@ class MobPack:
     def __init__(self, *args, complexity=None):
         self.mob_units = args
         self.complexity = complexity
-        self.team_dict = self.generate_team()
+        self.team = self.generate_team()
 
     def generate_team(self):
-        team_dict = {'marker': 'mobs'}
-        i = 0
+        mobs_team = Team(team_marker='mobs')
         for unit in self.mob_units:
-            team_dict[(units.units_dict[unit], i)] = units.units_dict[unit](complexity=self.complexity).to_dict()
-            i += 1
-        return team_dict
+            unit_name = unit
+            name = None
+            unit_dict = units.units_dict[unit](complexity=self.complexity).to_dict()
+            mobs_team.add_unit(main_arg=unit_name, name=name, unit_dict=unit_dict)
+        return mobs_team
 
     def get_image_tuples(self):
-        for k, v in self.team_dict.items():
-            if k != 'marker':
-                yield units.units_dict[v['unit_name']](unit_dict=v).get_image()
+        for unit in self.team.units:
+            yield unit.get_image()
 
 
 class EnemyKey:

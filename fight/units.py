@@ -28,7 +28,7 @@ class Unit:
     # Вероятности, с которыми Вы можете получить оружие, броню или предметы цели при её смерти
     default_loot_chances = {'armor': 0, 'weapon': 0, 'items': 0}
 
-    def __init__(self, name, controller=None, unit_dict=None, fight=None, complexity=None):
+    def __init__(self, name, controller=None):
 
         # То, как осуществляется управление юнитом
         self.controller = controller
@@ -44,7 +44,7 @@ class Unit:
         # Параметры игрока
         self.name = name
         self.id = engine.rand_id()
-        self.fight = fight
+        self.fight = None
         self.team = None
         self.lang = None
         self.melee_accuracy = 0
@@ -494,7 +494,7 @@ class Unit:
             self.boosted_attributes[key] = value
 
     def form_ai_name(self):
-        same_class_units = [unit for unit in self.fight.units if unit.unit_name_marker == self.unit_name_marker and not unit.named]
+        same_class_units = [unit for unit in self.team.units if unit.unit_name_marker == self.unit_name_marker and not unit.named]
         if self.number == any(unit.number for unit in same_class_units):
             self.number = len(same_class_units) + 1
         if self.number == 1:
@@ -548,8 +548,8 @@ class StandardCreature(Unit):
 
     danger = 7
 
-    def __init__(self, name, controller=None, fight=None, unit_dict=None, complexity=None):
-        Unit.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
+    def __init__(self, name, controller=None, unit_dict=None, complexity=None):
+        Unit.__init__(self, name, controller=controller)
         # Максимальные параметры
         self.max_hp = 3
         self.hp = self.max_hp

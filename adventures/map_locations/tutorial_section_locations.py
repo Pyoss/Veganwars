@@ -119,7 +119,6 @@ class TutorialEnemyLoc(locations.OpenLocation):
             return ''
 
     def get_encounter_button(self):
-        self.form_mobs_team()
         buttons = []
         #if not self.visited:
         buttons.append(('0', self.go_away))

@@ -42,6 +42,10 @@ def delete_message(chat_id=None, message_id=None, call=None):
     return bot.delete_message(chat_id, message_id)
 
 
+def delete_keyboard(call):
+    bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
+
+
 def err(text):
     #print(str(text))
     admin_bot.send_message(config.admin_id, str(text), parse_mode=None)

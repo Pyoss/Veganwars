@@ -8,12 +8,13 @@ from fight import abilities, weapons
 import random
 import file_manager
 
+
 class GoblinAi(StandardMeleeAi):
     ai_name = 'goblin'
     snatch_targets = []
 
-    def __init__(self, fight):
-        Ai.__init__(self, fight)
+    def __init__(self):
+        Ai.__init__(self)
         self.action_pattern_dict = {'default': self.default_weapon_actions,
                                     'fist': self.snatch_weapon_action,
                                     'bow': self.bow_weapon_actions,
@@ -92,8 +93,8 @@ class Goblin(StandardCreature):
 
     danger = 7
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
-        StandardCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
+    def __init__(self, name=None, controller=None, unit_dict=None, complexity=None):
+        StandardCreature.__init__(self, name, controller=controller, unit_dict=unit_dict)
         # Максимальные параметры
         self.max_hp = 4
         self.toughness = 5

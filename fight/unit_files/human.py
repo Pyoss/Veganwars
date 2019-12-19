@@ -7,8 +7,8 @@ from bot_utils import config
 class Human(StandardCreature):
     unit_name = 'human'
 
-    def __init__(self, name=None, controller=None, fight=None, unit_dict=None, complexity=None):
-        StandardCreature.__init__(self, name, controller=controller, fight=fight, unit_dict=unit_dict)
+    def __init__(self, name=None, controller=None, unit_dict=None, complexity=None):
+        StandardCreature.__init__(self, name, controller=controller, unit_dict=unit_dict)
         # Максимальные параметры
         if unit_dict is None:
             self.abilities = [abilities.Dodge(self), abilities.SpellCaster(self)]

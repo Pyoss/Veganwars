@@ -2,6 +2,7 @@
 from adventures import locations, map_engine
 from bot_utils import bot_methods, keyboards
 from fight import abilities, standart_actions, units
+from fight.fight_main import Team, Fight
 from locales.localization import LangTuple
 from locales.emoji_utils import emote_dict
 from bot_utils.keyboards import form_keyboard
@@ -129,10 +130,14 @@ class Party:
 
     # Нахождение локаций, которые находятся в поле зрения.
 
-    def join_fight(self):
-        team_dict = {member.team_dict_item()[0]: member.team_dict_item()[1] for member in self.members}
-        team_dict['marker'] = 'party'
-        return team_dict
+    def generate_team(self):
+        players_team = Team(team_marker='party')
+        for member in self.members:
+            player_id = member.chat_id
+            player_name = member.name
+            player_unit_dict = member.unit_dict
+            players_team.add_unit(main_arg=player_id, name=player_name, unit_dict=player_unit_dict)
+        return players_team
 
     def occupied(self):
         if any([member.occupied for member in self.members]):
@@ -297,9 +302,6 @@ class Member:
         elif action == 'defeat':
             if self.chat_id == self.dungeon.party.leader.chat_id:
                 self.dungeon.end_dungeon(defeat=True)
-
-    def team_dict_item(self):
-        return self.chat_id, self.unit_dict
 
     def get_party_members_to_give(self, item_id, item_name):
         item_name = self.inventory.get_string(item_id, self.lang)

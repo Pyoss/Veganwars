@@ -32,9 +32,9 @@ def thread_fight(*args, chat_id=None):
 
 
 class Team:
-    def __init__(self, *args, team_marker=None):
-        self.units = list(args)
-        self.captain = self.units[0]
+    def __init__(self, team_marker=None):
+        self.units = list()
+        self.captain = None
         self.team_marker = team_marker
 
     def name(self):
@@ -49,16 +49,52 @@ class Team:
     def get_dmg(self):
         return sum(unit.dmg_received for unit in self.units if unit.alive())
 
+    def add_player(self, chat_id, name, unit_dict=None):
+        # Добавление бота в словарь игроков и список игроков конкретного боя
+        controller = Player(chat_id, 'rus')
+        unit_class = units.units_dict[unit_dict['unit_name']]
+        unit = unit_class(name, controller=controller, unit_dict=unit_dict)
+        unit.team = self
+        return unit
+
+    def add_ai(self, unit_name, name, unit_dict=None, controller=None, **kwargs):
+        unit_class = units.units_dict[unit_name]
+        if controller is None:
+            controller = unit_class.control_class()
+        else:
+            controller = controller()
+        unit = unit_class(name, controller=controller, unit_dict=unit_dict, **kwargs)
+        unit.team = self
+        if unit.name is None:
+            if unit.controller.name is None:
+                unit.form_ai_name()
+                unit.named = False
+            else:
+                unit.name = unit.controller.name
+        if unit.weapon is None:
+            unit.weapon = weapons.weapon_dict[unit.default_weapon](unit)
+        return unit
+
+    def add_unit(self, main_arg, name, unit_dict=None, controller=None):
+        if isinstance(main_arg, int):
+            unit = self.add_player(main_arg, name, unit_dict=unit_dict)
+        else:
+            unit = self.add_ai(main_arg, name, unit_dict=unit_dict, controller=controller)
+        self.units.append(unit)
+        if self.captain is None:
+            self.captain = unit
+
+
 
 class Player:
     ai = False
 
-    def __init__(self, chat_id, lang, fight):
+    def __init__(self, chat_id, lang):
         self.lang = lang
         self.chat_id = chat_id
         self.message_id = None
         self.player_string = PlayerString(self)
-        self.fight = fight
+        self.fight = None
         self.unit = None
         self.talked = False
 
@@ -165,6 +201,7 @@ class Fight:
             func(results)
 
     def fight_loop(self):
+        print('started')
         while self.in_progress():
             self.fill_active_actors()
             self.activate_statuses_and_passives()
@@ -180,6 +217,7 @@ class Fight:
         return self.ending()
 
     def in_progress(self):
+        print(len([team for team in self.teams if any(unit.alive() for unit in team.units)]))
         if len([team for team in self.teams if any(unit.alive() for unit in team.units)]) > 1:
             return True
         return False
@@ -218,62 +256,20 @@ class Fight:
                 if not fighter.controller.ai and unit != fighter:
                     bot_methods.send_message(fighter.controller.chat_id, '{}: {}'.format(unit.name, message))
 
-    def add_player(self, chat_id, name, unit_dict=None):
-        # Добавление бота в словарь игроков и список игроков конкретного боя
-        controller = Player(chat_id, 'rus', self)
-        unit_class = units.units_dict[unit_dict['unit_name']]
-        unit = unit_class(name, controller=controller, fight=self, unit_dict=unit_dict)
-        self.units_dict[unit.id] = unit
-        dynamic_dicts.unit_talk[unit.controller.chat_id] = (unit.id, self)
-        self.units.append(unit)
-        if not any(controller.chat_id == listener.chat_id for listener in self.listeners):
-            self.listeners.append(controller)
-        return unit
-
-    def add_ai(self, unit, name, unit_dict=None, controller=None, **kwargs):
-        if isinstance(unit, tuple):
-            unit = unit[0]
-        if controller is None:
-            controller = unit.control_class(self)
-        else:
-            controller = controller(self)
-        unit = unit(name, controller=controller, fight=self, unit_dict=unit_dict, **kwargs)
-        if unit.name is None:
-            if unit.controller.name is None:
-                unit.form_ai_name()
-                unit.named = False
-            else:
-                unit.name = unit.controller.name
-        if unit.weapon is None:
-            unit.weapon = weapons.weapon_dict[unit.default_weapon](unit)
-        self.units_dict[unit.id] = unit
-        self.units.append(unit)
-        return unit
-
-    def add_unit(self, delta, name, unit_dict=None, controller=None):
-        if isinstance(delta, int):
-            return self.add_player(delta, name, unit_dict=unit_dict)
-        else:
-            return self.add_ai(delta, name, unit_dict=unit_dict, controller=controller)
-
-    def form_teams(self, team_dicts):
+    def form_teams(self, *args):
         # [team={chat_id:(name, unit_dict)} or team={(ai_class.name, id):(name/None, unit_dict)}]
         self.teams = []
-        for team in team_dicts:
-            self.teams.append(Team(*[self.add_unit(key, value['name'],
-                                               unit_dict=value, controller=value['controller']) for key, value in team.items()
-                                 if key if key != 'marker'], team_marker=team['marker'] if 'marker' in team else None))
-        for team in self.teams:
-            for actor in team.units:
-                actor.team = team
-
-    def add_team(self, team):
-        self.teams.append(team)
-        for unit in team.units:
-            unit.fight = self
-            self.units.append(unit)
-            self.units_dict[unit.chat_id] = unit
-            unit.team = team
+        for team in args:
+            self.teams.append(team)
+            for unit in team.units:
+                self.units_dict[unit.id] = unit
+                self.units.append(unit)
+                unit.fight = self
+                unit.controller.fight = self
+                if not unit.controller.ai:
+                    dynamic_dicts.unit_talk[unit.controller.chat_id] = (unit.id, self)
+                    if not any(unit.controller.chat_id == listener.chat_id for listener in self.listeners):
+                        self.listeners.append(unit.controller)
 
     def active_actors(self):
         active_actors = [unit for unit in self.units if unit.alive() and not unit.disabled]

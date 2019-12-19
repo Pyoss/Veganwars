@@ -93,7 +93,7 @@ class Lobby:
         # [team={chat_id: unit_dict} or team={(ai_class, n):unit_dict}].
         try:
             fight = fight_main.Fight(chat_id=self.chat_id)
-            fight.form_teams(args)
+            fight.form_teams(*args)
             results = fight.run(first_turn=first_turn)
             return results
         except Exception as e:

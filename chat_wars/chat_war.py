@@ -130,7 +130,7 @@ class AttackAction:
             self.process_results({'won_team': 'attacker'})
         else:
             fight = fight_main.Fight((self.attacker_lobby.chat_id, self.defender_lobby.chat_id))
-            fight.form_teams(args)
+            fight.form_teams(*args)
             thread = Thread(target=fight.run, kwargs={'func': self.process_results})
             thread.daemon = True
             thread.start()

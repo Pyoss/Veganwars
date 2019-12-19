@@ -37,9 +37,9 @@ class Ai:
     ai = True
     name = None
 
-    def __init__(self, fight):
+    def __init__(self):
         self.number = 0
-        self.fight = fight
+        self.fight = None
         self.chat_id = id(self)
         self.action_dict = {}
         self.done = True
