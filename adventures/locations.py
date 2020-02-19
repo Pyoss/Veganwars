@@ -9,7 +9,7 @@ import inspect
 import sys
 import engine
 
-victory_image = 'D:\YandexDisk\Veganwars\Veganwars\\files\images\\backgrounds\\victory.jpg'
+victory_image = 'D:\\YandexDisk\\Veganwars\\Veganwars\\files\\images\\backgrounds\\victory.jpg'
 
 
 class OpenLocation(map_engine.Location):
@@ -54,7 +54,7 @@ class End(OpenLocation):
     emote = '⚔'
     image = 'AgADAgADvKoxG2wBsUvh5y6JbSyZmUNqXw8ABHPt9rOstNKjRZ8FAAEC'
 
-    def __init__(self, x, y, dungeon, map_tuple, special='0'):
+    def __init__(self, x, y, dungeon, map_tuple):
         map_engine.Location.__init__(self, x, y, dungeon, map_tuple)
 
 
@@ -88,7 +88,8 @@ class Entrance(OpenLocation):
 
     def move_permission(self, movement, call):
         if not self.open:
-            bot_methods.answer_callback_query(call, 'Вы не можете двигаться дальше, пока не откроете клетку.', alert=True)
+            bot_methods.answer_callback_query(call, 'Вы не можете двигаться дальше, пока не откроете клетку.',
+                                              alert=True)
             return False
         return True
 
@@ -105,8 +106,6 @@ class Entrance(OpenLocation):
         elif not self.key_taken:
             buttons.append(pick_up_key)
         return buttons
-
-
 
 
 class Smith(OpenLocation):
@@ -301,7 +300,7 @@ class ForestGob(OpenLocation):
             self.reset_message('text_6', image=self.mob_image, keyboard_func=False)
             for member in self.dungeon.party.members:
                 member.occupied = False
-            self.dungeon.party.move(self.entrance_location, new_map=True, exhaust=False, events=False)
+            self.dungeon.party.move(self.entrance_location, new_message=True, exhaust=False, events=False)
 
     def get_greet_tuple(self):
         if self.state == 'scouted':

@@ -696,7 +696,7 @@ units_dict = {}
 
 def fill_unit_dict():
     from fight.unit_files import skeleton, goblin, human, lich, rat,\
-        bloodbug, snail, worm, zombie, goblin_bomber, red_oak, ogre, goblin_shaman, dragon
+        bloodbug, snail, worm, zombie, goblin_bomber, red_oak, ogre, goblin_shaman, dragon, tutorial_goblin
 
 
 

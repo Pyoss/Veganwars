@@ -57,6 +57,7 @@ class DungeonMap:
         self.impact_integer_range = (-5, 5)
         self.negative_modifier = 1
         self.entrance_location = None
+        self.exit_opened = False
 
         self.statistics = {'positive': 0,
                            'negative': 0,
@@ -221,19 +222,17 @@ class Location:
             self.complexity = map_tuple.complexity
         self.emote = self.get_emote()
         self.get_mobs()
-        if self.mobs is not None:
-            self.mob_team = self.mobs.team
         self.loot = engine.ChatContainer()
         self.cleared_emote = ' '
         self.entrance_location = None
         self.cleared = False
-        self.create_images()
+        self.containers_dict = {}
 
     def get_button_tuples(self, lang):
         button_tuples = json.loads(LangTuple(self.table_row, 'buttons').translate(lang))
         return button_tuples
 
-    def throwed(self, name):
+    def thrown(self, name):
         pass
 
     def create_images(self):
@@ -245,11 +244,10 @@ class Location:
             mobs = get_enemy(self.complexity, self.dungeon.map.enemy_list)
             self.mobs = MobPack(*mobs, complexity=self.complexity)
 
-    def fight(self, call, first_turn=None):
-        self.erase_keyboard(call)
+    def fight(self, **kwargs):
         for member in self.dungeon.party.members:
             member.occupied = True
-        thread = threading.Thread(target=self.location_fight, kwargs={'first_turn': first_turn})
+        thread = threading.Thread(target=self.location_fight, kwargs={**kwargs})
         thread.start()
 
     def get_emote(self):
@@ -284,7 +282,10 @@ class Location:
         bot_methods.err(call.data)
         data = call.data.split('_')
         action = data[3]
-        self.get_action_dict()[action](call)
+        if action == 'container':
+            self.container_handler(call)
+        else:
+            self.get_action_dict()[action](call)
 
     def to_map(self, call):
         bot_methods.bot.edit_message_reply_markup(chat_id=call.from_user.id, message_id=call.message.message_id)
@@ -307,15 +308,20 @@ class Location:
         return self.image
 
     # Вход группы в локацию
-    def enter_location(self, party, new_map=False):
+    def enter_location(self, party, new_message=False):
         # Формирование новой картинки (для заполнения картинки новыми объектами)
+        self.create_images()
         self.image = self.get_image()
 
+        # Запись в переменную "current" для локации.
         self.current = True
         party.current_location = self
 
         if not self.cleared:
-            self.dungeon.delete_map()
+
+            # Если не надо стирать предыдущее сообщение (обычно это карта, которую стоит стереть)
+            if not new_message:
+                self.dungeon.delete_map()
             for member in party.members:
                 member.message_id = None
                 member.occupied = True
@@ -325,7 +331,7 @@ class Location:
 
             # В случае повторного посещения пустой локации
 
-            self.on_enter(new_map=new_map)
+            self.on_enter(new_map=new_message)
 
     def available(self):
         return False
@@ -404,13 +410,81 @@ class Location:
         self.dungeon.party.send_message(LangTuple('dungeon', 'victory'), image=self.image,
                                         reply_markup_func=self.get_action_keyboard)
 
+    def defeat(self):
+        def get_exit_keyboard(mmbr):
+            keyboard = form_keyboard(DungeonButton('Покинуть карту', mmbr, 'menu', 'defeat', named=True))
+            return keyboard
+
+        self.dungeon.party.send_message('Вы проиграли!', reply_markup_func=get_exit_keyboard)
+
     def on_enter(self, new_map=False):
         self.dungeon.update_map(new=new_map)
 
     def collect_receipts(self):
         if self.receipts:
             self.dungeon.party.send_message('Вы находите следующие рецепты: {}'.format(self.receipts.to_string('rus')))
-            self.dungeon.party.collected_receipts += self.receipts
+
+    def open_container(self, container_key, member, edit_last_message=True):
+        container = self.containers_dict[container_key]
+        buttons = []
+        for item_id in container.base_dict:
+            buttons.append(DungeonButton(container.get_string(item_id, 'rus'), member, 'location', 'container',
+                                         container_key, 'take', str(item_id), str(edit_last_message), named=True))
+
+        buttons.append(DungeonButton('Положить', member, 'location', 'container', container_key, 'put-menu', named=True))
+        buttons.append(DungeonButton('Закрыть', member, 'menu', 'main', named=True))
+        text = container.name_lang_tuple.translate('rus')
+        if edit_last_message:
+            member.edit_message(text, reply_markup=form_keyboard(*buttons))
+        else:
+            member.send_message(text, reply_markup=form_keyboard(*buttons))
+
+    def open_inventory_for_container(self, container_key, member, edit_last_message=True):
+        container = self.containers_dict[container_key]
+        buttons = []
+        for item_id in member.inventory.base_dict:
+            buttons.append(DungeonButton(member.inventory.get_string(item_id, 'rus'), member, 'location', 'container',
+                                         container_key, 'put', str(item_id), named=True))
+        buttons.append(DungeonButton('Взять', member, 'location', 'container', container_key, 'take-menu', named=True))
+        buttons.append(DungeonButton('Закрыть', member, 'menu', 'main', named=True))
+        text = member.inventory.name_lang_tuple.translate('rus')
+        if edit_last_message:
+            member.edit_message(text, reply_markup=form_keyboard(*buttons))
+        else:
+            member.send_message(text, reply_markup=form_keyboard(*buttons))
+
+    def container_handler(self, call):
+        bot_methods.err(call.data)
+        data = call.data.split('_')
+        container_key = data[4]
+        action = data[5]
+        member = self.dungeon.party.member_dict[call.from_user.id]
+        if action == 'take':
+            item_id = data[6]
+            self.take_item(member, container_key, item_id)
+        elif action == 'put':
+            item_id = data[6]
+            self.put_item(member, container_key, item_id)
+        elif action == 'put-menu':
+            self.open_inventory_for_container(container_key, member)
+        elif action == 'take-menu':
+            self.open_container(container_key, member)
+
+    def take_item(self, member, container_key, item_id):
+        item_id = int(item_id)
+        container = self.containers_dict[container_key]
+        item = container.base_dict[item_id][0]
+        container.remove(item_id)
+        member.inventory.put(item)
+        self.open_container(container_key, member)
+
+    def put_item(self, member, container_key, item_id):
+        item_id = int(item_id)
+        container = self.containers_dict[container_key]
+        item = member.inventory.base_dict[item_id][0]
+        member.inventory.remove(item_id)
+        container.put(item)
+        self.open_inventory_for_container(container_key, member)
 
     def leave_location(self):
         self.current = False
@@ -491,26 +565,24 @@ class Location:
         visited = 'visited' if self.visited else 'closed'
         return self.name + '_' + self.special + '_' + visited
 
-    def location_fight(self, first_turn=None):
-            results = self.dungeon.run_fight(self.dungeon.party.generate_team(), self.mob_team, first_turn=first_turn)
+    def location_fight(self, first_turn=None, **kwargs):
+            results = self.dungeon.run_fight(self.dungeon.party.generate_team(**kwargs),
+                                             self.mobs.generate_team(**kwargs),
+                                             first_turn=first_turn, **kwargs)
             self.process_fight_results(results)
 
-    def process_fight_results(self, results):
-        if not any(unit_dict['name'] == self.dungeon.party.leader.unit_dict['name'] for unit_dict in results['winners']):
-
-                def get_exit_keyboard(mmbr):
-                    keyboard = form_keyboard(DungeonButton('Покинуть карту', mmbr, 'menu', 'defeat', named=True))
-                    return keyboard
-
-                self.dungeon.party.send_message('Вы проиграли!', reply_markup_func=get_exit_keyboard)
+    def process_fight_results(self, fight_results):
+        if fight_results.winner_team is None or fight_results.winner_team.team_marker != 'party':
+            self.defeat()
         else:
             for member in self.dungeon.party.members:
                 member.occupied = False
-                member.unit_dict = [unit_dict for unit_dict in results['winners']
-                                    if unit_dict['name'] == member.unit_dict['name']][0]
+                member.unit_dict = fight_results.end_units_dict[member.chat_id]
                 member.inventory.update()
-            loot = results['loot'] + self.loot
+
+            loot = fight_results.loot + self.loot
             experience = sum([units.units_dict[mob].experience for mob in self.mobs.mob_units if self.mobs is not None])
+
             self.dungeon.party.experience += experience
             self.dungeon.party.distribute_loot(loot)
             self.collect_receipts()
@@ -521,19 +593,18 @@ class MobPack:
     def __init__(self, *args, complexity=None):
         self.mob_units = args
         self.complexity = complexity
-        self.team = self.generate_team()
 
-    def generate_team(self):
+    def generate_team(self, **kwargs):
         mobs_team = Team(team_marker='mobs')
         for unit in self.mob_units:
             unit_name = unit
             name = None
             unit_dict = units.units_dict[unit](complexity=self.complexity).to_dict()
-            mobs_team.add_unit(main_arg=unit_name, name=name, unit_dict=unit_dict)
+            mobs_team.add_unit(main_arg=unit_name, name=name, unit_dict=unit_dict, **kwargs)
         return mobs_team
 
     def get_image_tuples(self):
-        for unit in self.team.units:
+        for unit in self.generate_team().units:
             yield unit.get_image()
 
 

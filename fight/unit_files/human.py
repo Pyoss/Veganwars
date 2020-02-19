@@ -11,7 +11,7 @@ class Human(StandardCreature):
         StandardCreature.__init__(self, name, controller=controller, unit_dict=unit_dict)
         # Максимальные параметры
         if unit_dict is None:
-            self.abilities = [abilities.Dodge(self), abilities.SpellCaster(self)]
+            self.abilities = []
 
     def get_unit_image_dict(self):
         main_armor = next(iter(armor for armor in self.armor if armor.placement == 'body'), None)

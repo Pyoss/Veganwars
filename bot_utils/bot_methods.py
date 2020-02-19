@@ -10,7 +10,7 @@ types = telebot.types
 bot = telebot.TeleBot(config.token)
 admin_bot = telebot.TeleBot(os.environ['ADMIN_TOKEN'])
 admin_mode = False
-images = True
+images = False
 
 
 # Переопределение метода отправки сообщения (защита от ошибок)

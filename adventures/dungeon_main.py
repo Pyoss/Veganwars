@@ -68,16 +68,16 @@ class Party:
             self.send_message('Вы находите рецепт на {}({})'.format(name, amount))
         self.collected_receipts.put(name, value=amount)
 
-    def move(self, location, new_map=False, exhaust=True, events=True):
+    def move(self, location, new_message=False, exhaust=True, events=True):
         if self.current_location is not None:
             self.current_location.leave_location()
         if exhaust:
             self.exhaust()
         if events and False:
-            if self.wait_for_event(func=location.enter_location, kwargs={'party': self, 'new_map': new_map}):
+            if self.wait_for_event(func=location.enter_location, kwargs={'party': self, 'new_message': new_message}):
                 pass
         else:
-            location.enter_location(self, new_map=new_map)
+            location.enter_location(self, new_message=new_message)
 
     def wait_for_event(self, func, kwargs=None):
         event = engine.get_random_with_chances(self.dungeon.get_event_list())
@@ -123,6 +123,7 @@ class Party:
                 member.send_message(form_message(*args, sh_m_ui=short_member_ui, memb=member),
                                     reply_markup=reply_markup_func(member) if reply_markup_func is not None else None if
                                     not leader_reply else None, image=image)
+        #time.sleep(1)
 
     def edit_message(self, text, reply_markup=None):
         for member in self.members:
@@ -130,7 +131,7 @@ class Party:
 
     # Нахождение локаций, которые находятся в поле зрения.
 
-    def generate_team(self):
+    def generate_team(self, **kwargs):
         players_team = Team(team_marker='party')
         for member in self.members:
             player_id = member.chat_id
@@ -187,6 +188,8 @@ class Member:
         self.max_exhaustion = 20
 
     def send_message(self, text, reply_markup=None, image=None):
+        if isinstance(image, str):
+            image = open(image, 'rb')
         if image is None:
             self.message_id = bot_methods.send_message(self.chat_id, text, reply_markup=reply_markup).message_id
         else:
@@ -222,8 +225,9 @@ class Member:
         buttons = list()
 
         buttons.append(keyboards.DungeonButton('Инвентарь', self, 'menu', 'inventory', named=True))
-        buttons.append(keyboards.DungeonButton('На карту', self, 'menu', 'map', named=True))
-        buttons.append(keyboards.DungeonButton('Покинуть карту', self, 'menu', 'leave', named=True))
+        buttons.append(keyboards.DungeonButton('Перемещение', self, 'menu', 'map', named=True))
+        if self.dungeon.map.exit_opened:
+            buttons.append(keyboards.DungeonButton('Покинуть карту', self, 'menu', 'leave', named=True))
         if len(self.dungeon.party.members) > 1:
             buttons.append(keyboards.DungeonButton('Обмен', self, 'menu', 'give', named=True))
 
@@ -341,7 +345,7 @@ class Member:
 
 class Inventory(engine.Container):
     def __init__(self, member):
-        engine.Container.__init__(self)
+        engine.Container.__init__(self, name_lang_tuple=LangTuple('dungeon', 'inventory'))
         self.max_size = 6
         self.member = member
         self.base_dict = member['inventory']
@@ -374,7 +378,7 @@ class Inventory(engine.Container):
         elif action == 'throw':
             item_id = call_data[4]
             item = self[item_id]
-            self.member.dungeon.party.current_location.throwed(item[0]['name'])
+            self.member.dungeon.party.current_location.thrown(item[0]['name'])
             self.remove(item_id)
             self.update_menu()
         elif action == 'equip':

@@ -88,11 +88,11 @@ class Lobby:
     def run(self):
         pass
 
-    def run_fight(self, *args, first_turn=None):
+    def run_fight(self, *args, first_turn=None, **kwargs):
         # В качестве аргумента должны быть переданы словари команд в виде
         # [team={chat_id: unit_dict} or team={(ai_class, n):unit_dict}].
         try:
-            fight = fight_main.Fight(chat_id=self.chat_id)
+            fight = fight_main.Fight(chat_id=self.chat_id, **kwargs)
             fight.form_teams(*args)
             results = fight.run(first_turn=first_turn)
             return results

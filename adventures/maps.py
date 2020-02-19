@@ -104,8 +104,9 @@ class TutorialMap(DungeonMap):
         self.neutral_scarceness = 100
         self.impact_integer_range = (-5, 5)
         self.wall_emote = emoji_utils.emote_dict['wall_em']
+        self.goblin_attempt = 1
 
-        self.enemy_list = (EnemyKey('goblin', 7, 238, 10),)
+        self.enemy_list = (EnemyKey('tutorial_goblin', 7, 238, 10),)
         self.entrance_location = tutorial_section_locations.TutorialEntrance
 
     def fill_locations(self):
@@ -115,9 +116,11 @@ class TutorialMap(DungeonMap):
         for x in range(self.width):
             for y in range(self.height):
                 if x == 0 and y == 0:
-                    self.location_matrix[(x, y)] = tutorial_section_locations.TutorialEnemyLoc(x, y, self.dungeon, self.map_tuples[(0, 0)])
+                    self.location_matrix[(x, y)] = tutorial_section_locations.TutorialEntrance(x, y, self.dungeon, self.map_tuples[(0, 0)])
                 elif x == 1 and y == 0:
                     self.location_matrix[(x, y)] = tutorial_section_locations.TutorialSecondLoc(x, y, self.dungeon, self.map_tuples[(0, 0)])
+                elif x == 2 and y == 0:
+                    self.location_matrix[(x, y)] = tutorial_section_locations.TutorialEnemyLoc(x, y, self.dungeon, self.map_tuples[(0, 0)])
                 else:
                     self.location_matrix[(x, y)] = self.generate_wall(x, y)
 

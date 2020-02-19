@@ -49,11 +49,11 @@ class Team:
     def get_dmg(self):
         return sum(unit.dmg_received for unit in self.units if unit.alive())
 
-    def add_player(self, chat_id, name, unit_dict=None):
+    def add_player(self, chat_id, name, unit_dict=None, **kwargs):
         # Добавление бота в словарь игроков и список игроков конкретного боя
         controller = Player(chat_id, 'rus')
         unit_class = units.units_dict[unit_dict['unit_name']]
-        unit = unit_class(name, controller=controller, unit_dict=unit_dict)
+        unit = unit_class(name, controller=controller, unit_dict=unit_dict, **kwargs)
         unit.team = self
         return unit
 
@@ -75,15 +75,14 @@ class Team:
             unit.weapon = weapons.weapon_dict[unit.default_weapon](unit)
         return unit
 
-    def add_unit(self, main_arg, name, unit_dict=None, controller=None):
+    def add_unit(self, main_arg, name, unit_dict=None, controller=None, **kwargs):
         if isinstance(main_arg, int):
-            unit = self.add_player(main_arg, name, unit_dict=unit_dict)
+            unit = self.add_player(main_arg, name, unit_dict=unit_dict, **kwargs)
         else:
-            unit = self.add_ai(main_arg, name, unit_dict=unit_dict, controller=controller)
+            unit = self.add_ai(main_arg, name, unit_dict=unit_dict, controller=controller, **kwargs)
         self.units.append(unit)
         if self.captain is None:
             self.captain = unit
-
 
 
 class Player:
@@ -172,7 +171,7 @@ class ActionQueue:
 
 
 class Fight:
-    def __init__(self, chat_id=None):
+    def __init__(self, chat_id=None, first_turn=None, **kwargs):
         self.turn = 1
         self.id = str(engine.rand_id())
         self.chat_id = [] if chat_id is None else [chat_id]
@@ -183,7 +182,7 @@ class Fight:
         self.dead = {}
         self.teams = []
         self.public = True
-        self.first_turn = None
+        self.first_turn = first_turn
         self.listeners = list()
         self.action_queue = ActionQueue()
         self.string_tuple = FightString(self)
@@ -193,7 +192,6 @@ class Fight:
 
     def run(self, func=None, first_turn=None):
         # self._send_chosen_weapons_()
-        self.first_turn = first_turn
         results = self.fight_loop()
         if func is None:
             return results
@@ -287,7 +285,10 @@ class Fight:
 
     def announce(self, lang_tuple, image=None):
         for listener in [listener for listener in self.listeners]:
-            text = lang_tuple.translate(listener.lang)
+            if isinstance(lang_tuple, str):
+                text = lang_tuple
+            else:
+                text = lang_tuple.translate(listener.lang)
             if image is None:
                 bot_methods.send_message(listener.chat_id, text)
             else:
@@ -376,33 +377,29 @@ class Fight:
         self.turn += 1
 
     def ending(self):
+        fight_result = FightResults()
+        for unit in self.units:
+            fight_result.end_units_dict[unit.controller.chat_id] = unit.to_dict()
+
         won_teams = [team for team in self.teams if any(unit.alive() for unit in team.units)]
+        lost_teams = [team for team in self.teams if team not in won_teams]
+
         if won_teams:
             self.string_tuple.row(LangTuple('fight', 'winner', {'team_name': won_teams[0].name()}))
+            fight_result.winner_team = won_teams[0]
         else:
+            fight_result.draw = True
             self.string_tuple.row(LangTuple('fight', 'draw'))
 
-        ending_dict = {'winners': [], 'loser': [], 'loot': engine.Container()}
-        if not won_teams:
-            ending_dict['won_team'] = 'draw'
-        for team in self.teams:
-            if team in won_teams:
-                if team.team_marker is not None:
-                    ending_dict['won_team'] = team.team_marker
-                for unit in team.units:
-                    if not unit.summoned:
-                        ending_dict['winners'].append(unit.to_dict())
-            else:
-                if team.team_marker is not None:
-                    ending_dict['lost_team'] = team.team_marker
-                for unit in team.units:
-                    if not unit.summoned:
-                        ending_dict['loser'].append(unit.to_dict())
-                        if not unit.alive():
-                            loot = unit.generate_loot()
-                            ending_dict['loot'] += loot
+        for team in lost_teams:
+            for unit in team.units:
+                if not unit.summoned and not unit.alive():
+                    loot = unit.generate_loot()
+                    fight_result.loot += loot
+
         del dynamic_dicts.fight_dict[str(self.id)]
-        return ending_dict
+
+        return fight_result
 
     def edit_queue(self, action):
         self.action_queue.append(action)
@@ -416,3 +413,11 @@ class Fight:
 
     def __getitem__(self, item):
         return self.units_dict[int(item)]
+
+
+class FightResults:
+    def __init__(self):
+        self.winner_team = None
+        self.draw = False
+        self.loot = engine.Container()
+        self.end_units_dict = {}

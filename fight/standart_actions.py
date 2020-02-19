@@ -716,6 +716,10 @@ def get_class(name):
     return object_dict[name]
 
 
+def to_object(name, unit=None, obj_dict=None):
+    return object_dict[name](unit=unit, obj_dict=obj_dict)
+
+
 class InstantObject(GameObject):
 
     def act(self, action):

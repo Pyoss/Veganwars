@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 import telebot
 from bot_utils import config, bot_handlers, bot_methods
 import dynamic_dicts
@@ -22,11 +23,11 @@ game_dict = dynamic_dicts.lobby_list
 types = telebot.types
 
 
-x = '5.189.144.84:3128'
-telebot.apihelper.proxy = {
-'http': 'http://{}'.format(x),
-'https': 'http://{}'.format(x)
-}
+#x = '45.76.47.63:3128'
+#telebot.apihelper.proxy = {
+#'http': 'http://{}'.format(x),
+#'https': 'http://{}'.format(x)
+#}
 
 bot.send_message(config.admin_id, 'Инициация бота...')
 bot.locked = False

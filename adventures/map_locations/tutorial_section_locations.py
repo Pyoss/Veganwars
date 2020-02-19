@@ -1,6 +1,7 @@
+import engine
+from fight.standart_actions import to_object
 from adventures import locations
 import file_manager
-from bot_utils import bot_methods
 
 
 class TutorialEntrance(locations.OpenLocation):
@@ -12,7 +13,6 @@ class TutorialEntrance(locations.OpenLocation):
         self.emote = '-'
         self.open = False
         self.looked = False
-        self.key_taken = False
 
     def get_emote(self):
         # return '-' + str(self.complexity)
@@ -32,7 +32,8 @@ class TutorialEntrance(locations.OpenLocation):
         self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True,
                                         short_member_ui=True, reply_markup_func=self.get_action_keyboard)
 
-        self.dungeon.party.send_message('<ℹ️Снизу Вы видите меню карты с комнатами. 👥 обозначает локацию, где находится '
+        self.dungeon.party.send_message('<ℹ️Снизу Вы видите меню карты с комнатами. '
+                                        '👥 обозначает локацию, где находится '
                                         'Ваша группа. Нажмите на иконку 👥 для просмотра действий, доступных в данной '
                                         'локации. Для перемещения группы нажмите на одну из соседних локаций.>')
 
@@ -45,31 +46,18 @@ class TutorialEntrance(locations.OpenLocation):
         buttons = []
         if not self.looked:
             buttons.append(('0', self.look_around))
-        elif not self.key_taken:
-            buttons.append(('1', self.take_key))
         return buttons
 
-    def throwed(self, name):
+    def thrown(self, name):
         if name == 'tutorial_key':
             self.looked = False
-            self.key_taken = False
 
     def look_around(self, call):
         self.reset_message('text_1')
         self.looked = True
         for member in self.dungeon.party.members:
             member.message_id = None
-        self.dungeon.party.member_dict[call.from_user.id].member_menu_start()
-
-    def take_key(self, call):
-        self.reset_message('text_2')
-        self.key_taken = True
-        for member in self.dungeon.party.members:
-            member.message_id = None
             member.add_item('tutorial_key')
-            bot_methods.send_message(member.chat_id,
-                '<Вы подняли ключ. Поднятые предметы появляются у вас в инвентаре.>')
-
         self.dungeon.party.member_dict[call.from_user.id].member_menu_start()
 
 
@@ -80,14 +68,17 @@ class TutorialSecondLoc(locations.OpenLocation):
     def __init__(self, x, y, dungeon, map_tuple):
         locations.OpenLocation.__init__(self, x, y, dungeon, map_tuple)
         self.emote = '-'
+        self.containers_dict['box'] = engine.Container(name_lang_tuple=self.get_lang_tuple('text_3'))
+        self.containers_dict['box'].put(to_object('bandages'))
+        self.last_attempt = 1
 
     def enter(self):
-        lang_tuple = self.get_greet_tuple()
-        self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True,
-                                        short_member_ui=True, reply_markup_func=self.get_action_keyboard)
-
-        self.dungeon.party.send_message('<У вашего персонажа есть жизни, энергия и скрытые параметры, зависящие от экипировки и уровня.>')
-
+        if not self.visited:
+            lang_tuple = self.get_greet_tuple()
+            self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True,
+                                            short_member_ui=True, reply_markup_func=self.get_action_keyboard)
+            self.dungeon.party.send_message('<У вашего персонажа есть жизни, энергия '
+                                            'и скрытые параметры, зависящие от экипировки и уровня.>')
         if not self.action_expected:
             for member in self.dungeon.party.members:
                 member.occupied = False
@@ -100,6 +91,24 @@ class TutorialSecondLoc(locations.OpenLocation):
         else:
             return ' '
 
+    def get_idle_buttons(self):
+        buttons = []
+        buttons.append(('0', self.search_box))
+        return buttons
+
+    def fill_box(self, attempt_number):
+        self.containers_dict['box'].put(to_object('bandages'))*2    
+        if attempt_number == 2:
+            self.containers_dict['box'].put(to_object("spear"))
+        elif attempt_number == 3:
+            self.containers_dict['box'].put(to_object("shield"))
+
+    def search_box(self, call):
+        if self.last_attempt != self.dungeon.map.goblin_attempt:
+            self.last_attempt = self.dungeon.map.goblin_attempt
+            self.fill_box(self.dungeon.map.goblin_attempt)
+        self.open_container('box', member=self.dungeon.party.member_dict[call.from_user.id])
+
 
 class TutorialEnemyLoc(locations.OpenLocation):
     name = 'tutorial_enemy'
@@ -108,6 +117,9 @@ class TutorialEnemyLoc(locations.OpenLocation):
     image = 'AgADAgADSaoxGxm_CUioZK0h2y0xQzlpXw8ABNGUQWMolIOL0_MFAAEC'
     image_file = file_manager.my_path + '/files/images/backgrounds/tutorial_cage.jpg'
     standard_mobs = True
+
+    def __init__(self, x, y, dungeon, map_tuple):
+        locations.OpenLocation.__init__(self, x, y, dungeon, map_tuple)
 
     def get_emote(self):
         # return '-' + str(self.complexity)
@@ -120,16 +132,20 @@ class TutorialEnemyLoc(locations.OpenLocation):
 
     def get_encounter_button(self):
         buttons = []
-        #if not self.visited:
-        buttons.append(('0', self.go_away))
-        buttons.append(('1', self.fight))
+        if not self.cleared:
+            buttons.append(('0', self.go_away))
+            buttons.append(('1', self.start_fight))
         return buttons
+
+    def start_fight(self, call, **kwargs):
+        self.erase_keyboard(call)
+        locations.OpenLocation.fight(self, attempt=self.dungeon.map.goblin_attempt, **kwargs)
 
     def go_away(self, call):
         self.reset_message('text_6', image=self.mob_image, keyboard_func=False)
         for member in self.dungeon.party.members:
             member.occupied = False
-        self.dungeon.party.move(self.entrance_location, new_map=True, exhaust=False, events=False)
+        self.dungeon.party.move(self.entrance_location, new_message=True, exhaust=False, events=False)
 
     def enter(self):
         lang_tuple = self.get_greet_tuple()
@@ -141,3 +157,11 @@ class TutorialEnemyLoc(locations.OpenLocation):
     def victory(self):
         self.cleared = True
         self.reset_message('text_3', image=self.image)
+        self.dungeon.update_map(new=True)
+
+    def defeat(self):
+        self.dungeon.map.goblin_attempt += 1
+        self.reset_message('text_5', keyboard_func=False)
+        for member in self.dungeon.party.members:
+            member.occupied = False
+        self.dungeon.party.move(self.entrance_location, new_message=True, exhaust=False, events=False)

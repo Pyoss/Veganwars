@@ -54,11 +54,12 @@ class NumberDict(dict):
 
 
 class Container:
-    def __init__(self, base_dict=None, base_list=None):
+    def __init__(self, base_dict=None, base_list=None, name_lang_tuple = None):
         self.base_dict = {} if base_dict is None else base_dict
         # Структура контейнера {случайный_айди: (словарь_предмета, количество)}
         if base_list is not None:
             [self.put(item) for item in base_list]
+        self.name_lang_tuple = name_lang_tuple
 
     def __len__(self):
         return self.base_dict.__len__()
@@ -83,6 +84,10 @@ class Container:
         print('Предмет: {}'.format(item))
         if isinstance(item, str):
             item = standart_actions.object_dict[item]().to_dict()
+        elif isinstance(item, dict):
+            pass
+        else:
+            item = item.to_dict()
         self.__change__(item, value)
         return True
 
@@ -115,7 +120,6 @@ class Container:
         elif isinstance(item, str):
             if item.isdigit():
                 item_id = int(item)
-
         if item_id is None:
             if isinstance(item, str):
                 test = list([k for k, v in self.base_dict.items() if v[0]['name'] == item and v[1] >= value])
@@ -131,6 +135,10 @@ class Container:
         if not self.base_dict:
             return True
         return False
+
+    def __iter__(self):
+        temp_list = [standart_actions.to_object(value[0]['name'], value[0]) for value in self.base_dict.values()]
+        return temp_list.__iter__()
 
     def random_split(self, number):
         new_containers = []
