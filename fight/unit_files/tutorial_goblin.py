@@ -26,7 +26,7 @@ class TutorialGoblinAi(StandardMeleeAi):
     def default_weapon_actions(self):
         self.clear_actions()
         self.find_target()
-        if not self.hint_done:
+        if not self.hint_done and self.unit.attempt < 3:
             self.unit.announce(self.get_hint_tuples('rus')[str(self.unit.attempt)])
             self.hint_done = True
         if StandardMeleeAi.nessesary_actions(self):
@@ -36,8 +36,8 @@ class TutorialGoblinAi(StandardMeleeAi):
         self.reload(5 - self.unit.energy if self.unit.energy <= 2 else 0)
 
     def get_hint_tuples(self, lang):
-        button_tuples = json.loads(self.unit.to_string('skill_1').translate(lang))
-        return button_tuples
+        hint_tuples = json.loads(self.unit.to_string('skill_1').translate(lang))
+        return hint_tuples
 
 
 class TutorialGoblin(StandardCreature):

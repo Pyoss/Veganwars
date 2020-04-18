@@ -1,6 +1,7 @@
 from adventures.map_engine import DungeonMap, EnemyKey
 from adventures import locations
 import engine
+from chat_wars import chat_main
 from locales import emoji_utils
 
 
@@ -133,4 +134,7 @@ class TutorialMap(DungeonMap):
                                                            ('branch', 'crossroad'): base_list,
                                                           ('branch', 'entrance'): base_list,
                                                           ('branch', 'default'): base_list})
+
+    def wrap(self):
+        chat_main.add_user(self.party.members[0])
 

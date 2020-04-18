@@ -2,6 +2,7 @@ import engine
 from fight.standart_actions import to_object
 from adventures import locations
 import file_manager
+from locales.localization import LangTuple
 
 
 class TutorialEntrance(locations.OpenLocation):
@@ -77,7 +78,7 @@ class TutorialSecondLoc(locations.OpenLocation):
             lang_tuple = self.get_greet_tuple()
             self.dungeon.party.send_message(lang_tuple, image=self.image, leader_reply=True,
                                             short_member_ui=True, reply_markup_func=self.get_action_keyboard)
-            self.dungeon.party.send_message('<У вашего персонажа есть жизни, энергия '
+            self.dungeon.party.send_message('<ℹ️У вашего персонажа есть жизни, энергия, усталость, '
                                             'и скрытые параметры, зависящие от экипировки и уровня.>')
         if not self.action_expected:
             for member in self.dungeon.party.members:
@@ -121,6 +122,12 @@ class TutorialEnemyLoc(locations.OpenLocation):
     def __init__(self, x, y, dungeon, map_tuple):
         locations.OpenLocation.__init__(self, x, y, dungeon, map_tuple)
 
+    def get_greet_tuple(self):
+        if self.dungeon.map.goblin_attempt:
+            return LangTuple(self.table_row, 'greeting')
+        else:
+            return LangTuple(self.table_row, 'text_1')
+
     def get_emote(self):
         # return '-' + str(self.complexity)
         if not self.visited:
@@ -157,6 +164,7 @@ class TutorialEnemyLoc(locations.OpenLocation):
     def victory(self):
         self.cleared = True
         self.reset_message('text_3', image=self.image)
+        self.dungeon.map.exit_opened = True
         self.dungeon.update_map(new=True)
 
     def defeat(self):

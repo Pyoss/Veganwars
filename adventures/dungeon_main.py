@@ -226,6 +226,8 @@ class Member:
 
         buttons.append(keyboards.DungeonButton('Инвентарь', self, 'menu', 'inventory', named=True))
         buttons.append(keyboards.DungeonButton('Перемещение', self, 'menu', 'map', named=True))
+
+        buttons.append(keyboards.DungeonButton('Персонаж', self, 'character', 'map', named=True))
         if self.dungeon.map.exit_opened:
             buttons.append(keyboards.DungeonButton('Покинуть карту', self, 'menu', 'leave', named=True))
         if len(self.dungeon.party.members) > 1:
@@ -302,6 +304,7 @@ class Member:
             self.menu.kill()
         elif action == 'leave':
             if self.chat_id == self.dungeon.party.leader.chat_id:
+                self.dungeon.map.wrap()
                 self.dungeon.end_dungeon()
         elif action == 'defeat':
             if self.chat_id == self.dungeon.party.leader.chat_id:

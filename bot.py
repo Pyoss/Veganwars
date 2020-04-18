@@ -32,6 +32,7 @@ types = telebot.types
 bot.send_message(config.admin_id, 'Инициация бота...')
 bot.locked = False
 
+
 @bot.message_handler(func=lambda message: True if bot.locked and message.from_user.id != config.admin_id else False,
                      content_types=['text'])
 def start(message):

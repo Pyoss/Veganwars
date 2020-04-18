@@ -188,11 +188,14 @@ class SqlChat(object):
 class SqlUser(object):
     pyosession = None
 
-    def __init__(self, user_id, attacked=0, experience=0, unit_dict='{"unit":"human"}', pending_tutorial=False):
+    def __init__(self, user_id, attacked=0, experience=0, event_dict='{"last_dungeon_attempt": 0}',
+                 backpack_dict='{}', unit_dict='{"unit":"human"}', pending_tutorial=False):
         self.user_id = user_id
         self.attacked = attacked
         self.experience = experience
         self.unit_dict = unit_dict
+        self.backpack_dict = backpack_dict
+        self.event_dict = event_dict
         self.options = {'pending_tutorial': pending_tutorial, 'language': 'rus'}
 
     def __repr__(self):
@@ -210,6 +213,13 @@ class SqlUser(object):
         return json.loads(self.unit_dict)
 
     def set_unit_dict(self, unit_dict):
+        self.unit_dict = json.dumps(unit_dict)
+        session.commit()
+
+    def get_backpack_dict(self):
+        return json.loads(self.backpack_dict)
+
+    def set_backpack_dict(self, unit_dict):
         self.unit_dict = json.dumps(unit_dict)
         session.commit()
 

@@ -153,6 +153,9 @@ class DungeonMap:
         location = self.dungeon.map.get_location(0, 0)
         self.dungeon.party.move(location, events=False, exhaust=False)
 
+    def wrap(self):
+        pass
+
     # Возвращает локацию от координат матрицы
     def get_location(self, x, y):
         return self.location_matrix[(int(x), int(y))]
@@ -430,14 +433,14 @@ class Location:
         for item_id in container.base_dict:
             buttons.append(DungeonButton(container.get_string(item_id, 'rus'), member, 'location', 'container',
                                          container_key, 'take', str(item_id), str(edit_last_message), named=True))
-
-        buttons.append(DungeonButton('Положить', member, 'location', 'container', container_key, 'put-menu', named=True))
-        buttons.append(DungeonButton('Закрыть', member, 'menu', 'main', named=True))
         text = container.name_lang_tuple.translate('rus')
+        keyboard = form_keyboard(*buttons)
+        keyboard.add(DungeonButton('⬇️Положить', member, 'location', 'container', container_key, 'put-menu', named=True),
+                     DungeonButton('❌Закрыть', member, 'menu', 'main', named=True))
         if edit_last_message:
-            member.edit_message(text, reply_markup=form_keyboard(*buttons))
+            member.edit_message(text, reply_markup=keyboard)
         else:
-            member.send_message(text, reply_markup=form_keyboard(*buttons))
+            member.send_message(text, reply_markup=keyboard)
 
     def open_inventory_for_container(self, container_key, member, edit_last_message=True):
         container = self.containers_dict[container_key]
@@ -445,13 +448,15 @@ class Location:
         for item_id in member.inventory.base_dict:
             buttons.append(DungeonButton(member.inventory.get_string(item_id, 'rus'), member, 'location', 'container',
                                          container_key, 'put', str(item_id), named=True))
-        buttons.append(DungeonButton('Взять', member, 'location', 'container', container_key, 'take-menu', named=True))
-        buttons.append(DungeonButton('Закрыть', member, 'menu', 'main', named=True))
         text = member.inventory.name_lang_tuple.translate('rus')
+        keyboard = form_keyboard(*buttons)
+
+        keyboard.add(DungeonButton('⬆️Взять', member, 'location', 'container', container_key, 'take-menu', named=True),
+                                   DungeonButton('❌Закрыть', member, 'menu', 'main', named=True))
         if edit_last_message:
-            member.edit_message(text, reply_markup=form_keyboard(*buttons))
+            member.edit_message(text, reply_markup=keyboard)
         else:
-            member.send_message(text, reply_markup=form_keyboard(*buttons))
+            member.send_message(text, reply_markup=keyboard)
 
     def container_handler(self, call):
         bot_methods.err(call.data)
@@ -572,13 +577,13 @@ class Location:
             self.process_fight_results(results)
 
     def process_fight_results(self, fight_results):
+        for member in self.dungeon.party.members:
+            member.occupied = False
+            member.unit_dict = fight_results.end_units_dict[member.chat_id]
+            member.inventory.update()
         if fight_results.winner_team is None or fight_results.winner_team.team_marker != 'party':
             self.defeat()
         else:
-            for member in self.dungeon.party.members:
-                member.occupied = False
-                member.unit_dict = fight_results.end_units_dict[member.chat_id]
-                member.inventory.update()
 
             loot = fight_results.loot + self.loot
             experience = sum([units.units_dict[mob].experience for mob in self.mobs.mob_units if self.mobs is not None])
