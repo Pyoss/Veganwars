@@ -1,4 +1,4 @@
-
+import file_manager
 
 class Hairstyle:
     path = None
@@ -30,6 +30,6 @@ class Hairstyle_3:
 
 
 class Hairstyle_4:
-    path = './files/images/hairstyles/cover_head_4.png'
+    path = file_manager.my_path + '/files/images/hairstyles/cover_head_4.png'
     padding = (20, 36)
     passed_padding = (0, 10)

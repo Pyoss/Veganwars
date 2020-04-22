@@ -21,7 +21,7 @@ class Unit:
     standart_additional = ['move', 'move_back', 'skip']
     experience = 10
     danger = 10
-    image = './files/images/units/default.png'
+    image = file_manager.my_path + '/files/images/units/default.png'
 
     # Список предметов, выпадающих из юнита при убийстве. Имеет вид [name: (quantity, chance)]
     default_loot = []

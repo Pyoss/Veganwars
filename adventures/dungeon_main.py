@@ -6,7 +6,9 @@ from fight.fight_main import Team, Fight
 from locales.localization import LangTuple
 from locales.emoji_utils import emote_dict
 from bot_utils.keyboards import form_keyboard
+import image_generator
 import dynamic_dicts
+import file_manager
 import time
 import threading
 import random
@@ -226,8 +228,7 @@ class Member:
 
         buttons.append(keyboards.DungeonButton('Инвентарь', self, 'menu', 'inventory', named=True))
         buttons.append(keyboards.DungeonButton('Перемещение', self, 'menu', 'map', named=True))
-
-        buttons.append(keyboards.DungeonButton('Персонаж', self, 'character', 'map', named=True))
+        buttons.append(keyboards.DungeonButton('Персонаж', self, 'menu', 'character', named=True))
         if self.dungeon.map.exit_opened:
             buttons.append(keyboards.DungeonButton('Покинуть карту', self, 'menu', 'leave', named=True))
         if len(self.dungeon.party.members) > 1:
@@ -246,8 +247,8 @@ class Member:
         keyboard = self.menu_keyboard()
         self.edit_message(text, reply_markup=keyboard)
 
-    def member_menu_start(self):
-        self.menu = Menu(text=self.member_string(), keyboard=self.menu_keyboard(), member=self)
+    def member_menu_start(self, new=False):
+        self.menu = Menu(text=self.member_string(), keyboard=self.menu_keyboard(), member=self, new=new)
 
     def add_item(self, item, call=None):
         return self.inventory.put(item)
@@ -298,6 +299,10 @@ class Member:
             self.inventory.inventory_menu()
         elif action == 'give':
             self.inventory.inventory_menu(give=True)
+        elif action == 'character':
+            self.delete_message()
+            self.send_message('Персонаж Pyos', image=self.get_image())
+            self.member_menu_start(new=True)
         elif action == 'main':
             self.member_menu()
         elif action == 'map':
@@ -309,6 +314,13 @@ class Member:
         elif action == 'defeat':
             if self.chat_id == self.dungeon.party.leader.chat_id:
                 self.dungeon.end_dungeon(defeat=True)
+
+    def get_image(self):
+        unit_class = units.units_dict[self.unit_dict['unit_name']]
+        image = unit_class(None, unit_dict=self.unit_dict).get_image()
+        image = image_generator.create_dungeon_image(self.dungeon.party.current_location.image,
+                                     [image], resize=True)
+        return image
 
     def get_party_members_to_give(self, item_id, item_name):
         item_name = self.inventory.get_string(item_id, self.lang)

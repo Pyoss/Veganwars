@@ -45,10 +45,9 @@ class ImageConstructor:
                 'high': int(self.background_image.height*5/6),
                 'low': int(self.background_image.height*2/5)}
 
-    def get_common_height_tier_list(self):
+    def get_common_height_tier_list(self, resize=False):
         for image_object in self.image_objects:
-            image_object.resize(self.size_heights[image_object.height_type])
-            print(self.sized_lists_dict)
+            image_object.resize(self.size_heights[image_object.height_type if not resize else 'high'])
             self.sized_lists_dict[image_object.height_type].append(image_object)
 
         if len(self.sized_lists_dict['standard']) == len(self.sized_lists_dict['low']) == len(self.sized_lists_dict['high']) == 1:
@@ -83,16 +82,16 @@ class ImageConstructor:
         padding_marker.padding += padding_coord
         return padding_marker.padding - image_object.get_center()
 
-    def create_image(self):
-        self.get_common_height_tier_list()
+    def create_image(self, resize=False):
+        self.get_common_height_tier_list(resize)
         self.setup_markers()
-
         for value in self.sized_lists_dict.values():
             for image_object in value:
                 self.background_image.image_file.paste(image_object.image,
                                                        (self.get_background_coord(image_object),
                                                         self.background_image.height - image_object.height),
                                                        mask=image_object.image)
+
 
         return self.background_image.image_file
 
@@ -115,9 +114,9 @@ class DuelImage(ImageConstructor):
             return corner + image_object.get_center()
 
 
-def create_dungeon_image(background, image_tuples):
+def create_dungeon_image(background, image_tuples, resize=False):
     constructor = ImageConstructor(ImageBackground(Image.open(background)), image_tuples)
-    image = constructor.create_image()
+    image = constructor.create_image(resize)
     return io_from_PIL(image)
 
 

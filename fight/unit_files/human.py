@@ -1,5 +1,6 @@
 from fight.units import StandardCreature, units_dict
 from fight import abilities
+import file_manager
 from PIL import Image
 from bot_utils import config
 
@@ -19,7 +20,7 @@ class Human(StandardCreature):
         return {
             'one-handed':
                 {
-                    'file': './files/images/armor_bodies/{}/dummy.png'.format(main_armor_name),
+                    'file': file_manager.my_path + '/files/images/armor_bodies/{}/dummy.png'.format(main_armor_name),
                     'right_hand': (30, 320),
                     'left_hand': (220, 320),
                     'body_armor': (110, 200),
@@ -28,7 +29,7 @@ class Human(StandardCreature):
                 },
             'two-handed':
                 {
-                    'file': './files/images/armor_bodies/{}/dummy_twohanded.png'.format(main_armor_name),
+                    'file': file_manager.my_path + '/files/images/armor_bodies/{}/dummy_twohanded.png'.format(main_armor_name),
                     'right_hand': (15, 160),
                     'left_hand': (307, 320),
                     'body_armor': (197, 200),
@@ -39,7 +40,7 @@ class Human(StandardCreature):
                 {
                     'hand_one_handed':
                         {
-                            'file': './files/images/armor_bodies/{}/cover_arm.png'.format(main_armor_name),
+                            'file': file_manager.my_path + '/files/images/armor_bodies/{}/cover_arm.png'.format(main_armor_name),
                             'coordinates': (-3, 108)
                         },
                 }
@@ -48,8 +49,8 @@ class Human(StandardCreature):
     def add_head(self, equipment_dicts, user_id):
         if not any(armor.placement == 'head' and armor.covering for armor in self.armor):
             if user_id is not None and user_id in config.special_units:
-                hairstyle_image = './files/images/armor_heads/{}/naked/cover_head.png'.format(config.special_units[user_id])
-                hairstyle_x, hairstyle_y = str(open('./files/images/armor_heads/{}/naked/cover_head_coord.txt'.format(config.special_units[user_id])).read()).split()
+                hairstyle_image = file_manager.my_path + '/files/images/armor_heads/{}/naked/cover_head.png'.format(config.special_units[user_id])
+                hairstyle_x, hairstyle_y = str(open(file_manager.my_path + '/files/images/armor_heads/{}/naked/cover_head_coord.txt'.format(config.special_units[user_id])).read()).split()
                 hairstyle_x, hairstyle_y = int(hairstyle_x), int(hairstyle_y)
             else:
                 hairstyle = self.get_hairstyle()

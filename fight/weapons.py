@@ -3,6 +3,7 @@
 from fight import statuses, standart_actions
 from bot_utils import keyboards, bot_methods
 from locales import emoji_utils, localization
+import file_manager
 import engine
 import inspect
 import sys
@@ -78,7 +79,7 @@ class Weapon(standart_actions.GameObject):
     def __init__(self, unit=None, obj_dict=None):
         standart_actions.GameObject.__init__(self, unit=unit, obj_dict=obj_dict)
         self.improved = None
-        self.file = './files/images/weapons/{}.png'.format(self.name)
+        self.file = file_manager.my_path + '/files/images/weapons/{}.png'.format(self.name)
 
     def string(self, string_code, format_dict=None, order=0):
         format_dict = {} if None else format_dict

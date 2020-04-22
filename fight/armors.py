@@ -3,6 +3,7 @@
 from fight import standart_actions, weapons
 from locales import localization, emoji_utils
 from bot_utils import keyboards, config
+import file_manager
 import sys
 import inspect
 
@@ -119,7 +120,7 @@ class Helmet(Armor):
         return {
          'handle': (26, 30),
          'placement': 'head',
-         'file': './files/images/armor_heads/{}/cover_head.png'.format(self.name),
+         'file': file_manager.my_path + '/files/images/armor_heads/{}/cover_head.png'.format(self.name),
          'covered': False,
          'layer': 0
         }
@@ -137,11 +138,11 @@ class HeavyHelmet(Armor):
 
     def get_image_dict(self, user_id=None):
         if user_id is not None and user_id in config.special_units:
-            file = './files/images/armor_heads/{}/{}/cover_head.png'.\
+            file = file_manager.my_path + '/files/images/armor_heads/{}/{}/cover_head.png'.\
                     format(config.special_units[user_id], self.name)
-            handle = list(int(item) for item in open('./files/images/armor_heads/{}/{}/cover_head_coord.txt'.format(config.special_units[user_id], self.name)).read().split())
+            handle = list(int(item) for item in open(file_manager.my_path + '/files/images/armor_heads/{}/{}/cover_head_coord.txt'.format(config.special_units[user_id], self.name)).read().split())
         else:
-            file = './files/images/armor_heads/common/{}/cover_head.png'.format(self.name)
+            file = file_manager.my_path + '/files/images/armor_heads/common/{}/cover_head.png'.format(self.name)
             handle = (26, 37)
         return {
          'handle': handle,
@@ -176,7 +177,7 @@ class Mask(Armor):
         return {
          'handle': (49, 70),
          'placement': 'head',
-         'file': './files/images/mask.png',
+         'file': file_manager.my_path + '/files/images/mask.png',
          'covered': False,
          'layer': 0
         }
@@ -196,7 +197,7 @@ class SteamPunk_Mask(Armor):
         return {
          'handle': (33, 35),
          'placement': 'head',
-         'file': './files/images/mask_1.png',
+         'file': file_manager.my_path + '/files/images/mask_1.png',
          'covered': False,
          'layer': 0
         }
@@ -220,7 +221,7 @@ class Shield(Armor, weapons.OneHanded, weapons.Weapon):
         return {
          'handle': (66, 160),
          'placement': 'left_hand',
-         'file': './files/images/weapons/shield_2.png',
+         'file': file_manager.my_path + '/files/images/weapons/shield_2.png',
          'covered': False,
          'layer': 2
         }
@@ -289,7 +290,7 @@ class HeavyShield(Shield):
         return {
          'handle': (106, 240),
          'placement': 'left_hand',
-         'file': './files/images/weapons/heavy-shield.png',
+         'file': file_manager.my_path + '/files/images/weapons/heavy-shield.png',
          'covered': False,
          'layer': 2
         }
