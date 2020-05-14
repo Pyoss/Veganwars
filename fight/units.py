@@ -699,4 +699,10 @@ def fill_unit_dict():
         bloodbug, snail, worm, zombie, goblin_bomber, red_oak, ogre, goblin_shaman, dragon, tutorial_goblin
 
 
+def get_unit_from_dict(unit_dict, controller=None, name=None, **kwargs):
+    unit_class = units_dict[unit_dict['unit_name']]
+    unit = unit_class(name, controller=controller, unit_dict=unit_dict, **kwargs)
+    return unit
+
+
 

@@ -48,7 +48,6 @@ class ImageConstructor:
     def get_common_height_tier_list(self):
         for image_object in self.image_objects:
             image_object.resize(self.size_heights[image_object.height_type])
-            print(self.sized_lists_dict)
             self.sized_lists_dict[image_object.height_type].append(image_object)
 
         if len(self.sized_lists_dict['standard']) == len(self.sized_lists_dict['low']) == len(self.sized_lists_dict['high']) == 1:
@@ -96,6 +95,20 @@ class ImageConstructor:
 
         return self.background_image.image_file
 
+    def create_solo_image(self):
+        self.setup_markers()
+
+        for image_object in self.image_objects:
+            image_object.resize(int(self.background_image.height*5/6))
+            self.background_image.image_file.paste(image_object.image,
+                                                   (self.get_background_coord(image_object),
+                                                   self.background_image.height - image_object.height),
+                                                   mask=image_object.image)
+
+        return self.background_image.image_file
+
+
+
 
 class DuelImage(ImageConstructor):
 
@@ -121,6 +134,12 @@ def create_dungeon_image(background, image_tuples):
     return io_from_PIL(image)
 
 
+def create_character_image(background, image_tuples):
+    constructor = ImageConstructor(ImageBackground(Image.open(background)), image_tuples)
+    image = constructor.create_solo_image()
+    return io_from_PIL(image)
+
+
 def io_from_PIL(image):
     img_byte_arr = io.BytesIO()
     image.save(img_byte_arr, format='PNG')
@@ -138,6 +157,6 @@ if __name__ == '__main__':
     unit1 = Goblin()
     constructor = ImageConstructor(ImageBackground(Image.open('files/images/backgrounds/Duel.png')),
                                                    (unit.get_image(1),))
-    image = constructor.create_image()
+    image = constructor.create_solo_image()
 
     image.save('test.png', 'PNG')

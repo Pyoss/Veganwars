@@ -10,7 +10,7 @@ import dynamic_dicts
 import time
 import threading
 import random
-import engine
+import engine, image_generator
 
 
 class MapHandler:
@@ -227,7 +227,7 @@ class Member:
         buttons.append(keyboards.DungeonButton('Инвентарь', self, 'menu', 'inventory', named=True))
         buttons.append(keyboards.DungeonButton('Перемещение', self, 'menu', 'map', named=True))
 
-        buttons.append(keyboards.DungeonButton('Персонаж', self, 'character', 'map', named=True))
+        buttons.append(keyboards.DungeonButton('Персонаж', self, 'menu', 'character', named=True))
         if self.dungeon.map.exit_opened:
             buttons.append(keyboards.DungeonButton('Покинуть карту', self, 'menu', 'leave', named=True))
         if len(self.dungeon.party.members) > 1:
@@ -245,6 +245,15 @@ class Member:
         text = self.member_string()
         keyboard = self.menu_keyboard()
         self.edit_message(text, reply_markup=keyboard)
+
+    def character_image(self):
+        unit = units.get_unit_from_dict(self.unit_dict)
+        image = image_generator.create_character_image(self.dungeon.party.current_location.image,
+                                                       [unit.get_image()])
+        text = self.member_string()
+        keyboard = self.menu_keyboard()
+        self.delete_message()
+        self.send_message(text=text, reply_markup=keyboard, image=image)
 
     def member_menu_start(self):
         self.menu = Menu(text=self.member_string(), keyboard=self.menu_keyboard(), member=self)
@@ -300,6 +309,8 @@ class Member:
             self.inventory.inventory_menu(give=True)
         elif action == 'main':
             self.member_menu()
+        elif action == 'character':
+            self.character_image()
         elif action == 'map':
             self.menu.kill()
         elif action == 'leave':
