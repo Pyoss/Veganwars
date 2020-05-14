@@ -31,11 +31,11 @@ class OgreAi(StandardMeleeAi):
     def get_action(self, edit=False):
         action = Ai.get_action(self, edit=edit)
         if action.name == 'ability':
-            if action.ability.name is 'ogre_charge':
+            if action.ability.name == 'ogre_charge':
                 self.unit.target = random.choice([trgt for trgt in self.unit.targets() if trgt not in self.unit.melee_targets])
                 # self.unit.announce(self.unit.to_string('skill_2', format_dict={'target': self.unit.target.name}))
                 return
-            elif action.ability.name is 'ogre_grab':
+            elif action.ability.name == 'ogre_grab':
                 # self.unit.announce(self.unit.to_string('skill_2', format_dict={'target': self.unit.target.name}))
                 return
 

@@ -109,7 +109,7 @@ class Unit:
 
     def equip_from_dict(self, unit_dict):
         for key, value in unit_dict.items():
-            if key is not 'controller':
+            if key != 'controller':
                 setattr(self, key, value)
         if 'weapon' not in unit_dict or unit_dict['weapon'] is None:
             self.weapon = self.default_weapon

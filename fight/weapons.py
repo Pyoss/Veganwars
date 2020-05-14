@@ -167,7 +167,7 @@ class Weapon(standart_actions.GameObject):
                                       'special', str(target), special=self.table_row)
         else:
             ready = self.special_available(target=None)
-            cd = self.ready_turn - self.unit.fight.turn if self.cd is not 0 else None
+            cd = self.ready_turn - self.unit.fight.turn if self.cd != 0 else None
             return keyboards.FightButton('special_button', self.unit,
                                          'special', special=self.table_row, ready=ready, cd=cd)
 
