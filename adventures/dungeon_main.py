@@ -180,6 +180,7 @@ class Member:
         self.menu = None
         self.name = unit_dict['name']
         self.dungeon = dungeon
+        self.party = self.dungeon.party
         self.unit_dict = unit_dict
         self.inventory = Inventory(self)
         self.experience = 0
@@ -200,8 +201,15 @@ class Member:
         bot_methods.answer_callback_query(call, text, alert=alert)
 
     def edit_message(self, text, reply_markup=None):
-        return bot_methods.edit_message(self.chat_id, self.message_id,
-                                        text, reply_markup=reply_markup)
+        try:
+            return bot_methods.edit_message(self.chat_id, self.message_id,
+                                            text, reply_markup=reply_markup)
+        except Exception as e:
+            print(e)
+            self.delete_message()
+            message = bot_methods.send_message(self.chat_id, text, reply_markup=reply_markup)
+            self.message_id = message.message_id
+            return message
 
     def update_map(self, new=False):
         text = self.member_string()
@@ -223,30 +231,38 @@ class Member:
 
     def menu_keyboard(self):
         buttons = list()
-
         buttons.append(keyboards.DungeonButton('Инвентарь', self, 'menu', 'inventory', named=True))
         buttons.append(keyboards.DungeonButton('Перемещение', self, 'menu', 'map', named=True))
-
         buttons.append(keyboards.DungeonButton('Персонаж', self, 'menu', 'character', named=True))
+
+        # Добавление кнопки выхода
         if self.dungeon.map.exit_opened:
             buttons.append(keyboards.DungeonButton('Покинуть карту', self, 'menu', 'leave', named=True))
-        if len(self.dungeon.party.members) > 1:
+
+        # Добавление кнопки обмена
+        if len(self.party.members) > 1:
             buttons.append(keyboards.DungeonButton('Обмен', self, 'menu', 'give', named=True))
 
+        # Добавление кнопок действия на локации
+        buttons = self.__add_idle_buttons(buttons)
+        keyboard = form_keyboard(*buttons)
+        return keyboard
+
+    def __add_idle_buttons(self, buttons):
         idle_buttons = self.dungeon.party.current_location.get_button_list()['idle']
         idle_buttons = [(self.dungeon.party.current_location.get_button_tuples(self.lang)[str(button[0])],
                          str(button[0])) for button in idle_buttons]
         for button in idle_buttons:
             buttons.append(keyboards.DungeonButton(button[0], self, 'location', str(button[1]), named=True))
-        keyboard = form_keyboard(*buttons)
-        return keyboard
+        return buttons
 
     def member_menu(self):
         text = self.member_string()
         keyboard = self.menu_keyboard()
         self.edit_message(text, reply_markup=keyboard)
 
-    def character_image(self):
+    # Отправка сообщения с картинкой игрока
+    def __send_character_image(self):
         unit = units.get_unit_from_dict(self.unit_dict)
         image = image_generator.create_character_image(self.dungeon.party.current_location.image,
                                                        [unit.get_image()])
@@ -310,7 +326,7 @@ class Member:
         elif action == 'main':
             self.member_menu()
         elif action == 'character':
-            self.character_image()
+            self.__send_character_image()
         elif action == 'map':
             self.menu.kill()
         elif action == 'leave':
